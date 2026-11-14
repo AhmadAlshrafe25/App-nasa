@@ -8,7 +8,7 @@ import {
 import {
   analyzeRadiation, defaultRadiationDemo, getRadiationSamples,
   normalizeRadiationDemo, radiationStorageKey,
-  type RadiationAnalysis, type RadiationDemo, type RadiationScenario,
+  type RadiationAnalysis, type RadiationDemo, type RadiationScenario, type RadiationSample,
 } from '@/lib/radiation';
 import { describeRadiation } from '@/lib/radiation-copy';
 import { DailyLog } from '@/components/daily-log';
@@ -19,20 +19,13 @@ import {
   type BodyReadings, type EvaluatedVital,
 } from '@/lib/vitals';
 import { mergeStoredValue } from '@/lib/persistent-state';
+import { getReadingTrend, primaryReadingKeys } from '@/lib/reading-trends';
 
 const navItems = [
   { href: '/', label: 'Readings', icon: RadiationIcon },
-  { href: '/signals', label: 'Trends', icon: Activity },
   { href: '/alerts', label: 'Alerts', icon: Bell },
   { href: '/log', label: 'Log', icon: ClipboardList },
 ];
-
-const telemetry = {
-  pulse: [61, 63, 62, 64, 60, 62, 65, 63, 64, 61, 63, 62, 66, 64],
-  oxygen: [98, 97, 98, 98, 97, 98, 99, 98, 97, 98, 98, 97, 98, 98],
-  sleep: [7.1, 6.8, 7.4, 6.9, 7.6, 7.2, 6.6, 7.8, 7.1, 7.4, 6.9, 7.7, 7.3, 7.4],
-  stress: [26, 29, 27, 31, 34, 28, 26, 32, 35, 30, 27, 33, 31, 29],
-};
 
 const storageKeys = {
   reviewed: 'spacehealth-alert-reviewed-v1',
@@ -215,13 +208,24 @@ function EmergencyMonitor({
   );
 }
 
-function Sparkline({ values, color = 'var(--signal-color)', alert = false }: { values: number[]; color?: string; alert?: boolean }) {
-  const min = Math.min(...values), max = Math.max(...values);
-  const points = values.map((v, i) => `${(i / (values.length - 1)) * 300},${65 - ((v - min) / (max - min || 1)) * 48}`).join(' ');
-  return <svg className="sparkline" viewBox="0 0 300 74" role="img" aria-label="Sample trend">
-    <path d="M0 68H300" stroke="#d4e0f2" strokeWidth="1" />
-    <polyline points={points} fill="none" stroke={alert ? '#c1854f' : color} strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" />
-    <circle cx="300" cy={65 - ((values.at(-1)! - min) / (max - min || 1)) * 48} r="3.5" fill={alert ? '#c1854f' : color} />
+function Sparkline({ values, label = 'Simulated trend', alert = false }: { values: (number | null)[]; label?: string; alert?: boolean }) {
+  const valid = values.filter((value): value is number => value !== null && Number.isFinite(value));
+  if (!valid.length) return <span className="short-hint">No trend available</span>;
+  const min = Math.min(...valid), max = Math.max(...valid);
+  const x = (index: number) => 6 + index / Math.max(1, values.length - 1) * 288;
+  const y = (value: number) => max === min ? 37 : 64 - (value - min) / (max - min) * 52;
+  const segments: string[][] = [[]];
+  values.forEach((value, index) => {
+    if (value === null || !Number.isFinite(value)) segments.push([]);
+    else segments.at(-1)!.push(`${x(index)},${y(value)}`);
+  });
+  const last = values.at(-1);
+  const color = alert ? '#a5620c' : 'var(--signal-color)';
+  return <svg className="sparkline" viewBox="0 0 300 74" role="img" aria-label={label}>
+    <title>{label}</title>
+    <path d="M6 68H294" stroke="#d4e0f2" strokeWidth="1" />
+    {segments.filter(segment => segment.length > 1).map((segment, index) => <polyline key={index} points={segment.join(' ')} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />)}
+    {last !== null && last !== undefined && Number.isFinite(last) && <circle cx={x(values.length - 1)} cy={y(last)} r="4" fill={color} />}
   </svg>;
 }
 
@@ -278,22 +282,25 @@ function Heading({ title, right }: { title: string; right?: ReactNode }) {
 function VitalSensorCard({
   item,
   onChange,
+  trend,
+  days = 14,
 }: {
   item: EvaluatedVital;
   onChange: (nextValue: number) => void;
+  trend?: number[] | null;
+  days?: 7 | 14;
 }) {
   const { spec, value, formattedValue, severity } = item;
   const Icon = VITAL_ICONS[spec.key];
   const slug = spec.label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   return (
     <article
-      className={`panel metric-card vital-card-${severity}`}
+      className={`panel metric-card compact-reading vital-card-${severity}`}
       data-testid={`metric-${slug}`}
     >
       <div className="metric-top">
         <div>
           <span>{spec.label}</span>
-          <small className="sensor-origin-line">Simulated {spec.sensorLocation} · {spec.sensorDetail}</small>
         </div>
         <span className="metric-icon"><Icon /></span>
       </div>
@@ -305,7 +312,14 @@ function VitalSensorCard({
           {severity === 'red' ? 'RED · DEMO' : severity === 'yellow' ? 'YELLOW · DEMO' : 'NORMAL · DEMO'}
         </span>
       </div>
-      <div className="vital-reason-line">{severity === 'normal' ? 'Within the default demo band' : 'Outside the default demo band'} · not a clinical assessment</div>
+      {trend && <div className="reading-inline-trend" data-testid={`trend-${spec.key}`}>
+        <Sparkline values={trend} label={`${spec.label}: ${days} simulated daily readings in ${spec.unit}; latest ${formattedValue}`} />
+        <div className="chart-labels"><span>{days} days · demo</span><span>Now</span></div>
+      </div>}
+      <details className="reading-controls">
+        <summary data-testid={`details-reading-${spec.key}`}>Details &amp; adjust</summary>
+        <small className="sensor-origin-line">Simulated {spec.sensorLocation} · {spec.sensorDetail}</small>
+        <div className="vital-reason-line">{severity === 'normal' ? 'Within the default demo band' : 'Outside the default demo band'} · not a clinical assessment</div>
       <div className="vital-thresholds-guide">
         <span>Unvalidated example bands:</span>
         <span className="th-normal">Normal: {spec.normalRangeText}</span>
@@ -340,18 +354,27 @@ function VitalSensorCard({
           >+</button>
         </div>
       </div>
+      </details>
     </article>
   );
 }
 
-function RadiationSummary({ analysis, acknowledged }: { analysis: RadiationAnalysis; acknowledged: boolean }) {
+function RadiationSummary({ analysis, acknowledged, trend }: { analysis: RadiationAnalysis; acknowledged: boolean; trend?: RadiationSample[] }) {
   const flagged = analysis.status !== 'baseline';
   const description = describeRadiation(analysis);
   return <section className={`panel radiation-panel ${flagged ? 'radiation-flagged' : ''}`} aria-label="Sample dosimeter" data-testid="card-radiation">
-    <div className="radiation-caption"><RadiationIcon size={18} /><strong>Radiation now · Wrist Dosimeter</strong><span>Sample</span></div>
+    <div className="radiation-caption"><RadiationIcon size={18} /><strong>{trend ? 'Radiation' : 'Radiation now · Wrist Dosimeter'}</strong><span>Sample</span></div>
+    <div className={trend ? 'radiation-with-trend' : undefined}>
+    <div>
     <div className={`radiation-value ${description.unknown ? 'reading-unknown' : ''}`} data-testid="value-radiation-rate">{description.value}<span>{description.unit}</span></div>
-    <div className="radiation-comparison" data-testid="text-radiation-comparison">{description.comparison}</div>
+    <div className="radiation-comparison" data-testid="text-radiation-comparison">{trend && !description.unknown ? 'the usual level' : description.comparison}</div>
     <div className="radiation-state" data-testid="status-radiation">{flagged && <ShieldAlert size={16} />}<strong>{description.status}</strong>{flagged && acknowledged && <span className="radiation-seen">Seen</span>}</div>
+    </div>
+    {trend && <div className="radiation-inline-trend" data-testid="trend-radiation">
+      <Sparkline values={trend.map(sample => sample.doseRate)} label="Radiation: simulated dose rate over the last hour in microsieverts per hour" alert={analysis.status === 'spike'} />
+      <div className="chart-labels"><span>1h · µSv/h</span><span>{analysis.doseRate === null ? 'Missing' : 'Now'}</span></div>
+    </div>}
+    </div>
   </section>;
 }
 
@@ -380,7 +403,9 @@ function Overview({
   const [reviewed] = usePersistentState(storageKeys.reviewed, false);
   const [savedDemo] = usePersistentState<RadiationDemo>(radiationStorageKey, defaultRadiationDemo);
   const demo = normalizeRadiationDemo(savedDemo);
-  const analysis = analyzeRadiation(getRadiationSamples(demo.scenario));
+  const samples = getRadiationSamples(demo.scenario);
+  const analysis = analyzeRadiation(samples);
+  const [period, setPeriod] = useState<7 | 14>(7);
   const evaluated = evaluateAllVitals(readings);
   const pendingCount = Number(!reviewed)
     + Number(analysis.status !== 'baseline' && !demo.acknowledged)
@@ -405,15 +430,34 @@ function Overview({
     });
   };
 
-  return <div className="fade-in">
+  return <div className="fade-in wrist-overview" data-testid="page-readings-trends">
     <Heading title="Readings" right={<Link href="/alerts" className={`wrist-alert ${pendingCount === 0 ? 'is-reviewed' : ''}`} data-testid="link-alert-status"><Bell size={15} />{pendingCount ? `${pendingCount} demo flags` : 'No demo flags'}</Link>} />
 
-    <section className="panel sensor-architecture-banner" data-testid="banner-sensor-architecture">
+    <Link href="/alerts" className="radiation-open" aria-label="View radiation anomaly details" data-testid="link-radiation-details"><RadiationSummary analysis={analysis} acknowledged={demo.acknowledged} trend={samples} /></Link>
+    <div className="readings-trend-heading">
+      <strong>Readings + trends</strong>
+      <div className="period-tabs" role="group" aria-label="Trend period">{([7, 14] as const).map(days => <button key={days} type="button" aria-pressed={period === days} className={period === days ? 'selected' : ''} onClick={() => setPeriod(days)} data-testid={`button-period-${days}`}>{days}d</button>)}</div>
+    </div>
+    <div className="grid wrist-reading-grid">
+      {primaryReadingKeys.map(key => {
+        const item = evaluated.items.find(item => item.spec.key === key)!;
+        return <VitalSensorCard key={key} item={item} trend={getReadingTrend(key, item.value, period)} days={period} onChange={next => onChangeReadings({ ...readings, [key]: next })} />;
+      })}
+    </div>
+    <details className="secondary-vitals">
+      <summary data-testid="button-body-vitals">More readings · {VITAL_SPECS.length - primaryReadingKeys.length}</summary>
+      <div className="grid wrist-reading-grid">
+        {evaluated.items.filter(item => !primaryReadingKeys.includes(item.spec.key)).map(item => <VitalSensorCard key={item.spec.key} item={item} onChange={next => onChangeReadings({ ...readings, [item.spec.key]: next })} />)}
+      </div>
+    </details>
+    <ReadingsExplained analysis={analysis} />
+    <details className="panel sensor-architecture-banner compact-demo-settings" data-testid="banner-sensor-architecture">
+      <summary>Demo settings · no connected sensors</summary>
       <div className="sensor-arch-head">
         <span className="sensor-arch-icon"><Watch size={20} /></span>
         <div>
           <strong>Simulated wrist and body readings</strong>
-          <p>These are editable local examples, <strong>not measurements from connected devices</strong>. Colors use unvalidated demonstration bands, not medical safety limits. Saving a log copies these sample values into the local archive.</p>
+          <p>These readings and trends are local examples, <strong>not measurements from connected devices</strong>. Colors use unvalidated demonstration bands, not medical safety limits.</p>
         </div>
       </div>
       <div className="sensor-preset-bar" role="group" aria-label="Test sensor alert thresholds">
@@ -428,43 +472,7 @@ function Overview({
           Load red demo values · silent
         </button>
       </div>
-    </section>
-
-    <Link href="/alerts" className="radiation-open" aria-label="View radiation anomaly details" data-testid="link-radiation-details"><RadiationSummary analysis={analysis} acknowledged={demo.acknowledged} /></Link>
-    <ReadingsExplained analysis={analysis} />
-
-    <details className="secondary-vitals" open>
-      <summary data-testid="button-body-vitals">Simulated wrist &amp; body readings ({ VITAL_SPECS.length } editable examples)</summary>
-      <div className="grid metrics-grid">
-        {evaluated.items.map(item => (
-          <VitalSensorCard
-            key={item.spec.key}
-            item={item}
-            onChange={nextVal => onChangeReadings({ ...readings, [item.spec.key]: nextVal })}
-          />
-        ))}
-      </div>
     </details>
-  </div>;
-}
-
-function Signals({ readings }: { readings: BodyReadings }) {
-  const [period, setPeriod] = useState('14 days');
-  const cards = [
-    { title: 'Pulse (Wrist PPG)', value: String(readings.heartRate), unit: 'beats/min', data: [...telemetry.pulse.slice(0, -1), readings.heartRate], icon: HeartPulse },
-    { title: 'Blood Oxygen (Wrist)', value: String(readings.oxygen), unit: '%', data: [...telemetry.oxygen.slice(0, -1), readings.oxygen], icon: Waves },
-    { title: 'Sleep (Wrist Actigraphy)', value: readings.sleep.toFixed(1), unit: 'hours', data: [...telemetry.sleep.slice(0, -1), readings.sleep], icon: Moon },
-    { title: 'HRV / Autonomic (Body)', value: String(readings.hrv), unit: 'ms', data: [...telemetry.stress.slice(0, -1), readings.hrv], icon: Wind },
-  ];
-  return <div className="fade-in">
-    <Heading title="Trends" right={<div className="period-tabs" aria-label="Trend period">{['7 days', '14 days'].map(x => <button key={x} className={period === x ? 'selected' : ''} onClick={() => setPeriod(x)} data-testid={`button-period-${x.split(' ')[0]}`}>{x.split(' ')[0]}d</button>)}</div>} />
-    <div className="grid signal-grid">
-      {cards.map(({ title, value, unit, data, icon: Icon }) => <article className="panel signal-card" key={title} data-testid={`signal-card-${title.toLowerCase().replaceAll(' ', '-')}`}>
-        <div className="signal-head"><div><div className="signal-name">{title}</div><div className="signal-large">{value} <span>{unit}</span></div></div><span className="metric-icon"><Icon /></span></div>
-        <Sparkline values={data.slice(-parseInt(period))} />
-        <div className="chart-labels"><span>{period}</span><span>Now</span></div>
-      </article>)}
-    </div>
   </div>;
 }
 
@@ -543,7 +551,7 @@ function RoutedApp() {
     {reminder.notice && <section className="daily-reminder-notice" role="alert" aria-label="Daily log reminder" data-testid="notice-daily-reminder"><Bell size={19} /><div><strong>Time for your Astronaut’s Log</strong>{reminder.settings.voiceEnabled && reminder.voiceStatus && <p className="short-hint">{reminder.voiceStatus}</p>}<div className="reminder-notice-actions"><Link href="/log" className="btn small" data-testid="link-reminder-log">Open Astronaut’s Log</Link><button className="btn outline small" onClick={reminder.dismiss} data-testid="button-dismiss-reminder">Dismiss</button></div></div></section>}
     <Switch>
       <Route path="/"><Overview readings={readings} onChangeReadings={setReadings} /></Route>
-      <Route path="/signals"><Signals readings={readings} /></Route>
+      <Route path="/signals"><Redirect to="/" replace /></Route>
       <Route path="/alerts"><Alerts readings={readings} /></Route>
       <Route path="/log"><DailyLog reminder={reminder} /></Route>
       <Route path="/wellbeing"><Redirect to="/log" replace /></Route>

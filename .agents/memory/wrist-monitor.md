@@ -9,6 +9,12 @@ SpaceHealth is intended for an astronaut’s wrist monitor and the team accompan
 
 **How to apply:** Design for very small screens, prioritize readings and alerts, use short labels and touch-friendly controls, and put secondary explanations in optional details. Do not imply live team connectivity until it exists.
 
+Readings and trends belong on the same wrist-friendly screen, with a current value beside its relevant short history.
+
+**Why:** The user asked to combine the two tabs and reiterated that the product is a wrist application.
+
+**How to apply:** Keep radiation first, avoid a separate Trends destination, preserve short trend-period controls, and hide secondary configuration behind touch-friendly details.
+
 The app's current scope excludes Chat and family/remote communication features; use a device-local daily health log with a daily spoken reminder instead.
 
 **Why:** The user explicitly asked to replace Check-in with a Log tab, add daily voice notifications, and remove Chat because their intended scenario has no communications.

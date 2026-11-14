@@ -688,4 +688,56 @@ summary:focus-visible { outline:3px solid #2563eb;outline-offset:2px; }
 @media (max-width:480px) {
   .metrics-grid, .log-timestamp-row { grid-template-columns:1fr; }
 }
+/* Combined, glanceable reading + history cards for a wrist display. */
+html { min-width:240px; }
+.readings-trend-heading { display:flex;align-items:center;justify-content:space-between;gap:8px;margin:10px 0 8px; }
+.readings-trend-heading > strong { font-size:14px; }
+.readings-trend-heading .period-tabs button { min-width:44px;min-height:44px;padding:4px 8px; }
+.wrist-reading-grid { grid-template-columns:repeat(4,minmax(0,1fr));gap:10px; }
+.compact-reading { min-width:0;padding:12px;box-shadow:none;animation:none; }
+.compact-reading .metric-top { align-items:center; }
+.compact-reading .metric-top > div { min-width:0; }
+.compact-reading .metric-top span { font-size:14px;font-weight:800; }
+.compact-reading .vital-status-row { display:block;margin-top:2px; }
+.compact-reading .metric-value { font-size:30px;line-height:1.2;margin:4px 0; }
+.compact-reading .metric-unit { font-size:12px; }
+.compact-reading .vital-zone-pill { display:inline-block;padding:2px 6px;font-size:9px;animation:none; }
+.reading-inline-trend .sparkline { height:40px;margin:6px 0 0; }
+.reading-inline-trend .chart-labels { font-size:10px;margin:0; }
+.reading-controls { margin-top:4px;border-top:1px solid #d4e3f7; }
+.reading-controls > summary { min-height:44px;display:flex;align-items:center;cursor:pointer;color:#174195;font-size:12px;font-weight:700; }
+.reading-controls .metric-step-btn { min-height:44px; }
+.radiation-with-trend { display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:12px; }
+.radiation-inline-trend { min-width:0; }
+.radiation-inline-trend .sparkline { height:62px;margin:0; }
+.radiation-inline-trend .chart-labels { font-size:11px;margin:2px 0; }
+.wrist-overview .radiation-comparison { font-size:12px;margin-bottom:4px; }
+.wrist-overview .radiation-state { font-size:12px; }
+.wrist-overview .radiation-value { font-size:34px;margin:3px 0; }
+.compact-demo-settings { margin:8px 0 0;padding:0 10px; }
+.compact-demo-settings > summary { min-height:44px;display:flex;align-items:center;cursor:pointer;font-size:12px;font-weight:700;color:#174195; }
+.compact-demo-settings .sensor-arch-head { margin-top:8px; }
+.compact-demo-settings .sensor-preset-bar { padding-bottom:10px; }
+@media (max-width:760px) {
+  .wrist-reading-grid { grid-template-columns:repeat(2,minmax(0,1fr));gap:8px; }
+}
+@media (max-width:340px) {
+  .topbar { gap:5px;padding:0 8px; }
+  .topbar .crew-name { font-size:11px; }
+  .topbar .sensor-live-pill { font-size:10px;padding:3px 6px;line-height:1.3; }
+  .topbar .wrist-day { display:none; }
+  .wrist-overview .page-heading h1 { font-size:20px; }
+  .wrist-overview .wrist-alert { font-size:11px;padding:4px 6px;gap:4px; }
+  .wrist-reading-grid { gap:6px; }
+  .compact-reading { padding:8px; }
+  .compact-reading .metric-top span { font-size:12px; }
+  .compact-reading .metric-icon { display:none; }
+  .compact-reading .metric-value { font-size:26px; }
+  .compact-reading .metric-unit { font-size:10px; }
+  .compact-reading .reading-controls > summary { font-size:11px; }
+  .radiation-with-trend { gap:8px; }
+  .wrist-overview .radiation-panel { padding:8px 10px; }
+  .wrist-overview .radiation-state { font-size:11px; }
+  .readings-trend-heading > strong { font-size:13px; }
+}
 @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important; } }
