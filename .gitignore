@@ -53,3 +53,15 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Python dependencies, local health records, and test outputs
+.pythonlibs/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.db
+*.db-shm
+*.db-wal
+/generated-artifacts/

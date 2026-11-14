@@ -1,32 +1,25 @@
 kind = "api"
-previewPath = "/api" # TODO - should be excluded from preview in the first place
+previewPath = "/api"
 title = "API Server"
 version = "1.0.0"
 id = "3B4_FFSkEVBkAeYMFRJ2e"
 
 [[services]]
-localPort = 8080
+localPort = 8000
 name = "API Server"
-paths = ["/api"]
+paths = ["/api", "/health", "/healthz", "/astronauts", "/companion/support", "/simulate", "/docs", "/redoc", "/openapi.json"]
 
 [services.development]
 run = "pnpm --filter @workspace/api-server run dev"
 
-[services.production]
-
 [services.production.build]
-args = ["pnpm", "--filter", "@workspace/api-server", "run", "build"]
-
-[services.production.build.env]
-NODE_ENV = "production"
+args = ["uv", "sync", "--frozen"]
 
 [services.production.run]
-# we don't run through pnpm to make startup faster in production
-args = ["node", "--enable-source-maps", "artifacts/api-server/dist/index.mjs"]
+args = ["uv", "run", "--frozen", "python", "-m", "backend.main"]
 
 [services.production.run.env]
-PORT = "8080"
-NODE_ENV = "production"
+PORT = "8000"
 
 [services.production.health.startup]
 path = "/api/healthz"
