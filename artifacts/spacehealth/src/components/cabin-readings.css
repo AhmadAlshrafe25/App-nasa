@@ -1,0 +1,23 @@
+.cabin-panel { padding:14px 15px;margin-top:14px; }
+.cabin-head { display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px; }
+.cabin-head h2 { margin:0;font-size:20px;color:#E5F2EF; }
+.cabin-note { margin-left:auto;color:#9FB3AE;font-size:14px; }
+.cabin-grid { display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px; }
+.cabin-card { border:1px solid #62F5E255;background:#090D1266; }
+.cabin-card .metric-value { font-size:26px; }
+.cabin-foot { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:10px; }
+.cabin-error { display:flex;align-items:center;gap:7px;padding:8px 10px;border:1px solid #F87171;background:#F8717124;color:#E5F2EF;font-size:15px;margin:0 0 10px; }
+.cabin-unknown { display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:12px;border:1px dashed #FACC15;color:#9FB3AE;font-size:15px; }
+.cabin-unknown strong { color:#E5F2EF;font-size:17px; }
+.zone-unknown { border-color:#FACC15 !important;color:#FACC15 !important;font-weight:700; }
+.cabin-banner { display:flex;align-items:center;flex-wrap:wrap;gap:9px;padding:9px 12px;margin-bottom:12px;background:#F8717124;border:1px solid #F87171;border-left:5px solid #F87171;color:#E5F2EF;font-size:16px; }
+.cabin-banner > svg { color:#F87171;flex-shrink:0; }
+.cabin-banner > span { flex:1;min-width:0; }
+.cabin-banner-unknown { background:#FACC151F;border-color:#FACC15; }
+.cabin-banner-unknown > svg { color:#FACC15; }
+.reading-group { margin-top:12px; }
+.reading-group-title { display:block;color:#9FB3AE;font-size:14px;letter-spacing:.08em;text-transform:uppercase;margin:0 0 6px; }
+.reading-group .wrist-reading-grid { grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); }
+.mission-context-collapse > summary { min-height:44px;display:flex;align-items:center;gap:7px;cursor:pointer;color:#62F5E2;font-size:16px;font-weight:700; }
+@media (max-width:900px) { .cabin-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (max-width:420px) { .cabin-grid, .reading-group .wrist-reading-grid { grid-template-columns:minmax(0,1fr); } .cabin-note { margin-left:0; } }

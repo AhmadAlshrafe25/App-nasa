@@ -6,6 +6,8 @@ export type BodyReadings = {
   respiration: number;    // breaths/min (Thoracic Body Vest)
   temperature: number;    // °C (Wrist & Torso Thermal Sensor)
   systolicBP: number;     // mmHg (Wrist Pulse-Transit Sensor)
+  diastolicBP: number;    // mmHg, lower blood-pressure value (demo)
+  stress: number;         // self-reported 0–10 score (demo)
   hrv: number;            // ms (Wrist/Chest Autonomic Sensor)
   sleep: number;          // hours (Wrist Actigraphy & Body Rest)
   activity: number;       // min (3-Axis Wrist & Body Accelerometer)
@@ -20,6 +22,8 @@ export const defaultBodyReadings: BodyReadings = {
   respiration: 14,
   temperature: 36.8,
   systolicBP: 118,
+  diastolicBP: 76,
+  stress: 3,
   hrv: 58,
   sleep: 7.4,
   activity: 90,
@@ -37,6 +41,8 @@ export function normalizeBodyReadings(raw: unknown): BodyReadings {
     respiration: Math.round(num(r.respiration, defaultBodyReadings.respiration, 4, 45)),
     temperature: Math.round(num(r.temperature, defaultBodyReadings.temperature, 34, 41) * 10) / 10,
     systolicBP: Math.round(num(r.systolicBP, defaultBodyReadings.systolicBP, 70, 200)),
+    diastolicBP: Math.round(num(r.diastolicBP, defaultBodyReadings.diastolicBP, 40, 140)),
+    stress: Math.round(num(r.stress, defaultBodyReadings.stress, 0, 10)),
     hrv: Math.round(num(r.hrv, defaultBodyReadings.hrv, 10, 140)),
     sleep: Math.round(num(r.sleep, defaultBodyReadings.sleep, 0, 24) * 10) / 10,
     activity: Math.round(num(r.activity, defaultBodyReadings.activity, 0, 600)),
@@ -48,7 +54,7 @@ export type VitalSpec = {
   key: keyof BodyReadings;
   label: string;
   unit: string;
-  sensorLocation: 'Wrist Sensor' | 'Body Vest Sensor' | 'Wrist + Body Sensors';
+  sensorLocation: 'Wrist Sensor' | 'Body Vest Sensor' | 'Wrist + Body Sensors' | 'Self-report';
   sensorDetail: string;
   min: number;
   max: number;
@@ -140,7 +146,7 @@ export const VITAL_SPECS: VitalSpec[] = [
   },
   {
     key: 'systolicBP',
-    label: 'Systolic BP',
+    label: 'Blood pressure · upper',
     unit: 'mmHg',
     sensorLocation: 'Wrist Sensor',
     sensorDetail: 'Wrist pulse-transit cuffless sensor',
@@ -156,6 +162,38 @@ export const VITAL_SPECS: VitalSpec[] = [
       if (v < 95 || v > 130) return { severity: 'yellow', reason: `Blood pressure outside baseline (${v} mmHg)` };
       return { severity: 'normal', reason: 'Nominal vascular pressure' };
     },
+  },
+  {
+    key: 'diastolicBP',
+    label: 'Blood pressure · lower',
+    unit: 'mmHg',
+    sensorLocation: 'Wrist Sensor',
+    sensorDetail: 'Simulated lower blood-pressure value, not a cuff measurement',
+    min: 40, max: 140, step: 1,
+    normalRangeText: '60–90 mmHg',
+    yellowRangeText: '50–59 or 91–110 mmHg',
+    redRangeText: '<50 or >110 mmHg',
+    evaluate: v => v < 50 || v > 110
+      ? { severity: 'red', reason: 'Outside the high-priority sample range' }
+      : v < 60 || v > 90
+        ? { severity: 'yellow', reason: 'Outside the usual sample range' }
+        : { severity: 'normal', reason: 'Within the usual sample range' },
+  },
+  {
+    key: 'stress',
+    label: 'Stress',
+    unit: '/10',
+    sensorLocation: 'Self-report',
+    sensorDetail: 'Self-reported sample score, not inferred from a sensor',
+    min: 0, max: 10, step: 1,
+    normalRangeText: '0–5',
+    yellowRangeText: '6–7',
+    redRangeText: '8–10',
+    evaluate: v => v >= 8
+      ? { severity: 'red', reason: 'High sample stress score' }
+      : v >= 6
+        ? { severity: 'yellow', reason: 'Raised sample stress score' }
+        : { severity: 'normal', reason: 'Lower sample stress score' },
   },
   {
     key: 'hrv',
