@@ -43,13 +43,7 @@
 :root[data-theme='space'] .radiation-panel,
 :root[data-theme='sky'] .radiation-panel { background:#8B72D633;border-color:#8B72D6; }
 :root[data-theme='space'] .radiation-flagged,
-:root[data-theme='space'] .vital-card-yellow,
-:root[data-theme='space'] .vital-card-red,
-:root[data-theme='space'] .yellow-emergency-toast,
-:root[data-theme='sky'] .radiation-flagged,
-:root[data-theme='sky'] .vital-card-yellow,
-:root[data-theme='sky'] .vital-card-red,
-:root[data-theme='sky'] .yellow-emergency-toast { background:#8B72D633;border-color:#8B72D6; }
+:root[data-theme='sky'] .radiation-flagged { background:#8B72D633;border-color:#8B72D6; }
 :root[data-theme='space'] .alert-callout,
 :root[data-theme='space'] .rule-box,
 :root[data-theme='space'] .history-item,
@@ -133,3 +127,37 @@
   .companion-status div { display:grid;gap:0; }
   .companion-status div span { font-size:12px;line-height:1.15; }
 }
+
+/* Severity colors: amber for Yellow, coral for Red, in both dark themes.
+   Declared after the generic .panel/.rule-box rules so these always win. Text stays
+   cream (#E8DCC8) on tinted surfaces; the accent colors are used for borders, icons and bars. */
+:root:is([data-theme='space'],[data-theme='sky']) {
+  --severity-yellow: #E5B84B;
+  --severity-red: #E05A5A;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .vital-card-yellow,
+:root:is([data-theme='space'],[data-theme='sky']) .yellow-emergency-toast {
+  background:#E5B84B1F;border-color:#E5B84B;color:#E8DCC8;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .vital-card-yellow { border-left:5px solid #E5B84B; }
+:root:is([data-theme='space'],[data-theme='sky']) .vital-card-red,
+:root:is([data-theme='space'],[data-theme='sky']) .red-breach-card {
+  background:#E05A5A24;border-color:#E05A5A;color:#E8DCC8;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .vital-card-red { border-left:5px solid #E05A5A; }
+:root:is([data-theme='space'],[data-theme='sky']) .zone-yellow,
+:root:is([data-theme='space'],[data-theme='sky']) .vital-card-yellow .vital-zone-pill {
+  background:#E5B84B26;border-color:#E5B84B;color:#F2D37E;font-weight:700;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .zone-red,
+:root:is([data-theme='space'],[data-theme='sky']) .vital-card-red .vital-zone-pill {
+  background:#E05A5A33;border-color:#E05A5A;color:#F4E6D2;font-weight:700;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .vital-card-yellow .metric-icon,
+:root:is([data-theme='space'],[data-theme='sky']) .yellow-toast-badge svg { color:#E5B84B;border-color:#E5B84B; }
+:root:is([data-theme='space'],[data-theme='sky']) .vital-card-red .metric-icon,
+:root:is([data-theme='space'],[data-theme='sky']) .red-siren-icon { color:#E05A5A;border-color:#E05A5A; }
+:root:is([data-theme='space'],[data-theme='sky']) .yellow-toast-badge { color:#F2D37E; }
+:root:is([data-theme='space'],[data-theme='sky']) .yellow-vital-chip { background:#E5B84B26;border:1px solid #E5B84B; }
+:root:is([data-theme='space'],[data-theme='sky']) .red-breach-top strong { color:#E8DCC8; }
+:root:is([data-theme='space'],[data-theme='sky']) .red-breach-reason { color:#F4C9C0; }

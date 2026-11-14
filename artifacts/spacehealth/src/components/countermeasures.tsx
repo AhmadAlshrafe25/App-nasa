@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'wouter';
 import { AlertTriangle, ArrowLeft, Check, Dumbbell, Volume2 } from 'lucide-react';
 import {
@@ -6,6 +6,7 @@ import {
   getExampleTrends, normalizeCountermeasureState, validateWorkout,
   type CountermeasureState,
 } from '@/lib/countermeasures';
+import { SOUNDSCAPE_DISCLAIMER, startSoundscape, type SoundscapeHandle } from '@/lib/soundscape';
 import './countermeasures.css';
 
 const LIMIT = 50;
@@ -51,6 +52,37 @@ export function Countermeasures() {
   const [storageError, setStorageError] = useState<string | null>(initial.error);
   const [status, setStatus] = useState<string | null>(null);
   const [audio, setAudio] = useState<string | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const tone = useRef<SoundscapeHandle | null>(null);
+  const pending = useRef(false);
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; tone.current?.stop(); tone.current = null; };
+  }, []);
+
+  const toggleAudio = async () => {
+    if (tone.current) {
+      tone.current.stop(); tone.current = null;
+      setPlaying(false); setAudio(`Stopped. ${SOUNDSCAPE_DISCLAIMER}`);
+      return;
+    }
+    if (pending.current) return;
+    pending.current = true;
+    try {
+      const handle = await startSoundscape(() => {
+        tone.current = null;
+        if (mounted.current) { setPlaying(false); setAudio(`Finished. ${SOUNDSCAPE_DISCLAIMER}`); }
+      });
+      if (!mounted.current) { handle.stop(); return; }
+      tone.current = handle;
+      setPlaying(true); setAudio(`Playing a calm 4-second tone (432 Hz and 528 Hz). ${SOUNDSCAPE_DISCLAIMER}`);
+    } catch (error) {
+      setPlaying(false);
+      if (mounted.current) setAudio(`${error instanceof Error ? error.message : 'Audio could not start. Nothing is playing.'} ${SOUNDSCAPE_DISCLAIMER}`);
+    } finally { pending.current = false; }
+  };
 
   const blocked = initial.blocked;
   const commit = (next: CountermeasureState, okMessage: string) => {
@@ -164,8 +196,8 @@ export function Countermeasures() {
 
     <div className="cm-audio">
       <button type="button" className="btn small outline" data-testid="button-cm-check-audio"
-        onClick={() => setAudio('Local audio unavailable: no recovery soundscape is installed on this display. Nothing will play.')}>
-        <Volume2 size={15} aria-hidden="true" />Check local audio
+        aria-pressed={playing} onClick={toggleAudio}>
+        <Volume2 size={15} aria-hidden="true" />{playing ? 'Stop local audio' : 'Check local audio'}
       </button>
       {audio && <p className="cm-fine" role="status" data-testid="status-cm-audio">{audio}</p>}
     </div>

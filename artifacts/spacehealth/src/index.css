@@ -440,11 +440,11 @@ body, button, input, textarea, select { font-family:"Arabic Typesetting","Noto N
 .topbar { background:var(--space-navy);border-color:var(--space-line); }
 .panel,.rule-box,.form-panel,.voice-log-deck,.captain-log-banner,.history-item,
 .alert-callout,.reviewed-box,.notice,.radiation-panel,.sensor-architecture-banner,
-.yellow-emergency-toast,.red-breach-card,.reminder-settings,.daily-reminder-notice,
+.reminder-settings,.daily-reminder-notice,
 .reminder-banner,.cm-glance,.cm-form,.cm-error,.reflection,.log-history,
 .chat-panel,.chat-aside { background:var(--space-panel);border-color:var(--space-line);color:var(--space-beige); }
 .radiation-panel { background:var(--space-panel-strong);border:1px solid var(--space-purple);border-left:5px solid var(--space-sky); }
-.radiation-flagged,.vital-card-yellow,.vital-card-red { background:var(--space-panel-strong);border-color:var(--space-purple); }
+.radiation-flagged { background:var(--space-panel-strong);border-color:var(--space-purple); }
 .radiation-caption,.radiation-state,.radiation-comparison,.rule-box p,.notice p,
 .alert-callout p,.history-item,.log-history,.cm-fine,.cm-status { color:var(--space-beige); }
 .radiation-caption svg,.radiation-state svg,.section-link,.cm-back,.cm-entry-link { color:var(--space-sky); }
@@ -459,7 +459,6 @@ body, button, input, textarea, select { font-family:"Arabic Typesetting","Noto N
 .vital-zone-pill,.sensor-live-pill,.wrist-alert,.status-pill,.signal-status,.recording-pill,
 .captain-log-banner .log-today,.captain-stardate,.yellow-vital-chip,.red-siren-icon,
 .alert-symbol,.reviewed-box,.radiation-seen { color:var(--space-sky);background:var(--space-panel);border-color:var(--space-line); }
-.zone-yellow,.zone-red,.vital-card-yellow .vital-zone-pill,.vital-card-red .vital-zone-pill { color:var(--space-beige);background:var(--space-panel-strong);border-color:var(--space-purple); }
 .wrist-alert.is-reviewed { color:var(--space-sky);background:var(--space-panel); }
 .reading-controls,.readings-table th,.readings-table td,.signal-foot,.score-foot,.activity-card { border-color:var(--space-line); }
 .reading-controls > summary,.secondary-vitals > summary,.compact-demo-settings > summary,
@@ -504,7 +503,6 @@ option { color:var(--space-beige);background:var(--space-navy); }
 .sensor-arch-head strong,.red-emergency-header h2,.red-breach-top strong,
 .yellow-toast-badge,.yellow-toast-source,.yellow-vital-chip { color:var(--space-beige); }
 .red-emergency-kicker,.red-emergency-header p,.red-breach-reason,.red-sensor-tag { color:var(--space-muted); }
-.red-breach-card,.yellow-emergency-toast { border-color:var(--space-purple); }
 .red-to-yellow-btn,.red-to-normal-btn { color:var(--space-navy)!important;background:var(--space-purple)!important; }
 .red-siren-icon,.alert-symbol { color:var(--space-sky);background:var(--space-panel);border-color:var(--space-line); }
 .fade-in { animation:arrive .28s ease both; }
