@@ -65,3 +65,4 @@ __pycache__/
 *.db-shm
 *.db-wal
 /generated-artifacts/
+astronaut_health.db
