@@ -26,3 +26,9 @@ Daily logs use automatically determined Earth Day and Hour, with the entry taken
 **Why:** The user explicitly requested this simpler recording flow and vertical archive placement.
 
 **How to apply:** Stamp the actual recording time, keep the real audio as the entry when local transcription is unavailable, and do not restore editable dates, typed log entries, or extra biometric inputs without approval.
+
+The shared mission motto must use the exact requested spelling “Ad astra per asphera”; retain the SpaceHealth product name and clinical/navigation labels.
+
+**Why:** The user explicitly requested this spelling and shared branding rather than replacing status labels or repeating the motto in cards.
+
+**How to apply:** Keep the motto in shared branding across modules. The shared Earth clock is Eastern civil time, but this does not authorize changing device-local daily logs or reminders, or recalculating mission day.
