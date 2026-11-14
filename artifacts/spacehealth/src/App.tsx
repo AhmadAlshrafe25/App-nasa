@@ -1,10 +1,23 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Link, Redirect, Route, Router as WouterRouter, Switch, useLocation } from 'wouter';
+import { ClerkProvider, SignIn, SignUp, useClerk } from '@clerk/react';
+import { publishableKeyFromHost } from '@clerk/react/internal';
+import { shadcn } from '@clerk/themes';
+import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import {
   Activity, AlertTriangle, ArrowDownRight, Bell, Check, CheckCircle2, ClipboardList,
-  Droplets, Dumbbell, Flame, Gauge, HeartPulse, Moon, Orbit, Pause, Play,
+  Droplets, Dumbbell, Flame, Gauge, HeartPulse, Moon, Orbit,
   Radiation as RadiationIcon, ShieldAlert, Siren, Sun, Thermometer, Watch, Waves, Wind, X,
 } from 'lucide-react';
+import {
+  getGetEarthMessageSessionQueryKey,
+  getListEarthMessagesQueryKey,
+  useCreateEarthMessageInvite,
+  useGetEarthMessageSession,
+  useListEarthMessages,
+  useMarkEarthMessageViewed,
+  type EarthFamilyMessage,
+} from '@workspace/api-client-react';
 import {
   analyzeRadiation, defaultRadiationDemo, getRadiationSamples,
   normalizeRadiationDemo, radiationStorageKey,
@@ -41,6 +54,23 @@ const storageKeys = {
 };
 
 const readingsChangedEvent = 'spacehealth-readings-changed';
+const queryClient = new QueryClient();
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+const clerkPubKey = publishableKeyFromHost(
+  window.location.hostname,
+  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
+);
+const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+
+if (!clerkPubKey) {
+  throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY.');
+}
+
+function stripBase(path: string): string {
+  return basePath && path.startsWith(basePath)
+    ? path.slice(basePath.length) || '/'
+    : path;
+}
 
 function readStored<T>(key: string, fallback: T): T {
   try {
@@ -76,71 +106,76 @@ function usePersistentState<T>(key: string, initial: T) {
   return [value, setValue] as const;
 }
 
-const astroSample = 'Hi Mara. We miss you here on Earth. The garden is thriving, and we’re cheering you on. Take a moment to look out at the stars for us.';
-
 function AstroDialog({ onClose }: { onClose: () => void }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [available] = useState(() => typeof window !== 'undefined'
-    && 'speechSynthesis' in window
-    && typeof SpeechSynthesisUtterance !== 'undefined');
-  const [playing, setPlaying] = useState(false);
-  const [paused, setPaused] = useState(false);
-  const [status, setStatus] = useState(available ? 'Sample ready to play.' : 'Speech synthesis is unavailable in this browser. Read the sample below.');
+  const [inviteLink, setInviteLink] = useState('');
+  const [inviteStatus, setInviteStatus] = useState('');
+  const sessionQuery = useGetEarthMessageSession({
+    query: { queryKey: getGetEarthMessageSessionQueryKey() },
+  });
+  const role = sessionQuery.data?.role;
+  const canReadMessages = role === 'astronaut' || role === 'family';
+  const messagesQuery = useListEarthMessages({
+    query: {
+      enabled: canReadMessages,
+      queryKey: getListEarthMessagesQueryKey(),
+    },
+  });
+  const createInvite = useCreateEarthMessageInvite();
+  const markViewed = useMarkEarthMessageViewed();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const dialog = dialogRef.current;
     if (dialog && !dialog.open) dialog.showModal();
     return () => {
-      if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
       if (dialog?.open) dialog.close();
     };
   }, []);
 
-  const stopSpeech = () => {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
-    setPlaying(false);
-    setPaused(false);
-  };
-
   const closeDialog = () => {
-    stopSpeech();
     if (dialogRef.current?.open) dialogRef.current.close();
     onClose();
   };
 
-  const toggleSpeech = () => {
-    if (!available) return;
-    const synthesis = window.speechSynthesis;
-    if (playing && !paused) {
-      synthesis.pause();
-      setPaused(true);
-      setStatus('Sample paused.');
-      return;
+  const createFamilyInvite = async () => {
+    setInviteStatus('');
+    try {
+      const invite = await createInvite.mutateAsync(undefined);
+      const url = new URL('/space-companion/send', window.location.origin);
+      url.searchParams.set('invite', invite.token);
+      setInviteLink(url.toString());
+      try {
+        await navigator.clipboard.writeText(url.toString());
+        setInviteStatus('One-time invitation copied. Share it privately with a family member.');
+      } catch {
+        setInviteStatus('Invitation ready. Copy the link below and share it privately.');
+      }
+    } catch (error) {
+      setInviteStatus(error instanceof Error ? error.message : 'Could not create an invitation.');
     }
-    if (playing && paused) {
-      synthesis.resume();
-      setPaused(false);
-      setStatus('Playing the computer-generated sample.');
-      return;
+  };
+
+  const copyFamilyInvite = async () => {
+    if (!inviteLink) return;
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setInviteStatus('Invitation copied.');
+    } catch {
+      setInviteStatus('Select and copy the invitation link below.');
     }
-    synthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(astroSample);
-    utterance.onstart = () => {
-      setPlaying(true);
-      setPaused(false);
-      setStatus('Playing the computer-generated sample.');
-    };
-    utterance.onend = () => {
-      setPlaying(false);
-      setPaused(false);
-      setStatus('Sample finished.');
-    };
-    utterance.onerror = () => {
-      setPlaying(false);
-      setPaused(false);
-      setStatus('Speech playback could not start. The sample transcript is available below.');
-    };
-    synthesis.speak(utterance);
+  };
+
+  const onMessagePlay = (message: EarthFamilyMessage) => {
+    if (role !== 'astronaut' || message.viewedAt) return;
+    markViewed.mutate({ id: message.id }, {
+      onSuccess: (updated) => {
+        queryClient.setQueryData<EarthFamilyMessage[]>(
+          getListEarthMessagesQueryKey(),
+          (current) => current?.map((item) => item.id === updated.id ? updated : item),
+        );
+      },
+    });
   };
 
   return <dialog
@@ -151,33 +186,59 @@ function AstroDialog({ onClose }: { onClose: () => void }) {
     data-testid="dialog-astro"
     onCancel={event => { event.preventDefault(); closeDialog(); }}
     onClick={event => { if (event.target === event.currentTarget) closeDialog(); }}
-    onClose={stopSpeech}
   >
     <div className="astro-dialog-content">
       <div className="astro-dialog-heading">
         <span className="astro-mark" aria-hidden="true"><Orbit size={20} /></span>
-        <div><span className="astro-kicker">LOCAL SAMPLE</span><h2 id="astro-dialog-title">A note from Earth</h2></div>
-        <button type="button" className="astro-close" onClick={closeDialog} aria-label="Close Astro sample" data-testid="button-astro-close"><X size={19} /></button>
-      </div>
-      <p className="astro-transcript" data-testid="text-astro-transcript">{astroSample}</p>
-      <div className="astro-playback">
-        <button
-          type="button"
-          className="btn astro-play-button"
-          onClick={toggleSpeech}
-          disabled={!available}
-          aria-label={playing && !paused ? 'Pause sample message' : paused ? 'Resume sample message' : 'Play sample message'}
-          aria-pressed={playing && !paused}
-          data-testid="button-astro-play"
-        >
-          {playing && !paused ? <Pause size={17} aria-hidden="true" /> : <Play size={17} aria-hidden="true" />}
-          {playing && !paused ? 'Pause' : paused ? 'Resume' : 'Play sample'}
-        </button>
-        <span role="status" aria-live="polite" data-testid="status-astro-speech">{status}</span>
+        <div><span className="astro-kicker">PRIVATE EARTH CHANNEL</span><h2 id="astro-dialog-title">Messages from Earth</h2></div>
+        <button type="button" className="astro-close" onClick={closeDialog} aria-label="Close Astro messages" data-testid="button-astro-close"><X size={19} /></button>
       </div>
       <p className="astro-disclosure" id="astro-disclosure" data-testid="status-astro-disclosure">
-        Fictional example only. This is not a real person, recording, Earth connection, or video. Any playback uses a computer-generated browser voice.
+        Real voice and video messages are private. Only the astronaut account and invited family members can access them.
       </p>
+
+      {sessionQuery.isLoading && <p role="status" data-testid="status-astro-loading">Checking the private inbox…</p>}
+      {sessionQuery.isError && <p role="alert" data-testid="status-astro-error">Could not load the inbox. Try again shortly.</p>}
+      {role === 'signed-out' && <div className="astro-access-prompt" data-testid="panel-astro-sign-in">
+        <p>Sign in with the astronaut account to open your family messages.</p>
+        <Link href="/sign-in" className="btn" data-testid="link-astro-sign-in">Sign in</Link>
+      </div>}
+      {role === 'unlinked' && <div className="astro-access-prompt" data-testid="panel-astro-unlinked">
+        <p>This account is not the astronaut inbox or an invited family account.</p>
+        <Link href="/space-companion/send" className="btn outline" data-testid="link-astro-family-portal">Open family message portal</Link>
+      </div>}
+      {role === 'astronaut' && <section className="astro-invite-panel" aria-label="Invite family">
+        <p>Create a one-time link for a family member to create an account and send a recording. The link expires in seven days.</p>
+        <button type="button" className="btn" onClick={createFamilyInvite} disabled={createInvite.isPending} data-testid="button-astro-create-invite">
+          {createInvite.isPending ? 'Creating link…' : 'Create family invite'}
+        </button>
+        {inviteLink && <div className="astro-invite-link">
+          <label htmlFor="astro-invite-url">Family invitation link</label>
+          <input id="astro-invite-url" type="url" readOnly value={inviteLink} data-testid="input-astro-invite-link" />
+          <button type="button" className="btn outline" onClick={copyFamilyInvite} data-testid="button-astro-copy-invite">Copy link</button>
+        </div>}
+        {inviteStatus && <p role="status" aria-live="polite" data-testid="status-astro-invite">{inviteStatus}</p>}
+      </section>}
+
+      {canReadMessages && <section className="astro-message-section" aria-label="Family messages">
+        <h3>Family recordings</h3>
+        {messagesQuery.isLoading && <p role="status" data-testid="status-astro-messages-loading">Loading messages…</p>}
+        {messagesQuery.isError && <p role="alert" data-testid="status-astro-messages-error">Could not load messages. Close Astro and try again.</p>}
+        {!messagesQuery.isLoading && !messagesQuery.isError && messagesQuery.data?.length === 0 && <p className="astro-empty" data-testid="status-astro-empty">No recordings yet. Invite someone you trust to send a voice note or video from Earth.</p>}
+        <div className="astro-message-list">
+          {messagesQuery.data?.map((message) => <article className="astro-message" key={message.id} data-testid={`card-astro-message-${message.id}`}>
+            <div className="astro-message-heading">
+              <div><strong data-testid={`text-astro-message-title-${message.id}`}>{message.title}</strong><span>{message.senderName} · {message.relationship}</span></div>
+              <time dateTime={message.createdAt}>{new Date(message.createdAt).toLocaleString()}</time>
+            </div>
+            {message.note && <p data-testid={`text-astro-message-note-${message.id}`}>{message.note}</p>}
+            {message.mediaType === 'audio'
+              ? <audio controls preload="metadata" src={message.mediaUrl} onPlay={() => onMessagePlay(message)} data-testid={`audio-astro-message-${message.id}`} />
+              : <video controls preload="metadata" src={message.mediaUrl} onPlay={() => onMessagePlay(message)} data-testid={`video-astro-message-${message.id}`} />}
+            <span className="astro-message-viewed">{message.viewedAt ? 'Viewed' : 'New message'}</span>
+          </article>)}
+        </div>
+      </section>}
     </div>
   </dialog>;
 }
@@ -717,8 +778,116 @@ function RoutedApp() {
   </Layout></MissionSyncProvider>;
 }
 
+const clerkAppearance = {
+  theme: shadcn,
+  cssLayerName: 'clerk',
+  options: {
+    logoPlacement: 'inside' as const,
+    logoLinkUrl: basePath || '/',
+    logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
+  },
+  variables: {
+    colorPrimary: '#a893ee',
+    colorForeground: '#f4efdf',
+    colorMutedForeground: '#bdc8d8',
+    colorDanger: '#ed8f79',
+    colorBackground: '#151c2e',
+    colorInput: '#222d43',
+    colorInputForeground: '#f4efdf',
+    colorNeutral: '#f4efdf',
+    fontFamily: 'Arabic Typesetting, serif',
+    borderRadius: '16px',
+  },
+  elements: {
+    rootBox: 'w-full flex justify-center',
+    cardBox: 'bg-[#151c2e] border border-[#46536d] rounded-2xl w-[440px] max-w-full overflow-hidden',
+    card: '!shadow-none !border-0 !bg-transparent !rounded-none',
+    footer: '!shadow-none !border-0 !bg-transparent !rounded-none',
+    headerTitle: 'text-[#f4efdf]',
+    headerSubtitle: 'text-[#bdc8d8]',
+    socialButtonsBlockButtonText: 'text-[#f4efdf]',
+    formFieldLabel: 'text-[#f4efdf]',
+    footerActionLink: 'text-[#a893ee]',
+    footerActionText: 'text-[#bdc8d8]',
+    dividerText: 'text-[#bdc8d8]',
+    identityPreviewEditButton: 'text-[#a893ee]',
+    formFieldSuccessText: 'text-[#9fcebd]',
+    alertText: 'text-[#f4efdf]',
+    logoBox: 'rounded-xl',
+    logoImage: 'rounded-xl',
+    socialButtonsBlockButton: 'border border-[#46536d] bg-[#202a3e]',
+    formButtonPrimary: 'bg-[#a893ee] text-[#17172a] hover:bg-[#b6a3f4]',
+    formFieldInput: 'border border-[#46536d] bg-[#222d43] text-[#f4efdf]',
+    footerAction: 'text-[#bdc8d8]',
+    dividerLine: 'bg-[#46536d]',
+    alert: 'border border-[#a45f54] bg-[#34242a]',
+    otpCodeFieldInput: 'border border-[#46536d] bg-[#222d43] text-[#f4efdf]',
+    formFieldRow: 'text-[#f4efdf]',
+    main: 'text-[#f4efdf]',
+  },
+};
+
+function SignInPage() {
+  return <div className="clerk-page">
+    <p className="clerk-page-label">SPACEHEALTH · PRIVATE FAMILY MESSAGES</p>
+    <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
+  </div>;
+}
+
+function SignUpPage() {
+  return <div className="clerk-page">
+    <p className="clerk-page-label">SPACEHEALTH · PRIVATE FAMILY MESSAGES</p>
+    <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
+  </div>;
+}
+
+function ClerkQueryClientCacheInvalidator() {
+  const { addListener } = useClerk();
+  const queryClient = useQueryClient();
+  const previousUserId = useRef<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    const unsubscribe = addListener(({ user }) => {
+      const userId = user?.id ?? null;
+      if (previousUserId.current !== undefined && previousUserId.current !== userId) {
+        queryClient.clear();
+      }
+      previousUserId.current = userId;
+    });
+    return unsubscribe;
+  }, [addListener, queryClient]);
+
+  return null;
+}
+
+function ClerkAppRoutes() {
+  const [, setLocation] = useLocation();
+  return <ClerkProvider
+    publishableKey={clerkPubKey}
+    proxyUrl={clerkProxyUrl}
+    appearance={clerkAppearance}
+    signInUrl={`${basePath}/sign-in`}
+    signUpUrl={`${basePath}/sign-up`}
+    localization={{
+      signIn: { start: { title: 'Welcome back', subtitle: 'Open your private mission inbox.' } },
+      signUp: { start: { title: 'Create your account', subtitle: 'Join your astronaut’s private family channel.' } },
+    }}
+    routerPush={(to) => setLocation(stripBase(to))}
+    routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
+  >
+    <QueryClientProvider client={queryClient}>
+      <ClerkQueryClientCacheInvalidator />
+      <Switch>
+        <Route path="/sign-in/*?" component={SignInPage} />
+        <Route path="/sign-up/*?" component={SignUpPage} />
+        <Route component={RoutedApp} />
+      </Switch>
+    </QueryClientProvider>
+  </ClerkProvider>;
+}
+
 function App() {
-  return <WouterRouter><RoutedApp /></WouterRouter>;
+  return <WouterRouter base={basePath}><ClerkAppRoutes /></WouterRouter>;
 }
 
 export default App;

@@ -10,9 +10,14 @@ import {
   useQuery
 } from '@tanstack/react-query';
 import type {
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
   MutationFunction,
+  QueryClient,
   QueryFunction,
   QueryKey,
+  UndefinedInitialDataOptions,
   UseMutationOptions,
   UseMutationResult,
   UseQueryOptions,
@@ -23,6 +28,13 @@ import type {
   CheckInRequest,
   CheckInResponse,
   Dashboard,
+  EarthFamilyMessage,
+  EarthInviteAcceptInput,
+  EarthMessageInput,
+  EarthMessageInvite,
+  EarthMessageSession,
+  EarthUpload,
+  EarthUploadInput,
   FamilyMessage,
   FamilyMessageIn,
   HTTPValidationError,
@@ -95,7 +107,7 @@ export const getHealthQueryKey = () => {
     }
 
 
-export const getHealthQueryOptions = <TData = Awaited<ReturnType<typeof health>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof health>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getHealthQueryOptions = <TData = Awaited<ReturnType<typeof health>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof health>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -110,25 +122,49 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof health>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof health>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type HealthQueryResult = NonNullable<Awaited<ReturnType<typeof health>>>
 export type HealthQueryError = ErrorType<unknown>
 
 
+export function useHealth<TData = Awaited<ReturnType<typeof health>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof health>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof health>>,
+          TError,
+          Awaited<ReturnType<typeof health>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useHealth<TData = Awaited<ReturnType<typeof health>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof health>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof health>>,
+          TError,
+          Awaited<ReturnType<typeof health>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useHealth<TData = Awaited<ReturnType<typeof health>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof health>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Health
  */
 
 export function useHealth<TData = Awaited<ReturnType<typeof health>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof health>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof health>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getHealthQueryOptions(options)
 
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
@@ -172,7 +208,7 @@ export const getDashboardQueryKey = (astronautId: string,) => {
     }
 
 
-export const getDashboardQueryOptions = <TData = Awaited<ReturnType<typeof dashboard>>, TError = ErrorType<HTTPValidationError>>(astronautId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof dashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getDashboardQueryOptions = <TData = Awaited<ReturnType<typeof dashboard>>, TError = ErrorType<HTTPValidationError>>(astronautId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboard>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -187,25 +223,49 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 
 
 
-   return  { queryKey, queryFn, enabled: astronautId !== null && astronautId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof dashboard>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, enabled: astronautId !== null && astronautId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof dashboard>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type DashboardQueryResult = NonNullable<Awaited<ReturnType<typeof dashboard>>>
 export type DashboardQueryError = ErrorType<HTTPValidationError>
 
 
+export function useDashboard<TData = Awaited<ReturnType<typeof dashboard>>, TError = ErrorType<HTTPValidationError>>(
+ astronautId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboard>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof dashboard>>,
+          TError,
+          Awaited<ReturnType<typeof dashboard>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDashboard<TData = Awaited<ReturnType<typeof dashboard>>, TError = ErrorType<HTTPValidationError>>(
+ astronautId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboard>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof dashboard>>,
+          TError,
+          Awaited<ReturnType<typeof dashboard>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDashboard<TData = Awaited<ReturnType<typeof dashboard>>, TError = ErrorType<HTTPValidationError>>(
+ astronautId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboard>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Dashboard
  */
 
 export function useDashboard<TData = Awaited<ReturnType<typeof dashboard>>, TError = ErrorType<HTTPValidationError>>(
- astronautId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof dashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+ astronautId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof dashboard>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getDashboardQueryOptions(astronautId,options)
 
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
@@ -296,13 +356,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  */
 export const useCheckin = <TError = ErrorType<HTTPValidationError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof checkin>>, TError,CheckinMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof checkin>>,
         TError,
         CheckinMutationVariables,
         TContext
       > => {
-      return useMutation(getCheckinMutationOptions(options));
+      return useMutation(getCheckinMutationOptions(options), queryClient);
     }
 
 export const getCompanionSupportUrl = () => {
@@ -384,13 +444,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  */
 export const useCompanionSupport = <TError = ErrorType<HTTPValidationError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof companionSupport>>, TError,CompanionSupportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof companionSupport>>,
         TError,
         CompanionSupportMutationVariables,
         TContext
       > => {
-      return useMutation(getCompanionSupportMutationOptions(options));
+      return useMutation(getCompanionSupportMutationOptions(options), queryClient);
     }
 
 export const getPostFamilyMessageUrl = () => {
@@ -472,13 +532,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  */
 export const usePostFamilyMessage = <TError = ErrorType<HTTPValidationError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postFamilyMessage>>, TError,PostFamilyMessageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postFamilyMessage>>,
         TError,
         PostFamilyMessageMutationVariables,
         TContext
       > => {
-      return useMutation(getPostFamilyMessageMutationOptions(options));
+      return useMutation(getPostFamilyMessageMutationOptions(options), queryClient);
     }
 
 export const getListFamilyMessagesUrl = (astronautId: string,
@@ -525,7 +585,7 @@ export const getListFamilyMessagesQueryKey = (astronautId: string,
 
 
 export const getListFamilyMessagesQueryOptions = <TData = Awaited<ReturnType<typeof listFamilyMessages>>, TError = ErrorType<HTTPValidationError>>(astronautId: string,
-    params?: ListFamilyMessagesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listFamilyMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+    params?: ListFamilyMessagesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFamilyMessages>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -540,26 +600,53 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 
 
 
-   return  { queryKey, queryFn, enabled: astronautId !== null && astronautId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listFamilyMessages>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, enabled: astronautId !== null && astronautId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listFamilyMessages>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type ListFamilyMessagesQueryResult = NonNullable<Awaited<ReturnType<typeof listFamilyMessages>>>
 export type ListFamilyMessagesQueryError = ErrorType<HTTPValidationError>
 
 
+export function useListFamilyMessages<TData = Awaited<ReturnType<typeof listFamilyMessages>>, TError = ErrorType<HTTPValidationError>>(
+ astronautId: string,
+    params: undefined |  ListFamilyMessagesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFamilyMessages>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listFamilyMessages>>,
+          TError,
+          Awaited<ReturnType<typeof listFamilyMessages>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListFamilyMessages<TData = Awaited<ReturnType<typeof listFamilyMessages>>, TError = ErrorType<HTTPValidationError>>(
+ astronautId: string,
+    params?: ListFamilyMessagesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFamilyMessages>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listFamilyMessages>>,
+          TError,
+          Awaited<ReturnType<typeof listFamilyMessages>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListFamilyMessages<TData = Awaited<ReturnType<typeof listFamilyMessages>>, TError = ErrorType<HTTPValidationError>>(
+ astronautId: string,
+    params?: ListFamilyMessagesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFamilyMessages>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary List Family Messages
  */
 
 export function useListFamilyMessages<TData = Awaited<ReturnType<typeof listFamilyMessages>>, TError = ErrorType<HTTPValidationError>>(
  astronautId: string,
-    params?: ListFamilyMessagesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listFamilyMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+    params?: ListFamilyMessagesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFamilyMessages>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getListFamilyMessagesQueryOptions(astronautId,params,options)
 
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
@@ -635,13 +722,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  */
 export const useMarkFamilyMessageViewed = <TError = ErrorType<HTTPValidationError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markFamilyMessageViewed>>, TError,MarkFamilyMessageViewedMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof markFamilyMessageViewed>>,
         TError,
         MarkFamilyMessageViewedMutationVariables,
         TContext
       > => {
-      return useMutation(getMarkFamilyMessageViewedMutationOptions(options));
+      return useMutation(getMarkFamilyMessageViewedMutationOptions(options), queryClient);
     }
 
 export const getSyncStatusUrl = () => {
@@ -677,7 +764,7 @@ export const getSyncStatusQueryKey = () => {
     }
 
 
-export const getSyncStatusQueryOptions = <TData = Awaited<ReturnType<typeof syncStatus>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof syncStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getSyncStatusQueryOptions = <TData = Awaited<ReturnType<typeof syncStatus>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncStatus>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -692,25 +779,49 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof syncStatus>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof syncStatus>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type SyncStatusQueryResult = NonNullable<Awaited<ReturnType<typeof syncStatus>>>
 export type SyncStatusQueryError = ErrorType<unknown>
 
 
+export function useSyncStatus<TData = Awaited<ReturnType<typeof syncStatus>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncStatus>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof syncStatus>>,
+          TError,
+          Awaited<ReturnType<typeof syncStatus>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSyncStatus<TData = Awaited<ReturnType<typeof syncStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncStatus>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof syncStatus>>,
+          TError,
+          Awaited<ReturnType<typeof syncStatus>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSyncStatus<TData = Awaited<ReturnType<typeof syncStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncStatus>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Sync Status
  */
 
 export function useSyncStatus<TData = Awaited<ReturnType<typeof syncStatus>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof syncStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncStatus>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getSyncStatusQueryOptions(options)
 
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
@@ -786,13 +897,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  */
 export const useMissionSync = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof missionSync>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof missionSync>>,
         TError,
         void,
         TContext
       > => {
-      return useMutation(getMissionSyncMutationOptions(options));
+      return useMutation(getMissionSyncMutationOptions(options), queryClient);
     }
 
 export const getSimulateUrl = (scenario: string,) => {
@@ -828,7 +939,7 @@ export const getSimulateQueryKey = (scenario: string,) => {
     }
 
 
-export const getSimulateQueryOptions = <TData = Awaited<ReturnType<typeof simulate>>, TError = ErrorType<HTTPValidationError>>(scenario: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof simulate>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getSimulateQueryOptions = <TData = Awaited<ReturnType<typeof simulate>>, TError = ErrorType<HTTPValidationError>>(scenario: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof simulate>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -843,25 +954,49 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 
 
 
-   return  { queryKey, queryFn, enabled: scenario !== null && scenario !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof simulate>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, enabled: scenario !== null && scenario !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof simulate>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type SimulateQueryResult = NonNullable<Awaited<ReturnType<typeof simulate>>>
 export type SimulateQueryError = ErrorType<HTTPValidationError>
 
 
+export function useSimulate<TData = Awaited<ReturnType<typeof simulate>>, TError = ErrorType<HTTPValidationError>>(
+ scenario: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof simulate>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof simulate>>,
+          TError,
+          Awaited<ReturnType<typeof simulate>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSimulate<TData = Awaited<ReturnType<typeof simulate>>, TError = ErrorType<HTTPValidationError>>(
+ scenario: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof simulate>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof simulate>>,
+          TError,
+          Awaited<ReturnType<typeof simulate>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSimulate<TData = Awaited<ReturnType<typeof simulate>>, TError = ErrorType<HTTPValidationError>>(
+ scenario: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof simulate>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Simulate
  */
 
 export function useSimulate<TData = Awaited<ReturnType<typeof simulate>>, TError = ErrorType<HTTPValidationError>>(
- scenario: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof simulate>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+ scenario: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof simulate>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getSimulateQueryOptions(scenario,options)
 
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
@@ -905,7 +1040,7 @@ export const getHealthCheckQueryKey = () => {
     }
 
 
-export const getHealthCheckQueryOptions = <TData = Awaited<ReturnType<typeof healthCheck>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getHealthCheckQueryOptions = <TData = Awaited<ReturnType<typeof healthCheck>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -920,25 +1055,764 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type HealthCheckQueryResult = NonNullable<Awaited<ReturnType<typeof healthCheck>>>
 export type HealthCheckQueryError = ErrorType<unknown>
 
 
+export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof healthCheck>>,
+          TError,
+          Awaited<ReturnType<typeof healthCheck>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof healthCheck>>,
+          TError,
+          Awaited<ReturnType<typeof healthCheck>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Healthz
  */
 
 export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getHealthCheckQueryOptions(options)
 
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetEarthMessageSessionUrl = () => {
+
+
+
+
+  return `/api/earth-messages/session`
+}
+
+/**
+ * @summary Get the signed-in role for Earth messages
+ */
+export const getEarthMessageSession = async ( options?: Parameters<typeof customFetch>[1]): Promise<EarthMessageSession> => {
+
+  return customFetch<EarthMessageSession>(getGetEarthMessageSessionUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetEarthMessageSessionQueryKey = () => {
+    return [
+    `/api/earth-messages/session`
+    ] as const;
+    }
+
+
+export const getGetEarthMessageSessionQueryOptions = <TData = Awaited<ReturnType<typeof getEarthMessageSession>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEarthMessageSession>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEarthMessageSessionQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEarthMessageSession>>> = ({ signal }) => getEarthMessageSession({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEarthMessageSession>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetEarthMessageSessionQueryResult = NonNullable<Awaited<ReturnType<typeof getEarthMessageSession>>>
+export type GetEarthMessageSessionQueryError = ErrorType<unknown>
+
+
+export function useGetEarthMessageSession<TData = Awaited<ReturnType<typeof getEarthMessageSession>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEarthMessageSession>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getEarthMessageSession>>,
+          TError,
+          Awaited<ReturnType<typeof getEarthMessageSession>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetEarthMessageSession<TData = Awaited<ReturnType<typeof getEarthMessageSession>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEarthMessageSession>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getEarthMessageSession>>,
+          TError,
+          Awaited<ReturnType<typeof getEarthMessageSession>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetEarthMessageSession<TData = Awaited<ReturnType<typeof getEarthMessageSession>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEarthMessageSession>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get the signed-in role for Earth messages
+ */
+
+export function useGetEarthMessageSession<TData = Awaited<ReturnType<typeof getEarthMessageSession>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEarthMessageSession>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetEarthMessageSessionQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateEarthMessageInviteUrl = () => {
+
+
+
+
+  return `/api/earth-messages/invites`
+}
+
+/**
+ * @summary Create a one-time family invitation
+ */
+export const createEarthMessageInvite = async ( options?: Parameters<typeof customFetch>[1]): Promise<EarthMessageInvite> => {
+
+  return customFetch<EarthMessageInvite>(getCreateEarthMessageInviteUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getCreateEarthMessageInviteMutationKey = () => ['createEarthMessageInvite'] as const;
+
+export const getCreateEarthMessageInviteMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEarthMessageInvite>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createEarthMessageInvite>>, TError,void, TContext> => {
+
+const mutationKey = getCreateEarthMessageInviteMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createEarthMessageInvite>>, void> = () => {
+
+
+          return  createEarthMessageInvite(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateEarthMessageInviteMutationResult = NonNullable<Awaited<ReturnType<typeof createEarthMessageInvite>>>
+
+    export type CreateEarthMessageInviteMutationError = ErrorType<unknown>
+
+
+    /**
+ * @summary Create a one-time family invitation
+ */
+export const useCreateEarthMessageInvite = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEarthMessageInvite>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createEarthMessageInvite>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getCreateEarthMessageInviteMutationOptions(options), queryClient);
+    }
+
+export const getAcceptEarthMessageInviteUrl = () => {
+
+
+
+
+  return `/api/earth-messages/invites/accept`
+}
+
+/**
+ * @summary Accept a family invitation
+ */
+export const acceptEarthMessageInvite = async (earthInviteAcceptInput: EarthInviteAcceptInput, options?: Parameters<typeof customFetch>[1]): Promise<EarthMessageSession> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<EarthMessageSession>(getAcceptEarthMessageInviteUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(earthInviteAcceptInput)
+  }
+);}
+
+
+
+
+
+export const getAcceptEarthMessageInviteMutationKey = () => ['acceptEarthMessageInvite'] as const;
+
+export const getAcceptEarthMessageInviteMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptEarthMessageInvite>>, TError,AcceptEarthMessageInviteMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof acceptEarthMessageInvite>>, TError,AcceptEarthMessageInviteMutationVariables, TContext> => {
+
+const mutationKey = getAcceptEarthMessageInviteMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof acceptEarthMessageInvite>>, AcceptEarthMessageInviteMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  acceptEarthMessageInvite(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AcceptEarthMessageInviteMutationResult = NonNullable<Awaited<ReturnType<typeof acceptEarthMessageInvite>>>
+    export type AcceptEarthMessageInviteMutationBody = BodyType<EarthInviteAcceptInput>
+    export type AcceptEarthMessageInviteMutationError = ErrorType<unknown>
+    export type AcceptEarthMessageInviteMutationVariables = {data: BodyType<EarthInviteAcceptInput>}
+
+    /**
+ * @summary Accept a family invitation
+ */
+export const useAcceptEarthMessageInvite = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptEarthMessageInvite>>, TError,AcceptEarthMessageInviteMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof acceptEarthMessageInvite>>,
+        TError,
+        AcceptEarthMessageInviteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAcceptEarthMessageInviteMutationOptions(options), queryClient);
+    }
+
+export const getRequestEarthMessageUploadUrl = () => {
+
+
+
+
+  return `/api/earth-messages/uploads/request-url`
+}
+
+/**
+ * @summary Prepare a private audio or video upload
+ */
+export const requestEarthMessageUpload = async (earthUploadInput: EarthUploadInput, options?: Parameters<typeof customFetch>[1]): Promise<EarthUpload> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<EarthUpload>(getRequestEarthMessageUploadUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(earthUploadInput)
+  }
+);}
+
+
+
+
+
+export const getRequestEarthMessageUploadMutationKey = () => ['requestEarthMessageUpload'] as const;
+
+export const getRequestEarthMessageUploadMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestEarthMessageUpload>>, TError,RequestEarthMessageUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestEarthMessageUpload>>, TError,RequestEarthMessageUploadMutationVariables, TContext> => {
+
+const mutationKey = getRequestEarthMessageUploadMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestEarthMessageUpload>>, RequestEarthMessageUploadMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestEarthMessageUpload(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestEarthMessageUploadMutationResult = NonNullable<Awaited<ReturnType<typeof requestEarthMessageUpload>>>
+    export type RequestEarthMessageUploadMutationBody = BodyType<EarthUploadInput>
+    export type RequestEarthMessageUploadMutationError = ErrorType<unknown>
+    export type RequestEarthMessageUploadMutationVariables = {data: BodyType<EarthUploadInput>}
+
+    /**
+ * @summary Prepare a private audio or video upload
+ */
+export const useRequestEarthMessageUpload = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestEarthMessageUpload>>, TError,RequestEarthMessageUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof requestEarthMessageUpload>>,
+        TError,
+        RequestEarthMessageUploadMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRequestEarthMessageUploadMutationOptions(options), queryClient);
+    }
+
+export const getListEarthMessagesUrl = () => {
+
+
+
+
+  return `/api/earth-messages/messages`
+}
+
+/**
+ * @summary List messages for the astronaut or family sender
+ */
+export const listEarthMessages = async ( options?: Parameters<typeof customFetch>[1]): Promise<EarthFamilyMessage[]> => {
+
+  return customFetch<EarthFamilyMessage[]>(getListEarthMessagesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListEarthMessagesQueryKey = () => {
+    return [
+    `/api/earth-messages/messages`
+    ] as const;
+    }
+
+
+export const getListEarthMessagesQueryOptions = <TData = Awaited<ReturnType<typeof listEarthMessages>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listEarthMessages>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListEarthMessagesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listEarthMessages>>> = ({ signal }) => listEarthMessages({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listEarthMessages>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListEarthMessagesQueryResult = NonNullable<Awaited<ReturnType<typeof listEarthMessages>>>
+export type ListEarthMessagesQueryError = ErrorType<unknown>
+
+
+export function useListEarthMessages<TData = Awaited<ReturnType<typeof listEarthMessages>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listEarthMessages>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listEarthMessages>>,
+          TError,
+          Awaited<ReturnType<typeof listEarthMessages>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListEarthMessages<TData = Awaited<ReturnType<typeof listEarthMessages>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listEarthMessages>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listEarthMessages>>,
+          TError,
+          Awaited<ReturnType<typeof listEarthMessages>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListEarthMessages<TData = Awaited<ReturnType<typeof listEarthMessages>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listEarthMessages>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List messages for the astronaut or family sender
+ */
+
+export function useListEarthMessages<TData = Awaited<ReturnType<typeof listEarthMessages>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listEarthMessages>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListEarthMessagesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateEarthMessageUrl = () => {
+
+
+
+
+  return `/api/earth-messages/messages`
+}
+
+/**
+ * @summary Save an uploaded family message
+ */
+export const createEarthMessage = async (earthMessageInput: EarthMessageInput, options?: Parameters<typeof customFetch>[1]): Promise<EarthFamilyMessage> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<EarthFamilyMessage>(getCreateEarthMessageUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(earthMessageInput)
+  }
+);}
+
+
+
+
+
+export const getCreateEarthMessageMutationKey = () => ['createEarthMessage'] as const;
+
+export const getCreateEarthMessageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEarthMessage>>, TError,CreateEarthMessageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createEarthMessage>>, TError,CreateEarthMessageMutationVariables, TContext> => {
+
+const mutationKey = getCreateEarthMessageMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createEarthMessage>>, CreateEarthMessageMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createEarthMessage(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateEarthMessageMutationResult = NonNullable<Awaited<ReturnType<typeof createEarthMessage>>>
+    export type CreateEarthMessageMutationBody = BodyType<EarthMessageInput>
+    export type CreateEarthMessageMutationError = ErrorType<unknown>
+    export type CreateEarthMessageMutationVariables = {data: BodyType<EarthMessageInput>}
+
+    /**
+ * @summary Save an uploaded family message
+ */
+export const useCreateEarthMessage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEarthMessage>>, TError,CreateEarthMessageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createEarthMessage>>,
+        TError,
+        CreateEarthMessageMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateEarthMessageMutationOptions(options), queryClient);
+    }
+
+export const getMarkEarthMessageViewedUrl = (id: number,) => {
+
+
+
+
+  return `/api/earth-messages/messages/${id}/viewed`
+}
+
+/**
+ * @summary Mark a family message as viewed
+ */
+export const markEarthMessageViewed = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<EarthFamilyMessage> => {
+
+  return customFetch<EarthFamilyMessage>(getMarkEarthMessageViewedUrl(id),
+  {
+    ...options,
+    method: 'PATCH'
+
+
+  }
+);}
+
+
+
+
+
+export const getMarkEarthMessageViewedMutationKey = () => ['markEarthMessageViewed'] as const;
+
+export const getMarkEarthMessageViewedMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markEarthMessageViewed>>, TError,MarkEarthMessageViewedMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof markEarthMessageViewed>>, TError,MarkEarthMessageViewedMutationVariables, TContext> => {
+
+const mutationKey = getMarkEarthMessageViewedMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof markEarthMessageViewed>>, MarkEarthMessageViewedMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  markEarthMessageViewed(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MarkEarthMessageViewedMutationResult = NonNullable<Awaited<ReturnType<typeof markEarthMessageViewed>>>
+
+    export type MarkEarthMessageViewedMutationError = ErrorType<unknown>
+    export type MarkEarthMessageViewedMutationVariables = {id: number}
+
+    /**
+ * @summary Mark a family message as viewed
+ */
+export const useMarkEarthMessageViewed = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markEarthMessageViewed>>, TError,MarkEarthMessageViewedMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof markEarthMessageViewed>>,
+        TError,
+        MarkEarthMessageViewedMutationVariables,
+        TContext
+      > => {
+      return useMutation(getMarkEarthMessageViewedMutationOptions(options), queryClient);
+    }
+
+export const getStreamEarthMessageMediaUrl = (id: number,) => {
+
+
+
+
+  return `/api/earth-messages/messages/${id}/media`
+}
+
+/**
+ * @summary Stream private message audio or video
+ */
+export const streamEarthMessageMedia = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getStreamEarthMessageMediaUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getStreamEarthMessageMediaQueryKey = (id: number,) => {
+    return [
+    `/api/earth-messages/messages/${id}/media`
+    ] as const;
+    }
+
+
+export const getStreamEarthMessageMediaQueryOptions = <TData = Awaited<ReturnType<typeof streamEarthMessageMedia>>, TError = ErrorType<unknown>>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof streamEarthMessageMedia>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getStreamEarthMessageMediaQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof streamEarthMessageMedia>>> = ({ signal }) => streamEarthMessageMedia(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof streamEarthMessageMedia>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type StreamEarthMessageMediaQueryResult = NonNullable<Awaited<ReturnType<typeof streamEarthMessageMedia>>>
+export type StreamEarthMessageMediaQueryError = ErrorType<unknown>
+
+
+export function useStreamEarthMessageMedia<TData = Awaited<ReturnType<typeof streamEarthMessageMedia>>, TError = ErrorType<unknown>>(
+ id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof streamEarthMessageMedia>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof streamEarthMessageMedia>>,
+          TError,
+          Awaited<ReturnType<typeof streamEarthMessageMedia>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useStreamEarthMessageMedia<TData = Awaited<ReturnType<typeof streamEarthMessageMedia>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof streamEarthMessageMedia>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof streamEarthMessageMedia>>,
+          TError,
+          Awaited<ReturnType<typeof streamEarthMessageMedia>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useStreamEarthMessageMedia<TData = Awaited<ReturnType<typeof streamEarthMessageMedia>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof streamEarthMessageMedia>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Stream private message audio or video
+ */
+
+export function useStreamEarthMessageMedia<TData = Awaited<ReturnType<typeof streamEarthMessageMedia>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof streamEarthMessageMedia>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getStreamEarthMessageMediaQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return withQueryKey(query, queryOptions.queryKey);
 }

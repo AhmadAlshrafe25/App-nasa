@@ -1,12 +1,13 @@
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
-import { History, Home, Info, MessageCircleHeart, Orbit, ShieldAlert, SmilePlus } from 'lucide-react';
+import { History, Home, Info, MessageCircleHeart, Orbit, Send, ShieldAlert, SmilePlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/hazards', label: 'Hazards', icon: ShieldAlert },
   { href: '/messages', label: 'Messages', icon: MessageCircleHeart },
+  { href: '/send', label: 'Send', icon: Send },
   { href: '/check-in', label: 'Check-in', icon: SmilePlus },
   { href: '/history', label: 'History', icon: History },
 ];
@@ -54,7 +55,7 @@ export function Layout({ children }: { children: ReactNode }) {
       </main>
 
       <nav aria-label="Primary" className="fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-background/90 backdrop-blur-md md:hidden">
-        <ul className="grid grid-cols-5 pb-[env(safe-area-inset-bottom)]">
+        <ul className="grid grid-cols-6 pb-[env(safe-area-inset-bottom)]">
           {NAV.map((n) => {
             const on = loc === n.href;
             return (

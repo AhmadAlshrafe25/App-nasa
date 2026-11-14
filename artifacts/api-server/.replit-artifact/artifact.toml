@@ -23,3 +23,24 @@ PORT = "8000"
 
 [services.production.health.startup]
 path = "/api/healthz"
+
+
+[[services]]
+localPort = 8080
+name = "Private Family Messages API"
+paths = ["/api/earth-messages", "/api/storage", "/api/__clerk"]
+
+[services.development]
+run = "pnpm --filter @workspace/api-server run family:dev"
+
+[services.production.build]
+args = ["pnpm", "--filter", "@workspace/api-server", "run", "family:build"]
+
+[services.production.run]
+args = ["pnpm", "--filter", "@workspace/api-server", "run", "family:start"]
+
+[services.production.run.env]
+PORT = "8080"
+
+[services.production.health.startup]
+path = "/api/earth-messages/healthz"

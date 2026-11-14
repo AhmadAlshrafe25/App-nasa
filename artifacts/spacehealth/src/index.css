@@ -1,4 +1,6 @@
+@layer theme, base, clerk, components, utilities;
 @import 'tailwindcss';
+@import '@clerk/themes/shadcn.css';
 
 :root {
   color-scheme: dark;
@@ -834,11 +836,25 @@ body { font-size:20px; }
 .astro-dialog-heading h2 { margin:0;color:var(--space-beige);font-size:26px;line-height:1.16; }
 .astro-close { display:grid;place-items:center;width:44px;height:44px;margin-left:auto;flex:none;color:var(--space-beige);background:transparent;border:1px solid var(--space-line); }
 .astro-close:hover { color:var(--space-navy);background:var(--space-sky); }
-.astro-transcript { margin:19px 0;padding:16px;border-left:3px solid var(--space-purple);background:var(--space-panel);color:var(--space-beige);font-size:21px;line-height:1.42; }
-.astro-playback { display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:12px; }
-.astro-play-button { min-width:148px; }
-.astro-playback [role='status'] { color:var(--space-muted);font-size:16px;line-height:1.3; }
 .astro-disclosure { margin:17px 0 0;padding-top:13px;border-top:1px solid var(--space-line);color:var(--space-muted);font-size:16px;line-height:1.4; }
+.astro-access-prompt,.astro-invite-panel,.astro-message-section { margin-top:16px;padding:15px;border:1px solid var(--space-line);background:var(--space-panel); }
+.astro-access-prompt p,.astro-invite-panel p,.astro-empty { margin:0 0 12px;color:var(--space-beige);font-size:18px;line-height:1.35; }
+.astro-invite-link { display:grid;gap:8px;margin-top:14px; }
+.astro-invite-link label { color:var(--space-muted);font-size:15px; }
+.astro-invite-link input { width:100%;min-height:44px;padding:8px 10px;color:var(--space-beige);background:var(--space-navy);border:1px solid var(--space-line);font-size:15px; }
+.astro-message-section h3 { margin:0 0 12px;color:var(--space-sky);font-size:21px; }
+.astro-message-list { display:grid;gap:12px; }
+.astro-message { display:grid;gap:10px;padding:13px;color:var(--space-beige);background:var(--space-navy);border:1px solid var(--space-line); }
+.astro-message-heading { display:flex;justify-content:space-between;gap:12px;align-items:flex-start; }
+.astro-message-heading > div { display:grid;gap:2px; }
+.astro-message-heading strong { font-size:19px; }
+.astro-message-heading span,.astro-message-heading time,.astro-message-viewed { color:var(--space-muted);font-size:14px; }
+.astro-message-heading time { text-align:right; }
+.astro-message p { margin:0;color:var(--space-beige);font-size:17px;line-height:1.35; }
+.astro-message audio,.astro-message video { display:block;width:100%;max-height:320px; }
+.astro-message-viewed { justify-self:end; }
+.clerk-page { min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;background:var(--space-navy); }
+.clerk-page-label { margin:0;color:var(--space-sky);font-size:15px;letter-spacing:.1em;text-align:center; }
 
 @media (max-width:767px) {
   .mobile-nav {
@@ -872,7 +888,6 @@ body { font-size:20px; }
   .mission-footer > span { font-size:15px; }
 }
 @media (max-width:360px) {
-  .astro-playback { grid-template-columns:1fr;gap:8px; }
-  .astro-play-button { width:100%; }
-  .astro-transcript { font-size:19px;padding:12px; }
+  .astro-message-heading { flex-direction:column; }
+  .astro-message-heading time { text-align:left; }
 }

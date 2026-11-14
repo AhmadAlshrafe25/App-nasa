@@ -398,6 +398,99 @@ export interface SyncStatus {
   pending_items: SyncItem[];
 }
 
+export type EarthMessageSessionRole = typeof EarthMessageSessionRole[keyof typeof EarthMessageSessionRole];
+
+
+export const EarthMessageSessionRole = {
+  astronaut: 'astronaut',
+  family: 'family',
+  unlinked: 'unlinked',
+  'signed-out': 'signed-out',
+} as const;
+
+export interface EarthMessageSession {
+  role: EarthMessageSessionRole;
+  /** @nullable */
+  displayName?: string | null;
+  /** @nullable */
+  relationship?: string | null;
+}
+
+export interface EarthMessageInvite {
+  token: string;
+  expiresAt: string;
+}
+
+export interface EarthInviteAcceptInput {
+  /** @minLength 16 */
+  token: string;
+  /**
+     * @minLength 2
+     * @maxLength 100
+     */
+  displayName: string;
+  /**
+     * @minLength 2
+     * @maxLength 80
+     */
+  relationship: string;
+}
+
+export interface EarthUploadInput {
+  contentType: string;
+  /**
+     * @minimum 1
+     * @maximum 104857600
+     */
+  size: number;
+}
+
+export interface EarthUpload {
+  uploadUrl: string;
+  objectPath: string;
+  maxBytes: number;
+}
+
+export interface EarthMessageInput {
+  objectPath: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  title: string;
+  /** @maxLength 600 */
+  note?: string;
+}
+
+export type EarthFamilyMessageMediaType = typeof EarthFamilyMessageMediaType[keyof typeof EarthFamilyMessageMediaType];
+
+
+export const EarthFamilyMessageMediaType = {
+  audio: 'audio',
+  video: 'video',
+} as const;
+
+export interface EarthFamilyMessage {
+  id: number;
+  astronautId: string;
+  senderName: string;
+  relationship: string;
+  title: string;
+  /** @nullable */
+  note?: string | null;
+  mediaType: EarthFamilyMessageMediaType;
+  contentType: string;
+  fileSize: number;
+  createdAt: string;
+  /** @nullable */
+  viewedAt?: string | null;
+  mediaUrl: string;
+}
+
+export interface EarthMessageError {
+  error: string;
+}
+
 export type ListFamilyMessagesParams = {
 mood_tag?: ListFamilyMessagesMoodTag;
 };

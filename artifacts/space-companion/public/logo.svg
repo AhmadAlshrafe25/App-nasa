@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 40" fill="none">
+  <circle cx="18" cy="20" r="12.5" stroke="#9BCBE3" stroke-width="1.5"/>
+  <ellipse cx="18" cy="20" rx="18" ry="6.5" stroke="#9BCBE3" stroke-width="1.2" transform="rotate(-23 18 20)"/>
+  <circle cx="31.8" cy="13.6" r="2.2" fill="#D9C4E8"/>
+  <text x="43" y="26" fill="#EAF0F4" font-family="Georgia,serif" font-size="19" font-style="italic">Space Companion</text>
+</svg>

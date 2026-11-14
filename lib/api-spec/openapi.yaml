@@ -259,6 +259,170 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthStatus'
+  /earth-messages/session:
+    get:
+      tags:
+      - earth-messages
+      summary: Get the signed-in role for Earth messages
+      operationId: getEarthMessageSession
+      responses:
+        '200':
+          description: Session role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EarthMessageSession'
+  /earth-messages/invites:
+    post:
+      tags:
+      - earth-messages
+      summary: Create a one-time family invitation
+      operationId: createEarthMessageInvite
+      security:
+      - clerkSession: []
+      responses:
+        '201':
+          description: Created invitation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EarthMessageInvite'
+  /earth-messages/invites/accept:
+    post:
+      tags:
+      - earth-messages
+      summary: Accept a family invitation
+      operationId: acceptEarthMessageInvite
+      security:
+      - clerkSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EarthInviteAcceptInput'
+      responses:
+        '201':
+          description: Account connected to the family inbox
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EarthMessageSession'
+  /earth-messages/uploads/request-url:
+    post:
+      tags:
+      - earth-messages
+      summary: Prepare a private audio or video upload
+      operationId: requestEarthMessageUpload
+      security:
+      - clerkSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EarthUploadInput'
+      responses:
+        '200':
+          description: Temporary upload URL and private object path
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EarthUpload'
+  /earth-messages/messages:
+    get:
+      tags:
+      - earth-messages
+      summary: List messages for the astronaut or family sender
+      operationId: listEarthMessages
+      security:
+      - clerkSession: []
+      responses:
+        '200':
+          description: Authorized messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EarthFamilyMessage'
+    post:
+      tags:
+      - earth-messages
+      summary: Save an uploaded family message
+      operationId: createEarthMessage
+      security:
+      - clerkSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EarthMessageInput'
+      responses:
+        '201':
+          description: Saved message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EarthFamilyMessage'
+  /earth-messages/messages/{id}/viewed:
+    patch:
+      tags:
+      - earth-messages
+      summary: Mark a family message as viewed
+      operationId: markEarthMessageViewed
+      security:
+      - clerkSession: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+      responses:
+        '200':
+          description: Updated message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EarthFamilyMessage'
+  /earth-messages/messages/{id}/media:
+    get:
+      tags:
+      - earth-messages
+      summary: Stream private message audio or video
+      operationId: streamEarthMessageMedia
+      security:
+      - clerkSession: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+      - name: Range
+        in: header
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Private media stream
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '206':
+          description: Partial media stream
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
 components:
   schemas:
     Assessment:
@@ -997,6 +1161,155 @@ components:
       - msg
       - type
       title: ValidationError
+    EarthMessageSession:
+      type: object
+      required:
+      - role
+      properties:
+        role:
+          type: string
+          enum:
+          - astronaut
+          - family
+          - unlinked
+          - signed-out
+        displayName:
+          type:
+          - string
+          - 'null'
+        relationship:
+          type:
+          - string
+          - 'null'
+    EarthMessageInvite:
+      type: object
+      required:
+      - token
+      - expiresAt
+      properties:
+        token:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+    EarthInviteAcceptInput:
+      type: object
+      required:
+      - token
+      - displayName
+      - relationship
+      properties:
+        token:
+          type: string
+          minLength: 16
+        displayName:
+          type: string
+          minLength: 2
+          maxLength: 100
+        relationship:
+          type: string
+          minLength: 2
+          maxLength: 80
+    EarthUploadInput:
+      type: object
+      required:
+      - contentType
+      - size
+      properties:
+        contentType:
+          type: string
+        size:
+          type: integer
+          minimum: 1
+          maximum: 104857600
+    EarthUpload:
+      type: object
+      required:
+      - uploadUrl
+      - objectPath
+      - maxBytes
+      properties:
+        uploadUrl:
+          type: string
+          format: uri
+        objectPath:
+          type: string
+        maxBytes:
+          type: integer
+    EarthMessageInput:
+      type: object
+      required:
+      - objectPath
+      - title
+      properties:
+        objectPath:
+          type: string
+        title:
+          type: string
+          minLength: 1
+          maxLength: 120
+        note:
+          type: string
+          maxLength: 600
+    EarthFamilyMessage:
+      type: object
+      required:
+      - id
+      - astronautId
+      - senderName
+      - relationship
+      - title
+      - mediaType
+      - contentType
+      - fileSize
+      - createdAt
+      - mediaUrl
+      properties:
+        id:
+          type: integer
+        astronautId:
+          type: string
+        senderName:
+          type: string
+        relationship:
+          type: string
+        title:
+          type: string
+        note:
+          type:
+          - string
+          - 'null'
+        mediaType:
+          type: string
+          enum:
+          - audio
+          - video
+        contentType:
+          type: string
+        fileSize:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        viewedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        mediaUrl:
+          type: string
+    EarthMessageError:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: string
+  securitySchemes:
+    clerkSession:
+      type: apiKey
+      in: cookie
+      name: __session
 servers:
 - url: /api
   description: Shared preview API prefix; root aliases are also available

@@ -519,3 +519,161 @@ export const HealthCheckResponse = zod.object({
 })
 
 
+/**
+ * @summary Get the signed-in role for Earth messages
+ */
+export const GetEarthMessageSessionResponse = zod.object({
+  "role": zod.enum(['astronaut', 'family', 'unlinked', 'signed-out']),
+  "displayName": zod.string().nullish(),
+  "relationship": zod.string().nullish()
+})
+
+
+/**
+ * @summary Create a one-time family invitation
+ */
+export const CreateEarthMessageInviteResponse = zod.object({
+  "token": zod.string(),
+  "expiresAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Accept a family invitation
+ */
+export const acceptEarthMessageInviteBodyTokenMin = 16;
+
+export const acceptEarthMessageInviteBodyDisplayNameMin = 2;
+export const acceptEarthMessageInviteBodyDisplayNameMax = 100;
+
+export const acceptEarthMessageInviteBodyRelationshipMin = 2;
+export const acceptEarthMessageInviteBodyRelationshipMax = 80;
+
+
+
+export const AcceptEarthMessageInviteBody = zod.object({
+  "token": zod.string().min(acceptEarthMessageInviteBodyTokenMin),
+  "displayName": zod.string().min(acceptEarthMessageInviteBodyDisplayNameMin).max(acceptEarthMessageInviteBodyDisplayNameMax),
+  "relationship": zod.string().min(acceptEarthMessageInviteBodyRelationshipMin).max(acceptEarthMessageInviteBodyRelationshipMax)
+})
+
+export const AcceptEarthMessageInviteResponse = zod.object({
+  "role": zod.enum(['astronaut', 'family', 'unlinked', 'signed-out']),
+  "displayName": zod.string().nullish(),
+  "relationship": zod.string().nullish()
+})
+
+
+/**
+ * @summary Prepare a private audio or video upload
+ */
+export const requestEarthMessageUploadBodySizeMax = 104857600;
+
+
+
+export const RequestEarthMessageUploadBody = zod.object({
+  "contentType": zod.string(),
+  "size": zod.number().int().min(1).max(requestEarthMessageUploadBodySizeMax)
+})
+
+export const RequestEarthMessageUploadResponse = zod.object({
+  "uploadUrl": zod.string().url(),
+  "objectPath": zod.string(),
+  "maxBytes": zod.number().int()
+})
+
+
+/**
+ * @summary List messages for the astronaut or family sender
+ */
+export const ListEarthMessagesResponseItem = zod.object({
+  "id": zod.number().int(),
+  "astronautId": zod.string(),
+  "senderName": zod.string(),
+  "relationship": zod.string(),
+  "title": zod.string(),
+  "note": zod.string().nullish(),
+  "mediaType": zod.enum(['audio', 'video']),
+  "contentType": zod.string(),
+  "fileSize": zod.number().int(),
+  "createdAt": zod.coerce.date(),
+  "viewedAt": zod.coerce.date().nullish(),
+  "mediaUrl": zod.string()
+})
+export const ListEarthMessagesResponse = zod.array(ListEarthMessagesResponseItem)
+
+
+/**
+ * @summary Save an uploaded family message
+ */
+export const createEarthMessageBodyTitleMax = 120;
+
+export const createEarthMessageBodyNoteMax = 600;
+
+
+
+export const CreateEarthMessageBody = zod.object({
+  "objectPath": zod.string(),
+  "title": zod.string().min(1).max(createEarthMessageBodyTitleMax),
+  "note": zod.string().max(createEarthMessageBodyNoteMax).optional()
+})
+
+export const CreateEarthMessageResponse = zod.object({
+  "id": zod.number().int(),
+  "astronautId": zod.string(),
+  "senderName": zod.string(),
+  "relationship": zod.string(),
+  "title": zod.string(),
+  "note": zod.string().nullish(),
+  "mediaType": zod.enum(['audio', 'video']),
+  "contentType": zod.string(),
+  "fileSize": zod.number().int(),
+  "createdAt": zod.coerce.date(),
+  "viewedAt": zod.coerce.date().nullish(),
+  "mediaUrl": zod.string()
+})
+
+
+/**
+ * @summary Mark a family message as viewed
+ */
+
+
+
+export const MarkEarthMessageViewedParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const MarkEarthMessageViewedResponse = zod.object({
+  "id": zod.number().int(),
+  "astronautId": zod.string(),
+  "senderName": zod.string(),
+  "relationship": zod.string(),
+  "title": zod.string(),
+  "note": zod.string().nullish(),
+  "mediaType": zod.enum(['audio', 'video']),
+  "contentType": zod.string(),
+  "fileSize": zod.number().int(),
+  "createdAt": zod.coerce.date(),
+  "viewedAt": zod.coerce.date().nullish(),
+  "mediaUrl": zod.string()
+})
+
+
+/**
+ * @summary Stream private message audio or video
+ */
+
+
+
+export const StreamEarthMessageMediaParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const StreamEarthMessageMediaHeader = zod.object({
+  "Range": zod.string().optional()
+})
+
+export const StreamEarthMessageMediaResponse = zod.unknown()
+
+
