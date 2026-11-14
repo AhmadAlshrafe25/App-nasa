@@ -6,20 +6,23 @@ a radiation safety system.
 
 ## Run & Operate
 
+- Install the imported project's dependencies with `pnpm install --frozen-lockfile` and `uv sync --frozen`.
+- In Replit, start the existing managed workflows: `artifacts/spacehealth: web`, `artifacts/space-companion: web`, and `artifacts/api-server: API Server`. They supply the frontend's required `PORT` and `BASE_PATH`; do not run Vite manually without those values. The existing mockup-sandbox workflow serves the design canvas.
+- Open `/` for SpaceHealth, `/space-companion/` for Space Companion, and `/docs` for the API documentation. No API keys or external services are needed for the offline demo.
 - `pnpm --filter @workspace/spacehealth run dev` — wrist frontend with radiation monitoring and an on-device Daily log.
 - `pnpm --filter @workspace/api-server run dev` — Python FastAPI on `0.0.0.0:8000`.
 - `uv sync --frozen` — reproducible Python dependencies (Python 3.11/3.12; Replit module is 3.12).
-- `uv run --frozen --extra ml pytest -q` — backend tests including the optional model.
+- `uv run --frozen pytest -q` — backend tests, using temporary databases rather than the demo's stored records.
 - `uv run --frozen python scripts/export-openapi.py` then `pnpm --filter @workspace/api-spec run codegen` — refresh shared contracts and generated helpers.
-- `uv run --frozen python scripts/smoke-backend.py http://localhost:8000` — read-only HTTP smoke checks.
+- `curl -fsS "https://${REPLIT_DEV_DOMAIN}/api/healthz"` — read-only health check through the Replit proxy. The legacy `scripts/smoke-backend.py` targets an earlier API contract and needs updating before use.
 - `pnpm run typecheck` — workspace type checks.
 
 ## Backend
 
 - Required modules live in `backend/`, `ai/`, and `companion/`.
-- Full setup, fields/units, examples, risk rules, offline semantics, privacy, and storage lifecycle: **`backend/README.md`**.
-- Local `astronaut_health.db` is initialized at API startup with two fictional astronauts (IDs 1 and 2), seven immutable synthetic baseline samples, and seven logs each. Submitted check-ins and assessment snapshots are transactional and survive same-filesystem process restarts.
-- `SPACEHEALTH_DB_PATH` can select another local SQLite path.
+- The current API's request fields and responses are documented at `/docs` and `/openapi.json`.
+- Local `astronaut_health.db` is initialized at API startup with fictional astronauts (`AST-01`, `AST-02`, `AST-03`) and synthetic logs. Submitted check-ins survive same-filesystem process restarts.
+- `ASTRONAUT_DB_PATH` can select another local SQLite path.
 - No `DATABASE_URL`, API key, paid provider, or internet connection is required. The old PostgreSQL/Express packages remain unused scaffolding; do not push or migrate them for this backend.
 - The Rust direction was explicitly replaced by Python. Do not merge the cancelled Rust task over this backend or the current frontend.
 
