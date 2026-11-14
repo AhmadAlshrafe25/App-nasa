@@ -31,7 +31,13 @@ Astro belongs in a floating button near the lower-right side of the dashboard, n
 
 **Why:** The user explicitly corrected its placement and asked for a side button down on the dashboard rather than a new tab.
 
-**How to apply:** Keep the main navigation focused on Readings, Alerts, and Log. Open the existing Astro dialog from the floating button and keep it above the mobile navigation.
+**How to apply:** Open the existing Astro dialog from the floating button and keep it above the mobile navigation.
+
+Muscle and bone belong on their own main navigation page, not inside Readings.
+
+**Why:** The user clarified that “another tab” meant a separate main navigation destination, not just tabs within the Readings card.
+
+**How to apply:** Keep the entire muscle and bone impact section off the Readings page, accessible through its own navigation item on desktop and mobile.
 
 Daily logs use automatically determined Earth Day and Hour, with the entry taken from the astronaut’s voice. Only crew mood and stress are manual fields; the archive belongs below them.
 

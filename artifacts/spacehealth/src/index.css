@@ -866,7 +866,7 @@ body { font-size:20px; }
 @media (max-width:767px) {
   .mobile-nav {
     display:grid;
-    grid-template-columns:repeat(3,minmax(0,1fr));
+    grid-template-columns:repeat(4,minmax(0,1fr));
     gap:2px;
     background:var(--space-navy);
     justify-content:stretch;

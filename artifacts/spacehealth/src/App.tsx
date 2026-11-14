@@ -46,6 +46,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 const navItems = [
   { href: '/', label: 'Readings', icon: RadiationIcon },
+  { href: '/muscle-bone', label: 'Muscle & bone', icon: Dumbbell },
   { href: '/alerts', label: 'Alerts', icon: Bell },
   { href: '/log', label: 'Log', icon: ClipboardList },
 ];
@@ -864,7 +865,6 @@ function Overview({
       <CompanionPanel />
       <SyncOverview narrow={isNarrow} />
     </section>
-    <MicrogravityVisualizer />
     <div className="readings-trend-heading">
       <strong>Readings + trends</strong>
       <div className="period-tabs" role="group" aria-label="Trend period">{([7, 14] as const).map(days => <button key={days} type="button" aria-pressed={period === days} className={period === days ? 'selected' : ''} onClick={() => setPeriod(days)} data-testid={`button-period-${days}`}>{days}d</button>)}</div>
@@ -984,6 +984,7 @@ function RoutedApp() {
     {reminder.notice && <section className="daily-reminder-notice" role="alert" aria-label="Daily log reminder" data-testid="notice-daily-reminder"><Bell size={19} /><div><strong>Time for your Astronaut’s Log</strong>{reminder.settings.voiceEnabled && reminder.voiceStatus && <p className="short-hint">{reminder.voiceStatus}</p>}<div className="reminder-notice-actions"><Link href="/log" className="btn small" data-testid="link-reminder-log">Open Astronaut’s Log</Link><button className="btn outline small" onClick={reminder.dismiss} data-testid="button-dismiss-reminder">Dismiss</button></div></div></section>}
     <Switch>
       <Route path="/"><Overview readings={readings} onChangeReadings={setReadings} /></Route>
+      <Route path="/muscle-bone"><div className="fade-in" data-testid="page-muscle-bone"><Heading title="Muscle & bone" /><MicrogravityVisualizer /></div></Route>
       <Route path="/signals"><Redirect to="/" replace /></Route>
       <Route path="/alerts"><Alerts readings={readings} /></Route>
       <Route path="/countermeasures"><Countermeasures /></Route>
