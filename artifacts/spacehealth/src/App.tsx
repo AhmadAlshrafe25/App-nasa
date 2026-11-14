@@ -3,7 +3,7 @@ import { Link, Redirect, Route, Router as WouterRouter, Switch, useLocation } fr
 import {
   Activity, AlertTriangle, ArrowDownRight, Bell, Check, CheckCircle2, ClipboardList,
   Droplets, Flame, Gauge, HeartPulse, Moon, Orbit, Radiation as RadiationIcon,
-  ShieldAlert, Siren, Thermometer, Watch, Waves, Wind,
+  ShieldAlert, Siren, Sun, Thermometer, Watch, Waves, Wind,
 } from 'lucide-react';
 import {
   analyzeRadiation, defaultRadiationDemo, getRadiationSamples,
@@ -20,6 +20,7 @@ import {
 } from '@/lib/vitals';
 import { mergeStoredValue } from '@/lib/persistent-state';
 import { getReadingTrend, primaryReadingKeys } from '@/lib/reading-trends';
+import { applyTheme, normalizeTheme, themeStorageKey, type DisplayTheme } from '@/lib/theme';
 
 const navItems = [
   { href: '/', label: 'Readings', icon: RadiationIcon },
@@ -220,7 +221,7 @@ function Sparkline({ values, label = 'Simulated trend', alert = false }: { value
     else segments.at(-1)!.push(`${x(index)},${y(value)}`);
   });
   const last = values.at(-1);
-  const color = alert ? '#a5620c' : 'var(--signal-color)';
+  const color = alert ? 'var(--trend-alert, #a5620c)' : 'var(--signal-color)';
   return <svg className="sparkline" viewBox="0 0 300 74" role="img" aria-label={label}>
     <title>{label}</title>
     <path d="M6 68H294" stroke="#d4e0f2" strokeWidth="1" />
@@ -239,6 +240,9 @@ function Layout({
   onChangeReadings: (next: BodyReadings) => void;
 }) {
   const [location] = useLocation();
+  const [storedTheme, setTheme] = usePersistentState<DisplayTheme>(themeStorageKey, 'space');
+  const theme = normalizeTheme(storedTheme);
+  useEffect(() => applyTheme(theme), [theme]);
   const evaluated = evaluateAllVitals(readings);
   return <div className={`app-shell ${evaluated.overall === 'red' ? 'shell-red-alert' : evaluated.overall === 'yellow' ? 'shell-yellow-caution' : ''}`}>
     <aside className="sidebar">
@@ -260,8 +264,23 @@ function Layout({
         </span>
         <span className="wrist-day">Day 142</span>
         <details className="demo-disclosure">
-          <summary data-testid="button-demo-info">Demo</summary>
-          <div className="demo-info" role="note">Sample data from simulated wrist &amp; body biometric sensors and dosimeter. Radiation flags show statistical changes, not exposure limits. Not medical advice. For urgent symptoms, contact mission medical staff.</div>
+          <summary data-testid="button-demo-info" title="Space / Sky theme" aria-label={`Display settings; current theme ${theme}`}>
+            {theme === 'space' ? <Orbit size={18} aria-hidden="true" /> : <Sun size={18} aria-hidden="true" />}
+            <span className="theme-summary">{theme === 'space' ? 'Space' : 'Sky'}</span>
+          </summary>
+          <div className="demo-info">
+            <strong>Display theme</strong>
+            <div className="theme-picker" role="group" aria-label="Display theme">
+              {(['space', 'sky'] as const).map(choice => <button key={choice} type="button" aria-pressed={theme === choice} data-testid={`button-theme-${choice}`} onClick={event => {
+                setTheme(choice);
+                event.currentTarget.closest('details')?.removeAttribute('open');
+              }}>
+                {choice === 'space' ? <Orbit size={17} aria-hidden="true" /> : <Sun size={17} aria-hidden="true" />}
+                {choice === 'space' ? 'Space' : 'Sky'}
+              </button>)}
+            </div>
+            <p className="theme-demo-note" role="note">Simulated readings; no connected sensors. Flags are sample comparisons, not safety limits or medical advice.</p>
+          </div>
         </details>
       </header>
       <main className="main-content">
