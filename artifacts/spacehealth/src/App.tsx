@@ -152,6 +152,7 @@ function CriticalDemoBanner({ readings, signal }: { readings: BodyReadings; sign
 
 function MicrogravityVisualizer() {
   const signal = useCountermeasureSignal();
+  const [selectedSystem, setSelectedSystem] = useState<'muscle' | 'bone'>('muscle');
   const [selectedDay, setSelectedDay] = useState(30);
   const exampleTrends = getExampleTrends('example');
   const lowWorkloadTrends = getExampleTrends('low');
@@ -186,6 +187,21 @@ function MicrogravityVisualizer() {
         <div className="body-legend"><span><i className="legend-muscle" /> Muscle</span><span><i className="legend-bone" /> Bone</span></div>
       </div>
       <div className="impact-readouts">
+        <div className="period-tabs" role="tablist" aria-label="Muscle and bone readings">
+          {(['muscle', 'bone'] as const).map(system => <button key={system} type="button"
+            role="tab" id={`impact-tab-${system}`} aria-selected={selectedSystem === system}
+            aria-controls="impact-readings-panel" tabIndex={selectedSystem === system ? 0 : -1}
+            className={selectedSystem === system ? 'selected' : ''}
+            onClick={() => setSelectedSystem(system)}
+            onKeyDown={event => {
+              if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+              event.preventDefault();
+              const next = event.key === 'Home' ? 'muscle' : event.key === 'End' ? 'bone' : selectedSystem === 'muscle' ? 'bone' : 'muscle';
+              setSelectedSystem(next);
+              document.getElementById(`impact-tab-${next}`)?.focus();
+            }}
+            data-testid={`tab-impact-${system}`}>{system === 'muscle' ? 'Muscle readings' : 'Bone readings'}</button>)}
+        </div>
         <p className="impact-disclaimer">Fictional demo comparison · indices relative to a fictional 100% baseline. Not measured tissue, not g/cm², and not a personal medical forecast.</p>
         <p className="impact-mitigation-note">In this fictional example, the regular countermeasure routine stays closer to baseline than the low-workload case. This is not evidence of a real workout effect.</p>
         <label className="impact-day-control" htmlFor="impact-day-range">
@@ -197,19 +213,19 @@ function MicrogravityVisualizer() {
             data-testid="input-impact-day" />
           <small id="impact-day-help">Choose one of the existing 5-day sample points.</small>
         </label>
-        <div className="impact-comparison" role="group" aria-label={`Fictional muscle and bone comparison at day ${selectedDay}`}>
+        <div className="impact-comparison" role="tabpanel" id="impact-readings-panel" aria-labelledby={`impact-tab-${selectedSystem}`}>
           {values.map((scenario, index) => <article className={`impact-scenario ${scenario.flagged ? 'low-workload-flagged' : ''}`} key={scenario.name}
             data-testid={`metric-demo-scenario-${index}`} tabIndex={0}>
             <h3>{scenario.name}{scenario.flagged && <span className="scenario-flag">Demo flag</span>}</h3>
             <div className="impact-pair">
-              <div className="impact-meter" role="group" aria-label={`${scenario.name} muscle index`} tabIndex={0} data-testid={`metric-demo-muscle-${index}`}>
+              {selectedSystem === 'muscle' && <div className="impact-meter" role="group" aria-label={`${scenario.name} muscle index`} tabIndex={0} data-testid={`metric-demo-muscle-${index}`}>
                 <div className="impact-meter-heading"><span>Muscle</span><strong>{scenario.muscle === null ? 'Unavailable' : `${scenario.muscle.toFixed(1)}%`}</strong></div>
                 {scenario.muscle !== null && <progress aria-label={`${scenario.name} fictional muscle index at day ${selectedDay}`} max="100" value={scenario.muscle} data-testid={`progress-demo-muscle-${index}`} />}
-              </div>
-              <div className="impact-meter bone-meter" role="group" aria-label={`${scenario.name} bone index`} tabIndex={0} data-testid={`metric-demo-bone-${index}`}>
+              </div>}
+              {selectedSystem === 'bone' && <div className="impact-meter bone-meter" role="group" aria-label={`${scenario.name} bone index`} tabIndex={0} data-testid={`metric-demo-bone-${index}`}>
                 <div className="impact-meter-heading"><span>Bone</span><strong>{scenario.bone === null ? 'Unavailable' : `${scenario.bone.toFixed(1)}%`}</strong></div>
                 {scenario.bone !== null && <progress aria-label={`${scenario.name} fictional bone index at day ${selectedDay}`} max="100" value={scenario.bone} data-testid={`progress-demo-bone-${index}`} />}
-              </div>
+              </div>}
             </div>
           </article>)}
         </div>

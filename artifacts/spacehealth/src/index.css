@@ -716,6 +716,7 @@ body { font-size:20px; }
 .compact-reading .metric-unit { font-size:15px; }
 .vital-zone-pill { font-size:14px; }
 .period-tabs button { font-size:17px; }
+#impact-readings-panel .impact-pair { grid-template-columns:minmax(0,1fr); }
 .btn { font-size:18px; }
 .choice { font-size:17px; }
 .form-label { font-size:19px; }
