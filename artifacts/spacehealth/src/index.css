@@ -510,7 +510,19 @@ summary:focus-visible { outline:3px solid #2563eb;outline-offset:2px; }
 .technical-rule { margin:12px 0; }
 .technical-rule > summary { font-size:13px;color:var(--supporting-ink); }
 .metric-value, .signal-large { overflow-wrap:anywhere; }
+.metric-adjust { margin-top:10px;display:flex;flex-direction:column;gap:8px; }
+.metric-adjust input[type=range] { width:100%;margin:0; }
+.metric-step-row { display:flex;gap:6px; }
+.metric-step-btn { flex:1;min-width:0;min-height:36px;padding:4px 8px;font-weight:800;font-size:16px; }
+.log-readings-grid { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:20px; }
+.log-reading-pill { padding:12px;border-radius:12px;background:var(--blue-soft);border:1px solid #c1d4ef;display:flex;flex-direction:column;gap:4px; }
+.log-reading-label { display:flex;align-items:center;gap:6px;color:var(--supporting-ink);font-size:12px;font-weight:700; }
+.log-reading-label svg { color:var(--blue);flex-shrink:0; }
+.log-reading-pill strong { color:var(--ink);font:800 20px/1.2 var(--app-font-serif); }
+.log-reading-pill strong span { font:600 12px var(--app-font-sans);color:var(--supporting-ink); }
 @media (max-width:480px) {
+  .log-readings-grid { grid-template-columns:1fr;gap:8px; }
+  .log-reading-pill { flex-direction:row;align-items:center;justify-content:space-between;padding:10px 12px; }
   .radiation-panel { padding:10px 12px;border-radius:12px; }
   .radiation-caption { font-size:13px;gap:6px; }
   .radiation-caption > span { font-size:11px; }

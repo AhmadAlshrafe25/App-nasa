@@ -13,16 +13,52 @@ import {
 } from '@/lib/radiation';
 import { describeRadiation } from '@/lib/radiation-copy';
 
-type CheckIn = { id: string; createdAt: string; mood: string; stress: number; sleep: string; note: string };
+type CheckIn = {
+  id: string;
+  createdAt: string;
+  mood: string;
+  stress: number;
+  sleep: string;
+  heartRate?: number;
+  activity?: number;
+  note: string;
+};
+type BodyReadings = {
+  heartRate: number;
+  activity: number;
+  sleep: number;
+  oxygen: number;
+  water: number;
+};
 type ChatMessage = { id: string; role: 'assistant' | 'user'; text: string; at: string };
 
 const navItems = [
-  { href: '/', label: 'Radiation', icon: RadiationIcon },
+  { href: '/', label: 'Readings', icon: RadiationIcon },
   { href: '/signals', label: 'Trends', icon: Activity },
   { href: '/alerts', label: 'Alerts', icon: Bell },
-  { href: '/wellbeing', label: 'Check-in', icon: Heart },
+  { href: '/wellbeing', label: 'Log', icon: Heart },
   { href: '/companion', label: 'Chat', icon: MessageCircle },
 ];
+const defaultBodyReadings: BodyReadings = {
+  heartRate: 64,
+  activity: 90,
+  sleep: 7.4,
+  oxygen: 98,
+  water: 1.6,
+};
+function normalizeBodyReadings(raw: unknown): BodyReadings {
+  if (!raw || typeof raw !== 'object') return defaultBodyReadings;
+  const r = raw as Partial<BodyReadings>;
+  const num = (val: unknown, fallback: number, min: number, max: number) =>
+    typeof val === 'number' && Number.isFinite(val) ? Math.min(max, Math.max(min, val)) : fallback;
+  return {
+    heartRate: Math.round(num(r.heartRate, defaultBodyReadings.heartRate, 30, 220)),
+    activity: Math.round(num(r.activity, defaultBodyReadings.activity, 0, 600)),
+    sleep: Math.round(num(r.sleep, defaultBodyReadings.sleep, 0, 24) * 10) / 10,
+    oxygen: Math.round(num(r.oxygen, defaultBodyReadings.oxygen, 70, 100)),
+    water: Math.round(num(r.water, defaultBodyReadings.water, 0, 10) * 10) / 10,
+  };
+}
 const telemetry = {
   pulse: [61, 63, 62, 64, 60, 62, 65, 63, 64, 61, 63, 62, 66, 64],
   oxygen: [98, 97, 98, 98, 97, 98, 99, 98, 97, 98, 98, 97, 98, 98],
@@ -39,6 +75,7 @@ const storageKeys = {
   checkins: 'spacehealth-checkins-v1',
   reviewed: 'spacehealth-alert-reviewed-v1',
   messages: 'spacehealth-companion-messages-v1',
+  readings: 'spacehealth-readings-v1',
 };
 function readStored<T>(key: string, fallback: T): T {
   try {
@@ -96,10 +133,46 @@ function Layout({ children }: { children: ReactNode }) {
 function Heading({ title, right }: { title: string; right?: ReactNode }) {
   return <div className="page-heading fade-in"><h1>{title}</h1>{right}</div>;
 }
-function MetricCard({ icon: Icon, label, value, unit }: { icon: typeof HeartPulse; label: string; value: string; unit: string }) {
-  return <article className="panel metric-card" data-testid={`metric-${label.toLowerCase().replaceAll(' ', '-')}`}>
+type MetricRangeControl = {
+  min: number;
+  max: number;
+  step: number;
+  numericValue: number;
+  onChange: (next: number) => void;
+};
+function MetricCard({ icon: Icon, label, value, unit, control }: { icon: typeof HeartPulse; label: string; value: string; unit: string; control?: MetricRangeControl }) {
+  const slug = label.toLowerCase().replaceAll(' ', '-');
+  return <article className="panel metric-card" data-testid={`metric-${slug}`}>
     <div className="metric-top"><span>{label}</span><span className="metric-icon"><Icon /></span></div>
     <div className="metric-value">{value} <span className="metric-unit">{unit}</span></div>
+    {control && <div className="metric-adjust" aria-label={`Adjust ${label}`}>
+      <input
+        type="range"
+        min={control.min}
+        max={control.max}
+        step={control.step}
+        value={control.numericValue}
+        onChange={e => control.onChange(Number(e.target.value))}
+        aria-label={`${label} reading`}
+        data-testid={`input-reading-${slug}`}
+      />
+      <div className="metric-step-row">
+        <button
+          type="button"
+          className="choice metric-step-btn"
+          onClick={() => control.onChange(Math.max(control.min, Number((control.numericValue - control.step).toFixed(1))))}
+          aria-label={`Decrease ${label}`}
+          data-testid={`button-decrease-${slug}`}
+        >−</button>
+        <button
+          type="button"
+          className="choice metric-step-btn"
+          onClick={() => control.onChange(Math.min(control.max, Number((control.numericValue + control.step).toFixed(1))))}
+          aria-label={`Increase ${label}`}
+          data-testid={`button-increase-${slug}`}
+        >+</button>
+      </div>
+    </div>}
   </article>;
 }
 function RadiationSummary({ analysis, acknowledged }: { analysis: RadiationAnalysis; acknowledged: boolean }) {
@@ -129,36 +202,77 @@ function ReadingsExplained({ analysis }: { analysis: RadiationAnalysis }) {
 function Overview() {
   const [reviewed] = usePersistentState(storageKeys.reviewed, false);
   const [savedDemo] = usePersistentState<RadiationDemo>(radiationStorageKey, defaultRadiationDemo);
+  const [savedReadings, setReadings] = usePersistentState<BodyReadings>(storageKeys.readings, defaultBodyReadings);
+  const readings = normalizeBodyReadings(savedReadings);
   const demo = normalizeRadiationDemo(savedDemo);
   const analysis = analyzeRadiation(getRadiationSamples(demo.scenario));
   const pendingCount = Number(!reviewed) + Number(analysis.status !== 'baseline' && !demo.acknowledged);
   return <div className="fade-in">
-    <Heading title="Radiation" right={<Link href="/alerts" className={`wrist-alert ${pendingCount === 0 ? 'is-reviewed' : ''}`} data-testid="link-alert-status"><Bell size={15} />{pendingCount ? `${pendingCount} new` : 'Seen'}</Link>} />
+    <Heading title="Readings" right={<Link href="/alerts" className={`wrist-alert ${pendingCount === 0 ? 'is-reviewed' : ''}`} data-testid="link-alert-status"><Bell size={15} />{pendingCount ? `${pendingCount} new` : 'Seen'}</Link>} />
     <Link href="/alerts" className="radiation-open" aria-label="View radiation anomaly details" data-testid="link-radiation-details"><RadiationSummary analysis={analysis} acknowledged={demo.acknowledged} /></Link>
     <ReadingsExplained analysis={analysis} />
-    <details className="secondary-vitals">
+    <details className="secondary-vitals" open>
       <summary data-testid="button-body-vitals">Body vitals</summary>
       <div className="grid metrics-grid">
-      <MetricCard icon={HeartPulse} label="Pulse" value="64" unit="beats/min" />
-      <MetricCard icon={Waves} label="Oxygen" value="98" unit="%" />
-      <MetricCard icon={Moon} label="Sleep" value="7.4" unit="hours" />
-      <MetricCard icon={Droplets} label="Water" value="1.6" unit="litres" />
+      <MetricCard
+        icon={HeartPulse}
+        label="Heart rate"
+        value={String(readings.heartRate)}
+        unit="beats/min"
+        control={{
+          min: 40,
+          max: 180,
+          step: 1,
+          numericValue: readings.heartRate,
+          onChange: heartRate => setReadings({ ...readings, heartRate }),
+        }}
+      />
+      <MetricCard
+        icon={Activity}
+        label="Activity"
+        value={String(readings.activity)}
+        unit="min"
+        control={{
+          min: 0,
+          max: 240,
+          step: 5,
+          numericValue: readings.activity,
+          onChange: activity => setReadings({ ...readings, activity }),
+        }}
+      />
+      <MetricCard
+        icon={Moon}
+        label="Sleep"
+        value={readings.sleep.toFixed(1)}
+        unit="hours"
+        control={{
+          min: 0,
+          max: 14,
+          step: 0.1,
+          numericValue: readings.sleep,
+          onChange: sleep => setReadings({ ...readings, sleep }),
+        }}
+      />
+      <MetricCard icon={Waves} label="Oxygen" value={String(readings.oxygen)} unit="%" />
+      <MetricCard icon={Droplets} label="Water" value={readings.water.toFixed(1)} unit="litres" />
       </div>
     </details>
   </div>;
 }
-const signalCards = [
-  { title: 'Pulse', value: '64', unit: 'beats/min', data: telemetry.pulse, icon: HeartPulse },
-  { title: 'Oxygen', value: '98', unit: '%', data: telemetry.oxygen, icon: Waves },
-  { title: 'Sleep', value: '7.4', unit: 'hours', data: telemetry.sleep, icon: Moon },
-  { title: 'Stress', value: '29', unit: '/100', data: telemetry.stress, icon: Wind },
-];
 function Signals() {
   const [period, setPeriod] = useState('14 days');
+  const [savedReadings] = usePersistentState<BodyReadings>(storageKeys.readings, defaultBodyReadings);
+  const readings = normalizeBodyReadings(savedReadings);
+  const cards = [
+    { title: 'Pulse', value: String(readings.heartRate), unit: 'beats/min', data: [...telemetry.pulse.slice(0, -1), readings.heartRate], icon: HeartPulse },
+    { title: 'Oxygen', value: String(readings.oxygen), unit: '%', data: telemetry.oxygen, icon: Waves },
+    { title: 'Sleep', value: readings.sleep.toFixed(1), unit: 'hours', data: [...telemetry.sleep.slice(0, -1), readings.sleep], icon: Moon },
+    { title: 'Stress', value: '29', unit: '/100', data: telemetry.stress, icon: Wind },
+  ];
   return <div className="fade-in">
     <Heading title="Trends" right={<div className="period-tabs" aria-label="Trend period">{['7 days', '14 days'].map(x => <button key={x} className={period === x ? 'selected' : ''} onClick={() => setPeriod(x)} data-testid={`button-period-${x.split(' ')[0]}`}>{x.split(' ')[0]}d</button>)}</div>} />
     <div className="grid signal-grid">
-      {signalCards.map(({ title, value, unit, data, icon: Icon }) => <article className="panel signal-card" key={title} data-testid={`signal-card-${title.toLowerCase().replaceAll(' ', '-')}`}>
+      {cards.map(({ title, value, unit, data, icon: Icon }) => <article className="panel signal-card" key={title} data-testid={`signal-card-${title.toLowerCase().replaceAll(' ', '-')}`}>
         <div className="signal-head"><div><div className="signal-name">{title}</div><div className="signal-large">{value} <span>{unit}</span></div></div><span className="metric-icon"><Icon /></span></div>
         <Sparkline values={data.slice(-parseInt(period))} />
         <div className="chart-labels"><span>{period}</span><span>Now</span></div>
@@ -226,36 +340,62 @@ function Alerts() {
 }
 function Wellbeing() {
   const [entries, setEntries] = usePersistentState<CheckIn[]>(storageKeys.checkins, syntheticCheckins);
+  const [savedReadings] = usePersistentState<BodyReadings>(storageKeys.readings, defaultBodyReadings);
+  const readings = normalizeBodyReadings(savedReadings);
   const [mood, setMood] = useState('');
   const [stress, setStress] = useState(4);
-  const [sleep, setSleep] = useState('');
   const [note, setNote] = useState('');
   const [saved, setSaved] = useState<CheckIn | null>(null);
   const save = () => {
-    if (!mood || !sleep) return;
-    const entry: CheckIn = { id: `${Date.now()}`, createdAt: new Date().toISOString(), mood, stress, sleep, note: note.trim() };
+    if (!mood) return;
+    const entry: CheckIn = {
+      id: `${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      mood,
+      stress,
+      sleep: `${readings.sleep.toFixed(1)} hrs`,
+      heartRate: readings.heartRate,
+      activity: readings.activity,
+      note: note.trim(),
+    };
     setEntries([entry, ...entries]);
     setSaved(entry);
-    setMood(''); setStress(4); setSleep(''); setNote('');
+    setMood(''); setStress(4); setNote('');
   };
   return <div className="fade-in">
-    <Heading title="Check-in" />
+    <Heading title="Log" />
     <div className="grid overview-bottom" style={{ marginTop: 0 }}>
       <section className="panel form-panel" data-testid="form-wellbeing">
+        <div className="section-head" style={{ margin: '0 0 10px' }}>
+          <span className="form-label" style={{ marginBottom: 0 }}>From Readings</span>
+          <Link href="/" className="section-link" data-testid="link-edit-readings">Adjust in Readings</Link>
+        </div>
+        <div className="log-readings-grid" data-testid="summary-pulled-readings">
+          <div className="log-reading-pill" data-testid="log-reading-heart-rate">
+            <span className="log-reading-label"><HeartPulse size={14} /> Heart rate</span>
+            <strong>{readings.heartRate} <span>bpm</span></strong>
+          </div>
+          <div className="log-reading-pill" data-testid="log-reading-activity">
+            <span className="log-reading-label"><Activity size={14} /> Activity</span>
+            <strong>{readings.activity} <span>min</span></strong>
+          </div>
+          <div className="log-reading-pill" data-testid="log-reading-sleep">
+            <span className="log-reading-label"><Moon size={14} /> Sleep</span>
+            <strong>{readings.sleep.toFixed(1)} <span>hrs</span></strong>
+          </div>
+        </div>
         <label className="form-label">Mood</label>
         <div className="choice-row" role="group" aria-label="Choose a mood">{['Low', 'Tense', 'Okay', 'Good', 'Bright'].map(m => <button type="button" className={`choice ${mood === m ? 'active' : ''}`} onClick={() => setMood(m)} aria-pressed={mood === m} key={m} data-testid={`button-mood-${m.toLowerCase()}`}>{m}</button>)}</div>
         <label className="form-label" htmlFor="stress-range">Stress <span className="short-hint">1 low · 10 high</span></label>
         <div className="range-row"><span style={{ color: 'var(--supporting-ink)', fontSize: 13 }}>1</span><input id="stress-range" aria-label="Stress level from one to ten" type="range" min="1" max="10" value={stress} onChange={e => setStress(Number(e.target.value))} data-testid="input-stress-level" /><span style={{ color: 'var(--supporting-ink)', fontSize: 13 }}>10</span><span className="range-value" data-testid="value-stress-level">{stress}/10</span></div>
-        <label className="form-label">Sleep</label>
-        <div className="choice-row" role="group" aria-label="Choose sleep quality">{['Rough', 'Restless', 'Mixed', 'Restful'].map(s => <button type="button" className={`choice ${sleep === s ? 'active' : ''}`} onClick={() => setSleep(s)} aria-pressed={sleep === s} key={s} data-testid={`button-sleep-${s.toLowerCase()}`}>{s}</button>)}</div>
         <label className="form-label" htmlFor="wellbeing-note">Note <span className="short-hint">optional</span></label>
         <textarea id="wellbeing-note" className="text-area" maxLength={500} placeholder="Add note…" value={note} onChange={e => setNote(e.target.value)} data-testid="input-wellbeing-note" />
-        <div className="checkin-actions"><span className="short-hint">On-device only</span><button className="btn" onClick={save} disabled={!mood || !sleep} data-testid="button-save-checkin"><Check size={16} /> Save</button></div>
+        <div className="checkin-actions"><span className="short-hint">On-device only</span><button className="btn" onClick={save} disabled={!mood} data-testid="button-save-checkin"><Check size={16} /> Save</button></div>
         {saved && <div className="saved-status" role="status" data-testid="reflection-latest"><CheckCircle2 size={16} /> Saved</div>}
       </section>
       <section className="panel panel-pad" data-testid="section-checkin-history"><div className="section-head" style={{ margin: '0 0 15px' }}><h2 className="section-title">History</h2><span className="score-label">{entries.length}</span></div>
-        {entries.length === 0 ? <div className="empty-state" data-testid="empty-checkin-history">No check-ins</div> :
-          <div className="history-list">{entries.map(entry => <article className="history-item" key={entry.id} data-testid={`history-checkin-${entry.id}`}><div><div className="history-date">{new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(entry.createdAt))}</div><div className="history-summary">{entry.mood} · {entry.sleep}</div>{entry.note && <div className="history-note">{entry.note}</div>}</div><div className="history-score">{entry.stress}/10</div></article>)}</div>}
+        {entries.length === 0 ? <div className="empty-state" data-testid="empty-checkin-history">No logs yet</div> :
+          <div className="history-list">{entries.map(entry => <article className="history-item" key={entry.id} data-testid={`history-checkin-${entry.id}`}><div><div className="history-date">{new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(entry.createdAt))}</div><div className="history-summary">{entry.mood} · {entry.heartRate !== undefined ? `${entry.heartRate} bpm · ` : ''}{entry.activity !== undefined ? `${entry.activity} min · ` : ''}{entry.sleep}</div>{entry.note && <div className="history-note">{entry.note}</div>}</div><div className="history-score">{entry.stress}/10</div></article>)}</div>}
       </section>
     </div>
   </div>;
