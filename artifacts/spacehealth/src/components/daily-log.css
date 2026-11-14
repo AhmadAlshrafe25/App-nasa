@@ -1,0 +1,60 @@
+.dl-box { display:grid; gap:14px; padding:16px; border:1px solid #62F5E255; background:#0E1820; color:#E5F2EF; }
+.dl-box * { border-radius:0; }
+.dl-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 12px; }
+.dl-head h1 { margin:0; font-size:28px; }
+.dl-today { font-size:14px; font-weight:700; color:#FACC15; }
+.dl-today.is-done { color:#4ADE80; }
+.dl-clock { margin-left:auto; font-size:14px; color:#9FB3AE; font-variant-numeric:tabular-nums; }
+.dl-notice { display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; padding:8px 10px; border-left:4px solid #FACC15; background:#FACC151A; }
+.dl-notice svg { color:#FACC15; }
+.dl-notice .dl-btn { margin-left:auto; }
+.dl-form { display:grid; gap:12px; }
+.dl-btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:44px; padding:6px 14px; font:inherit; font-size:16px; font-weight:700;
+  background:#62F5E2; color:#071014; border:1px solid #62F5E2; cursor:pointer; }
+.dl-btn:disabled { opacity:.45; cursor:not-allowed; }
+.dl-btn.ghost { background:transparent; color:#62F5E2; border-color:#62F5E255; font-weight:400; }
+.dl-btn:focus-visible, .dl-box summary:focus-visible { outline:3px solid #62F5E2; outline-offset:2px; }
+.dl-big { min-height:60px; font-size:20px; padding:8px 22px; }
+.dl-record { display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; }
+.dl-record > .dl-big { min-width:180px; }
+.dl-big.is-live { background:#F87171; border-color:#F87171; color:#071014; }
+.dl-rec { display:inline-flex; align-items:center; gap:8px; font-size:18px; font-weight:700; color:#F87171; font-variant-numeric:tabular-nums; }
+.dl-rec-dot { width:12px; height:12px; background:#F87171; animation:dl-blink 1s steps(2) infinite; }
+@keyframes dl-blink { 50% { opacity:.2; } }
+.dl-clip { display:flex; flex-wrap:wrap; align-items:center; gap:8px; flex:1; min-width:0; }
+.dl-clip audio { flex:1; min-width:200px; max-width:100%; }
+.dl-hint { margin:0; font-size:14px; color:#9FB3AE; }
+.dl-transcript { margin:0; padding:8px 10px; border-left:3px solid #62F5E255; color:#E5F2EF; font-size:15px; }
+.dl-row { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,2fr); gap:12px 18px; padding-top:12px; border-top:1px solid #2A4A50; }
+.dl-field { display:grid; gap:6px; font-size:16px; color:#9FB3AE; }
+.dl-field > span strong { color:#62F5E2; font-size:20px; margin-left:4px; }
+.dl-field .log-input { min-height:44px; font-size:17px; }
+.dl-stress input[type=range] { width:100%; min-height:44px; accent-color:#62F5E2; }
+.dl-save { width:100%; }
+.dl-saved { display:flex; align-items:center; gap:6px; margin:0; color:#4ADE80; font-weight:700; }
+.dl-fold { border-top:1px solid #2A4A50; }
+.dl-fold > summary, .dl-foot > summary { display:flex; align-items:center; gap:8px; min-height:44px; cursor:pointer; color:#E5F2EF; font-size:16px; }
+.dl-fold > summary > span { margin-left:auto; color:#9FB3AE; }
+.dl-fold-body { display:grid; gap:10px; padding:4px 0 10px; }
+.dl-inline { display:flex; flex-wrap:wrap; gap:8px; }
+.dl-list { display:grid; }
+.dl-entry { border-bottom:1px solid #2A4A50; }
+.dl-entry:last-child { border-bottom:0; }
+.dl-entry > summary { display:flex; flex-wrap:wrap; gap:2px 10px; align-items:baseline; min-height:44px; padding:8px 0; cursor:pointer; }
+.dl-entry > summary span { font-size:14px; color:#9FB3AE; }
+.dl-entry audio { width:100%; margin:4px 0; }
+.dl-entry > .dl-hint { padding-bottom:8px; }
+.dl-foot { font-size:13px; color:#9FB3AE; }
+.dl-foot > summary { min-height:44px; font-size:13px; color:#9FB3AE; }
+.dl-fold > summary::after, .dl-foot > summary::after {
+  content:'›'; font-size:22px; line-height:1; color:#62F5E2; flex:none;
+}
+.dl-fold[open] > summary::after, .dl-foot[open] > summary::after { transform:rotate(90deg); }
+.dl-foot p { margin:0 0 4px; }
+@media (max-width:640px) {
+  .dl-box { padding:12px; }
+  .dl-row { grid-template-columns:1fr; }
+  .dl-record > .dl-big { flex:1; }
+  .dl-clock { margin-left:0; flex-basis:100%; }
+}
+@media (prefers-reduced-motion:reduce) { .dl-rec-dot { animation:none; } }

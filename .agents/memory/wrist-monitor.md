@@ -87,6 +87,12 @@ Daily logs use automatically determined Earth Day and Hour, with the entry taken
 
 **How to apply:** Stamp the actual recording time, keep the real audio as the entry when local transcription is unavailable, and do not restore editable dates, typed log entries, or extra biometric inputs without approval.
 
+The daily log should be one compact box with recording, mood, stress, reminders, and a compact archive below the entry controls.
+
+**Why:** The user explicitly asked to combine the separate boxes, remove extra text, and highlight the important actions so astronauts can use it easily.
+
+**How to apply:** Emphasize Record/Stop and Save, keep labels short, and collapse secondary reminder/storage explanations rather than removing essential warnings or recording states.
+
 The shared mission motto must use the exact requested spelling “Ad astra per asphera”; retain the SpaceHealth product name and clinical/navigation labels.
 
 **Why:** The user explicitly requested this spelling and shared branding rather than replacing status labels or repeating the motto in cards.
