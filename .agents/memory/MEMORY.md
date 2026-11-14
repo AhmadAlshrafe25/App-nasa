@@ -1,1 +1,2 @@
 - [Wrist monitor target](wrist-monitor.md) — SpaceHealth targets an astronaut’s wrist display and accompanying team; keep screens glanceable and free of decorative prose.
+- [Radiation monitoring scope](radiation-monitoring.md) — Radiation anomalies are the priority; distinguish statistical deviations from validated exposure limits and live hardware readings.

@@ -474,4 +474,64 @@ summary:focus-visible { outline:3px solid #2563eb;outline-offset:2px; }
   .chat-aside { padding:8px; }
   .prompt-chip { font-size:13px; }
 }
+/* Radiation monitoring stays first; physiological readings remain expandable. */
+.radiation-open { display:block;border-radius:14px; }
+.radiation-panel { padding:18px 20px;background:#eaf2ff;border-color:#95b8ed; }
+.radiation-caption { display:flex;align-items:center;gap:8px;color:#173f88;font-size:14px; }
+.radiation-caption > span { margin-left:auto;color:var(--supporting-ink);font-size:12px; }
+.radiation-value { font:800 42px/1.25 var(--app-font-serif);color:var(--ink);margin:8px 0;letter-spacing:-.03em; }
+.radiation-value > span { font:600 17px var(--app-font-sans);letter-spacing:0; }
+.radiation-state { display:flex;align-items:center;gap:7px;font-size:14px;color:#173f88; }
+.radiation-state > svg { flex-shrink:0; }
+.radiation-flagged { background:#fff4df;border-color:#d5a04f; }
+.radiation-flagged .radiation-caption, .radiation-flagged .radiation-state { color:#744206; }
+.radiation-seen { margin-left:auto;color:#604b30;font-size:11px;font-weight:700; }
+.radiation-facts { grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px; }
+.radiation-facts .metric-value { font-size:28px; }
+.radiation-facts .metric-card { min-height:90px; }
+.secondary-vitals { margin-top:10px; }
+.secondary-vitals > summary { min-height:44px;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;font-weight:700;color:#174195; }
+.secondary-vitals > summary::before { content:'+';font-size:20px; }
+.secondary-vitals[open] > summary::before { content:'−'; }
+.radiation-review { display:flex;flex-direction:column;gap:6px;margin-top:10px; }
+.radiation-review .btn { width:100%; }
+.radiation-rule, .radiation-demo { border:1px solid #c4d5ee; }
+.radiation-scenarios { display:flex;flex-wrap:wrap;gap:6px;padding:4px 0 10px; }
+.radiation-scenarios .choice { flex:1;min-width:0;white-space:nowrap; }
+.body-alerts { border-top:1px solid #c4d5ee; }
+.radiation-value > span { font-size:.75em; }
+.radiation-value.reading-unknown { font-size:30px; }
+.radiation-comparison { color:var(--supporting-ink);font-size:15px;line-height:1.4;margin-bottom:8px; }
+.radiation-flagged .radiation-comparison { color:#604b30; }
+.radiation-explained { border:1px solid #c4d5ee; }
+.reading-definitions { margin:8px 0 12px;font-size:14px; }
+.reading-definitions dt { color:var(--ink);font-weight:700;margin-top:12px; }
+.reading-definitions dd { color:var(--supporting-ink);margin:2px 0 0;overflow-wrap:anywhere; }
+.technical-rule { margin:12px 0; }
+.technical-rule > summary { font-size:13px;color:var(--supporting-ink); }
+.metric-value, .signal-large { overflow-wrap:anywhere; }
+@media (max-width:480px) {
+  .radiation-panel { padding:10px 12px;border-radius:12px; }
+  .radiation-caption { font-size:13px;gap:6px; }
+  .radiation-caption > span { font-size:11px; }
+  .radiation-value { font-size:34px;margin:3px 0; }
+  .radiation-value > span { font-size:.75em; }
+  .radiation-value.reading-unknown { font-size:27px; }
+  .radiation-comparison { font-size:13px;margin-bottom:6px; }
+  .radiation-state { font-size:13px;gap:5px;line-height:1.4; }
+  .radiation-facts { gap:8px;margin-top:8px; }
+  .radiation-facts .metric-card { min-height:72px;padding:8px 10px; }
+  .radiation-facts .metric-value { font-size:25px; }
+  .radiation-facts .metric-top { font-size:12px; }
+  .radiation-facts .metric-unit { font-size:11px; }
+  .radiation-facts .metric-icon { display:none; }
+  .secondary-vitals { margin-top:4px; }
+  .radiation-rule, .radiation-demo { margin-top:8px; }
+  .radiation-rule summary, .radiation-demo summary { font-size:13px; }
+  .radiation-rule p { font-size:13px; }
+  .radiation-explained { margin-top:8px; }
+  .radiation-explained p { font-size:13px; }
+  .radiation-scenarios { display:grid;grid-template-columns:1fr; }
+  .signal-large span, .metric-unit { display:inline-block; }
+}
 @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important; } }

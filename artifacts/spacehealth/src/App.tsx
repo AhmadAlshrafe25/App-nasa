@@ -3,15 +3,21 @@ import { Link, Route, Router as WouterRouter, Switch, useLocation } from 'wouter
 import {
   Activity, ArrowDownRight, ArrowUpRight, Bell, Check, CheckCircle2,
   Droplets, Heart, HeartPulse, MessageCircle,
-  Moon, Orbit, Send, ShieldAlert,
+  Moon, Orbit, Radiation as RadiationIcon, Send, ShieldAlert,
   Waves, Wind, X,
 } from 'lucide-react';
+import {
+  analyzeRadiation, defaultRadiationDemo, getRadiationSamples,
+  normalizeRadiationDemo, radiationStorageKey,
+  type RadiationAnalysis, type RadiationDemo, type RadiationScenario,
+} from '@/lib/radiation';
+import { describeRadiation } from '@/lib/radiation-copy';
 
 type CheckIn = { id: string; createdAt: string; mood: string; stress: number; sleep: string; note: string };
 type ChatMessage = { id: string; role: 'assistant' | 'user'; text: string; at: string };
 
 const navItems = [
-  { href: '/', label: 'Vitals', icon: Orbit },
+  { href: '/', label: 'Radiation', icon: RadiationIcon },
   { href: '/signals', label: 'Trends', icon: Activity },
   { href: '/alerts', label: 'Alerts', icon: Bell },
   { href: '/wellbeing', label: 'Check-in', icon: Heart },
@@ -77,7 +83,7 @@ function Layout({ children }: { children: ReactNode }) {
         <span className="wrist-day">Day 142</span>
         <details className="demo-disclosure">
           <summary data-testid="button-demo-info">Demo</summary>
-          <div className="demo-info" role="note">Sample data. No live sensors or team connection. Not medical advice. For urgent symptoms, contact mission medical staff.</div>
+          <div className="demo-info" role="note">Sample data. No live dosimeter, sensors, or team connection. Radiation flags show statistical changes, not exposure limits. Not medical advice. For urgent symptoms, contact mission medical staff.</div>
         </details>
       </header>
       <main className="main-content">{children}</main>
@@ -96,22 +102,55 @@ function MetricCard({ icon: Icon, label, value, unit }: { icon: typeof HeartPuls
     <div className="metric-value">{value} <span className="metric-unit">{unit}</span></div>
   </article>;
 }
+function RadiationSummary({ analysis, acknowledged }: { analysis: RadiationAnalysis; acknowledged: boolean }) {
+  const flagged = analysis.status !== 'baseline';
+  const description = describeRadiation(analysis);
+  return <section className={`panel radiation-panel ${flagged ? 'radiation-flagged' : ''}`} aria-label="Sample dosimeter" data-testid="card-radiation">
+    <div className="radiation-caption"><RadiationIcon size={18} /><strong>Radiation now</strong><span>Sample</span></div>
+    <div className={`radiation-value ${description.unknown ? 'reading-unknown' : ''}`} data-testid="value-radiation-rate">{description.value}<span>{description.unit}</span></div>
+    <div className="radiation-comparison" data-testid="text-radiation-comparison">{description.comparison}</div>
+    <div className="radiation-state" data-testid="status-radiation">{flagged && <ShieldAlert size={16} />}<strong>{description.status}</strong>{flagged && acknowledged && <span className="radiation-seen">Seen</span>}</div>
+  </section>;
+}
+function ReadingsExplained({ analysis }: { analysis: RadiationAnalysis }) {
+  const rate = (value: number | null) => value === null ? 'Unavailable' : `${value.toFixed(1)} microsieverts per hour`;
+  return <details className="rule-box radiation-explained">
+    <summary data-testid="button-readings-explained">Readings explained</summary>
+    <dl className="reading-definitions">
+      <dt>Right now</dt><dd data-testid="value-technical-rate">{rate(analysis.doseRate)}</dd>
+      <dt>Usual sample level</dt><dd>{rate(analysis.baseline)}</dd>
+      <dt>Total over this sample hour</dt><dd>{analysis.sampleDose === null ? 'Unavailable — missing readings' : `${analysis.sampleDose.toFixed(1)} microsieverts`}</dd>
+    </dl>
+    <p>A <strong>microsievert</strong> is a unit of radiation dose. <strong>Per hour</strong> means how quickly that dose adds up.</p>
+    <p>The large number compares now with earlier samples. For example, <strong>2.5×</strong> means two and a half times the earlier average.</p>
+    <p>Higher does not by itself mean unsafe. These sample readings are not a safety assessment.</p>
+  </details>;
+}
 function Overview() {
   const [reviewed] = usePersistentState(storageKeys.reviewed, false);
+  const [savedDemo] = usePersistentState<RadiationDemo>(radiationStorageKey, defaultRadiationDemo);
+  const demo = normalizeRadiationDemo(savedDemo);
+  const analysis = analyzeRadiation(getRadiationSamples(demo.scenario));
+  const pendingCount = Number(!reviewed) + Number(analysis.status !== 'baseline' && !demo.acknowledged);
   return <div className="fade-in">
-    <Heading title="Vitals" right={<Link href="/alerts" className={`wrist-alert ${reviewed ? 'is-reviewed' : ''}`} data-testid="link-alert-status"><Bell size={15} />{reviewed ? 'Reviewed' : '1 alert'}</Link>} />
-    <div className="grid metrics-grid">
-      <MetricCard icon={HeartPulse} label="Pulse" value="64" unit="bpm" />
+    <Heading title="Radiation" right={<Link href="/alerts" className={`wrist-alert ${pendingCount === 0 ? 'is-reviewed' : ''}`} data-testid="link-alert-status"><Bell size={15} />{pendingCount ? `${pendingCount} new` : 'Seen'}</Link>} />
+    <Link href="/alerts" className="radiation-open" aria-label="View radiation anomaly details" data-testid="link-radiation-details"><RadiationSummary analysis={analysis} acknowledged={demo.acknowledged} /></Link>
+    <ReadingsExplained analysis={analysis} />
+    <details className="secondary-vitals">
+      <summary data-testid="button-body-vitals">Body vitals</summary>
+      <div className="grid metrics-grid">
+      <MetricCard icon={HeartPulse} label="Pulse" value="64" unit="beats/min" />
       <MetricCard icon={Waves} label="Oxygen" value="98" unit="%" />
-      <MetricCard icon={Moon} label="Sleep" value="7.4" unit="h" />
-      <MetricCard icon={Droplets} label="Water" value="1.6" unit="L" />
-    </div>
+      <MetricCard icon={Moon} label="Sleep" value="7.4" unit="hours" />
+      <MetricCard icon={Droplets} label="Water" value="1.6" unit="litres" />
+      </div>
+    </details>
   </div>;
 }
 const signalCards = [
-  { title: 'Pulse', value: '64', unit: 'bpm', data: telemetry.pulse, icon: HeartPulse },
+  { title: 'Pulse', value: '64', unit: 'beats/min', data: telemetry.pulse, icon: HeartPulse },
   { title: 'Oxygen', value: '98', unit: '%', data: telemetry.oxygen, icon: Waves },
-  { title: 'Sleep', value: '7.4', unit: 'h', data: telemetry.sleep, icon: Moon },
+  { title: 'Sleep', value: '7.4', unit: 'hours', data: telemetry.sleep, icon: Moon },
   { title: 'Stress', value: '29', unit: '/100', data: telemetry.stress, icon: Wind },
 ];
 function Signals() {
@@ -129,16 +168,52 @@ function Signals() {
 }
 function Alerts() {
   const [reviewed, setReviewed] = usePersistentState(storageKeys.reviewed, false);
+  const [savedDemo, setDemo] = usePersistentState<RadiationDemo>(radiationStorageKey, defaultRadiationDemo);
+  const demo = normalizeRadiationDemo(savedDemo);
+  const samples = getRadiationSamples(demo.scenario);
+  const analysis = analyzeRadiation(samples);
+  const flagged = analysis.status !== 'baseline';
+  const scenarios: { value: RadiationScenario; label: string }[] = [
+    { value: 'baseline', label: 'Usual' },
+    { value: 'spike', label: 'Sudden rise' },
+    { value: 'signal-loss', label: 'Lost signal' },
+  ];
   return <div className="fade-in">
     <Heading title="Alerts" />
+    <RadiationSummary analysis={analysis} acknowledged={demo.acknowledged} />
+    {flagged && <div className="radiation-review">
+      <button className={`btn ${demo.acknowledged ? 'outline' : ''}`} onClick={() => setDemo({ ...demo, acknowledged: !demo.acknowledged })} data-testid="button-review-radiation">{demo.acknowledged ? <ArrowDownRight size={16} /> : <Check size={16} />}{demo.acknowledged ? 'Mark as not seen' : 'I’ve seen this'}</button>
+      {demo.acknowledged && <span className="short-hint" role="status">Marked seen. The reading has not changed.</span>}
+    </div>}
+    <details className="rule-box radiation-rule">
+      <summary data-testid="button-radiation-details">{flagged ? 'Why this alert?' : 'What this means'}</summary>
+      {analysis.status === 'spike' ? <p>The reading rose above its earlier pattern. This flags a change, not a confirmed unsafe exposure.</p> : analysis.status === 'baseline' ? <p>The reading is close to its earlier pattern. This does not confirm it is safe.</p> : <p>Readings are missing or incomplete. Unknown does not mean zero radiation.</p>}
+      <p>Marking an alert seen does not clear the condition.</p>
+      <details className="technical-rule"><summary data-testid="button-technical-rule">Technical rule</summary>
+      {analysis.trigger !== null && <p>Baseline {analysis.baseline!.toFixed(1)} µSv/h. Flag above {analysis.trigger.toFixed(1)} µSv/h. Not an exposure limit.</p>}
+      <p>Prior mean + the greater of 3 standard deviations, 25% of baseline, or 0.1 µSv/h. Dose uses trapezoidal integration over the sample hour.</p>
+      <table className="readings-table"><thead><tr><th>Minute</th><th>µSv/h</th></tr></thead><tbody>
+        {samples.slice(-3).map((sample) => <tr key={sample.minute}><td>{sample.minute}</td><td>{sample.doseRate === null ? 'No signal' : sample.doseRate.toFixed(1)}</td></tr>)}
+      </tbody></table>
+      </details>
+    </details>
+    <ReadingsExplained analysis={analysis} />
+    <details className="rule-box radiation-demo">
+      <summary data-testid="button-demo-scenarios">Try sample readings</summary>
+      <div className="radiation-scenarios" role="group" aria-label="Sample dosimeter scenarios">
+        {scenarios.map(({ value, label }) => <button key={value} className={`choice ${demo.scenario === value ? 'active' : ''}`} aria-pressed={demo.scenario === value} onClick={() => setDemo({ scenario: value, acknowledged: false })} data-testid={`button-radiation-${value}`}>{label}</button>)}
+      </div>
+    </details>
+    <details className="secondary-vitals body-alerts">
+    <summary data-testid="button-pulse-alert">Pulse · {reviewed ? 'seen' : '1 new'}</summary>
     <div className="panel alert-panel" data-testid="alert-anomaly">
-      {reviewed ? <div className="reviewed-box" data-testid="status-alert-reviewed"><CheckCircle2 size={22} /><strong>Reviewed</strong></div> : <div className="alert-callout"><span className="alert-symbol"><ShieldAlert size={18} /></span><div><h3>Pulse outside baseline</h3><p><strong>81 bpm</strong> · +9 above band</p></div></div>}
+      {reviewed ? <div className="reviewed-box" data-testid="status-alert-reviewed"><CheckCircle2 size={22} /><strong>Reviewed</strong></div> : <div className="alert-callout"><span className="alert-symbol"><ShieldAlert size={18} /></span><div><h3>Heartbeat above usual</h3><p><strong>81 beats/min</strong> · 9 above usual range</p></div></div>}
       <div className="alert-actions">
         {reviewed ? <button className="btn outline" onClick={() => setReviewed(false)} data-testid="button-unreview-alert"><ArrowDownRight size={16} /> Reopen</button> : <button className="btn" onClick={() => setReviewed(true)} data-testid="button-review-alert"><Check size={16} /> Mark reviewed</button>}
       </div>
       <details className="rule-box">
         <summary data-testid="button-alert-details">Details</summary>
-        <p>14-day baseline: <strong>58–72 bpm</strong>. Demo comparison, not a clinical threshold.</p>
+        <p>Usual sample range: <strong>58–72 beats per minute</strong> over 14 days. This is a comparison, not a safety limit.</p>
         <table className="readings-table"><thead><tr><th>Sample</th><th>Pulse</th><th>Status</th></tr></thead><tbody>
           <tr><td>Prior</td><td>64 bpm</td><td>In band</td></tr>
           <tr><td>Flagged</td><td className="reading-outlier">81 bpm</td><td className="reading-outlier">Review</td></tr>
@@ -146,6 +221,7 @@ function Alerts() {
         </tbody></table>
       </details>
     </div>
+    </details>
   </div>;
 }
 function Wellbeing() {
