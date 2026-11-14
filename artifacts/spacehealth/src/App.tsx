@@ -668,7 +668,7 @@ function Layout({
       </main>
       <footer className="mission-footer" data-testid="footer-mission-motto">
         <strong className="mission-motto" data-testid="mission-motto">Ad astra per asphera</strong>
-        <span>To the stars through adversity.</span>
+        <span>To the stars through hardship.</span>
       </footer>
     </div>
     <nav className="mobile-nav" aria-label="Mobile navigation">
