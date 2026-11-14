@@ -20,6 +20,9 @@ export function CabinReadingsPanel({ compact = false }: { compact?: boolean }) {
   const summary = !evaluated ? 'Unknown'
     : evaluated.redItems.length ? `${evaluated.redItems.length} alert`
     : evaluated.yellowItems.length ? `${evaluated.yellowItems.length} attention` : 'Normal';
+  const oxygenPartialPressure = readings
+    ? (readings.pressure * readings.oxygen / 100).toFixed(1)
+    : null;
 
   return <section className="panel cabin-panel" aria-labelledby="cabin-title" data-testid="panel-cabin">
     <header className="cabin-head">
@@ -60,9 +63,12 @@ export function CabinReadingsPanel({ compact = false }: { compact?: boolean }) {
         })}
       </div>
       <div className="cabin-foot">
-        <span className="short-hint">Sample bands, not approved flight limits.</span>
+        <span className="short-hint">Sample bands only · not flight limits.</span>
         <button type="button" className="btn small outline" onClick={reset} data-testid="button-cabin-reset"><RotateCcw size={15} />Reset sample values</button>
       </div>
+      {oxygenPartialPressure !== null && <p className="cabin-derived" data-testid="value-cabin-o2-partial">
+        O₂ partial pressure <strong>{oxygenPartialPressure} kPa</strong><span>Derived from sample oxygen and cabin pressure; not a flight limit.</span>
+      </p>}
     </>}
   </section>;
 }

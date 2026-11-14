@@ -15,6 +15,12 @@ Readings and trends belong on the same wrist-friendly screen, with a current val
 
 **How to apply:** Keep radiation first, avoid a separate Trends destination, preserve short trend-period controls, and hide secondary configuration behind touch-friendly details.
 
+The main voyage readings include crew health plus cabin atmosphere (oxygen, carbon dioxide, pressure, temperature, and humidity). This prototype's values are samples, not connected hardware.
+
+**Why:** The user asked for the other important readings in a space voyage, not radiation alone. Cabin atmosphere is distinct from the astronaut's blood oxygen and body temperature.
+
+**How to apply:** Keep both crew and cabin readings visible on the main page, distinguish cabin oxygen from blood oxygen, and never present sample thresholds as flight-qualified limits or live sensor values.
+
 The app's current scope excludes Chat and family/remote communication features; use a device-local daily health log with a daily spoken reminder instead.
 
 **Why:** The user explicitly asked to replace Check-in with a Log tab, add daily voice notifications, and remove Chat because their intended scenario has no communications.

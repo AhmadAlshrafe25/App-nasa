@@ -28,15 +28,17 @@ import { BodyMap } from '@/components/body-map';
 import { DailyLog } from '@/components/daily-log';
 import { AstroDemo } from '@/components/astro-demo';
 import { Countermeasures } from '@/components/countermeasures';
+import { CabinAlertBanner, CabinReadingsPanel } from '@/components/cabin-readings';
 import { EarthClock } from '@/components/earth-clock';
 import { useDailyReminder } from '@/hooks/use-daily-reminder';
 import {
   defaultBodyReadings, evaluateAllVitals, normalizeBodyReadings,
-  readingsStorageKey, VITAL_SPECS,
-  type BodyReadings, type EvaluatedVital,
+  readingsStorageKey, type BodyReadings, type EvaluatedVital,
 } from '@/lib/vitals';
 import { mergeStoredValue } from '@/lib/persistent-state';
 import { getReadingTrend, primaryReadingKeys } from '@/lib/reading-trends';
+import { useCabinReadings } from '@/hooks/use-cabin-readings';
+import { evaluateCabin } from '@/lib/cabin-readings';
 import { applyTheme, normalizeTheme, themeStorageKey, type DisplayTheme } from '@/lib/theme';
 import { normalizeCountermeasureState, countermeasureStorageKey, emptyCountermeasureState } from '@/lib/countermeasures';
 
@@ -305,6 +307,8 @@ const VITAL_ICONS: Record<keyof BodyReadings, typeof HeartPulse> = {
   respiration: Wind,
   temperature: Thermometer,
   systolicBP: Gauge,
+  diastolicBP: Gauge,
+  stress: Activity,
   hrv: Flame,
   sleep: Moon,
   activity: Activity,
@@ -329,6 +333,8 @@ function EmergencyMonitor({
         case 'respiration': next.respiration = item.value < 8 ? 9 : 23; break;
         case 'temperature': next.temperature = item.value < 35.5 ? 35.8 : 37.9; break;
         case 'systolicBP': next.systolicBP = item.value < 88 ? 91 : 140; break;
+        case 'diastolicBP': next.diastolicBP = item.value < 50 ? 55 : 95; break;
+        case 'stress': next.stress = 6; break;
         case 'hrv': next.hrv = 32; break;
         case 'sleep': next.sleep = 5.0; break;
         case 'activity': next.activity = item.value < 10 ? 20 : 195; break;
@@ -602,6 +608,7 @@ function Layout({
       </header>
       <main className="main-content">
         <CriticalDemoBanner readings={readings} signal={countermeasureSignal} />
+        <CabinAlertBanner />
         <EmergencyMonitor readings={readings} onChangeReadings={onChangeReadings} />
         {children}
       </main>
@@ -753,10 +760,15 @@ function Overview({
   const [period, setPeriod] = useState<7 | 14>(7);
   const isNarrow = useIsMobile();
   const evaluated = evaluateAllVitals(readings);
+  const cabin = useCabinReadings();
+  const cabinEvaluation = cabin.readings ? evaluateCabin(cabin.readings) : null;
   const pendingCount = Number(!reviewed)
     + Number(analysis.status !== 'baseline' && !demo.acknowledged)
     + evaluated.yellowItems.length
-    + evaluated.redItems.length;
+    + evaluated.redItems.length
+    + (cabinEvaluation
+      ? cabinEvaluation.yellowItems.length + cabinEvaluation.redItems.length
+      : Number(!cabin.readings));
 
   const triggerYellowPreset = () => {
     onChangeReadings({
@@ -780,26 +792,31 @@ function Overview({
     <Heading title="Readings" right={<Link href="/alerts" className={`wrist-alert ${pendingCount === 0 ? 'is-reviewed' : ''}`} data-testid="link-alert-status"><Bell size={15} />{pendingCount ? `${pendingCount} alerts` : 'No alerts'}</Link>} />
 
     <Link href="/alerts" className="radiation-open" aria-label="View radiation anomaly details" data-testid="link-radiation-details"><RadiationSummary analysis={analysis} acknowledged={demo.acknowledged} trend={samples} /></Link>
-    <section className="mission-context" aria-label="Mission overview" data-testid="section-mission-overview">
-      <div className="mission-context-heading"><Orbit size={15} aria-hidden="true" /><strong>Mission overview</strong><span>Day 142</span></div>
-      <CompanionPanel />
-      <SyncOverview narrow={isNarrow} />
-    </section>
+    <CabinReadingsPanel />
     <div className="readings-trend-heading">
       <strong>Readings + trends</strong>
       <div className="period-tabs" role="group" aria-label="Trend period">{([7, 14] as const).map(days => <button key={days} type="button" aria-pressed={period === days} className={period === days ? 'selected' : ''} onClick={() => setPeriod(days)} data-testid={`button-period-${days}`}>{days}d</button>)}</div>
     </div>
-    <div className="grid wrist-reading-grid">
-      {primaryReadingKeys.map(key => {
-        const item = evaluated.items.find(item => item.spec.key === key)!;
-        return <VitalSensorCard key={key} item={item} trend={getReadingTrend(key, item.value, period)} days={period} onChange={next => onChangeReadings({ ...readings, [key]: next })} />;
-      })}
-    </div>
-    <details className="secondary-vitals">
-      <summary data-testid="button-body-vitals">More readings · {VITAL_SPECS.length - primaryReadingKeys.length}</summary>
+    {([
+      { title: 'Vitals', keys: ['heartRate', 'oxygen', 'respiration', 'temperature', 'systolicBP', 'diastolicBP'] },
+      { title: 'Recovery', keys: ['hrv', 'sleep', 'stress'] },
+      { title: 'Daily', keys: ['activity', 'water'] },
+    ] as const).map(group => <section key={group.title} className="reading-group" aria-label={group.title}>
+      <strong className="reading-group-title">{group.title}</strong>
       <div className="grid wrist-reading-grid">
-        {evaluated.items.filter(item => !primaryReadingKeys.includes(item.spec.key)).map(item => <VitalSensorCard key={item.spec.key} item={item} onChange={next => onChangeReadings({ ...readings, [item.spec.key]: next })} />)}
+        {group.keys.map(key => {
+          const item = evaluated.items.find(item => item.spec.key === key);
+          if (!item) return null;
+          return <VitalSensorCard key={key} item={item}
+            trend={primaryReadingKeys.includes(key) ? getReadingTrend(key, item.value, period) : null}
+            days={period} onChange={next => onChangeReadings({ ...readings, [key]: next })} />;
+        })}
       </div>
+    </section>)}
+    <details className="mission-context mission-context-collapse" aria-label="Mission overview" data-testid="section-mission-overview">
+      <summary><Orbit size={15} aria-hidden="true" /><strong>Mission overview</strong><span>Day 142</span></summary>
+      <CompanionPanel />
+      <SyncOverview narrow={isNarrow} />
     </details>
     <Link href="/countermeasures" className="cm-entry-link" data-testid="link-countermeasures"><Dumbbell size={16} aria-hidden="true" />Workouts</Link>
     <ReadingsExplained analysis={analysis} />
@@ -843,6 +860,7 @@ function Alerts({ readings }: { readings: BodyReadings }) {
   ];
   return <div className="fade-in">
     <Heading title="Alerts" />
+    <CabinReadingsPanel />
     <RadiationSummary analysis={analysis} acknowledged={demo.acknowledged} />
     {flagged && <div className="radiation-review">
       <button className={`btn ${demo.acknowledged ? 'outline' : ''}`} onClick={() => setDemo({ ...demo, acknowledged: !demo.acknowledged })} data-testid="button-review-radiation">{demo.acknowledged ? <ArrowDownRight size={16} /> : <Check size={16} />}{demo.acknowledged ? 'Mark as not seen' : 'I’ve seen this'}</button>
