@@ -62,7 +62,7 @@ export function DailyLog({ reminder }: { reminder: DailyReminderControls }) {
         <h1>Daily voice log</h1>
         <span className="log-today">{hasLogForDay(entries, reminder.today) ? 'Logged today' : 'Awaiting entry'}</span>
       </div>
-      <p className="short-hint" style={{ color: '#dce8ff' }}>Day and time are set automatically from this device when recording starts.</p>
+      <p className="short-hint">Day and time are set automatically from this device when recording starts.</p>
     </div>
 
     {reminder.notice && <section className="panel reminder-banner" role="status">
@@ -87,7 +87,7 @@ export function DailyLog({ reminder }: { reminder: DailyReminderControls }) {
       </div>
       {voice.status && <p className="short-hint" role="status" data-testid="status-voice-log">{voice.status}</p>}
       {voice.capturedAt && voice.audio && <p className="short-hint" data-testid="text-recorded-timestamp">Recorded {localDay(voice.capturedAt)} at {earthHourLabel(voice.capturedAt)} · device local time</p>}
-      {voice.transcript && <div className="history-note" data-testid="text-voice-transcript"><strong>On-device transcript</strong><p>{voice.transcript}</p></div>}
+      {voice.transcript && <div className="history-note" data-testid="text-voice-transcript"><strong>On-device transcript</strong><p dir="auto">{voice.transcript}</p></div>}
     </section>
 
     <details className="panel reminder-settings">
@@ -136,7 +136,7 @@ export function DailyLog({ reminder }: { reminder: DailyReminderControls }) {
                 {entry.readingsSource === 'simulated' && <span>Legacy simulated sensor readings</span>}
               </summary>
               {entry.voiceAudioDataUrl && <audio controls src={entry.voiceAudioDataUrl} className="voice-audio-player" data-testid={`audio-log-${entry.id}`} />}
-              {entry.note && <p className="history-note captain-entry-text">{entry.note}</p>}
+              {entry.note && <p className="history-note captain-entry-text" dir="auto">{entry.note}</p>}
               <p className="short-hint">Earth Day {day} · Hour {hour} · on-device archive</p>
             </details>;
           })}

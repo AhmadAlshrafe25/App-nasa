@@ -7,7 +7,7 @@ export function normalizeTheme(value: unknown): DisplayTheme {
 
 export function applyTheme(theme: DisplayTheme) {
   document.documentElement.dataset.theme = theme;
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'space' ? '#080f21' : '#e6f3ff');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'space' ? '#f7f5fc' : '#eff7fb');
 }
 
 export function initializeTheme() {
