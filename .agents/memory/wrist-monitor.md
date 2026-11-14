@@ -39,6 +39,18 @@ Muscle and bone belong on their own main navigation page, not inside Readings.
 
 **How to apply:** Keep the entire muscle and bone impact section off the Readings page, accessible through its own navigation item on desktop and mobile.
 
+The muscle and bone experience should support a large, region-based body map for a future sensor-equipped concept.
+
+**Why:** The user asked for a bigger body showing which muscle or bone has a sensor-detected concern, rather than only whole-body indices.
+
+**How to apply:** Keep anatomical region selection central. Until real validated hardware is integrated, label regional readings simulated and do not equate a sensor flag with confirmed tissue damage.
+
+Use detailed anatomical body artwork, not blocky polygons or a simple silhouette, for the muscle and bone figure.
+
+**Why:** The user repeatedly clarified that “whole detailed body figure” meant visible anatomical detail, not merely more selectable geometric regions.
+
+**How to apply:** Preserve detailed muscle fibers and skeleton illustrations across front/back views; keep sensor overlays subtle so the artwork remains visible.
+
 Daily logs use automatically determined Earth Day and Hour, with the entry taken from the astronaut’s voice. Only crew mood and stress are manual fields; the archive belongs below them.
 
 **Why:** The user explicitly requested this simpler recording flow and vertical archive placement.

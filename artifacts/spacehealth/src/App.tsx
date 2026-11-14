@@ -24,6 +24,7 @@ import {
   type RadiationAnalysis, type RadiationDemo, type RadiationScenario, type RadiationSample,
 } from '@/lib/radiation';
 import { describeRadiation } from '@/lib/radiation-copy';
+import { BodyMap } from '@/components/body-map';
 import { DailyLog } from '@/components/daily-log';
 import { AstroDemo } from '@/components/astro-demo';
 import { Countermeasures } from '@/components/countermeasures';
@@ -176,17 +177,7 @@ function MicrogravityVisualizer() {
       <div><span className="eyebrow">MICROGRAVITY · LOCAL SIMULATION</span><h2 id="microgravity-title">Muscle + bone impact</h2></div>
       <span className="demo-stamp"><Orbit size={13} aria-hidden="true" /> DEMO ONLY</span>
     </header>
-    <div className="microgravity-body">
-      <div className="body-schematic" aria-label="Illustrative astronaut body schematic">
-        <svg viewBox="0 0 118 184" role="img" aria-label="Illustration highlighting muscle and bone systems; not a scan">
-          <path className="suit-outline" d="M59 9c-12 0-19 9-19 21 0 9 4 15 10 19v12L31 70 18 98l11 6 15-24 5 25-14 48 13 4 11-34 11 34 13-4-14-48 5-25 15 24 11-6-13-28-19-9V49c6-4 10-10 10-19 0-12-7-21-19-21Z"/>
-          <path className="suit-joints" d="M50 60h18M46 80l13 10 13-10M47 105h24M51 123l8-4 8 4M40 51l19 9 19-9"/>
-          <circle className="body-node node-muscle" cx="37" cy="82" r="4"/><circle className="body-node node-bone" cx="59" cy="93" r="4"/>
-          <circle className="body-node node-muscle" cx="79" cy="82" r="4"/><circle className="body-node node-bone" cx="59" cy="126" r="4"/>
-          <path className="body-orbit" d="M7 108c8 39 36 64 66 59 18-3 31-16 37-34"/>
-        </svg>
-        <div className="body-legend"><span><i className="legend-muscle" /> Muscle</span><span><i className="legend-bone" /> Bone</span></div>
-      </div>
+    <div className="microgravity-body has-body-map">
       <div className="impact-readouts">
         <div className="period-tabs" role="tablist" aria-label="Muscle and bone readings">
           {(['muscle', 'bone'] as const).map(system => <button key={system} type="button"
@@ -203,6 +194,7 @@ function MicrogravityVisualizer() {
             }}
             data-testid={`tab-impact-${system}`}>{system === 'muscle' ? 'Muscle readings' : 'Bone readings'}</button>)}
         </div>
+        <BodyMap system={selectedSystem} />
         <p className="impact-disclaimer">Fictional demo comparison · indices relative to a fictional 100% baseline. Not measured tissue, not g/cm², and not a personal medical forecast.</p>
         <p className="impact-mitigation-note">In this fictional example, the regular countermeasure routine stays closer to baseline than the low-workload case. This is not evidence of a real workout effect.</p>
         <label className="impact-day-control" htmlFor="impact-day-range">
