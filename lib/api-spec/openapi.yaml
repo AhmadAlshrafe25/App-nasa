@@ -1,89 +1,35 @@
 openapi: 3.1.0
 info:
   title: Api
-  description: 'SpaceHealth synthetic-data demo. Local SQLite; offline-first, non-diagnostic
-    support. No authentication: use only demonstration data. Statistical radiation
-    changes are not validated exposure limits.'
+  description: Offline-first onboard health backend. Detection, risk scoring and companion
+    fallback run locally; check-ins queue for Earth sync with a simulated 14-minute
+    Mars delay. Not a medical device.
   version: 1.0.0
-servers:
-- url: /api
-  description: Shared preview API prefix; root aliases are also available
 paths:
-  /healthz:
-    get:
-      tags:
-      - health
-      summary: Healthz
-      operationId: healthCheck
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HealthStatus'
-        '404':
-          description: Unknown astronaut or scenario
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '422':
-          description: Invalid input
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '503':
-          description: Local storage unavailable
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
   /health:
     get:
       tags:
-      - health
+      - system
       summary: Health
-      operationId: getHealth
+      operationId: health
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/HealthResponse'
-        '404':
-          description: Unknown astronaut or scenario
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '422':
-          description: Invalid input
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '503':
-          description: Local storage unavailable
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+              schema: {}
   /astronauts/{astronaut_id}/dashboard:
     get:
       tags:
-      - health
+      - astronauts
       summary: Dashboard
-      operationId: getAstronautDashboard
+      operationId: dashboard
       parameters:
       - name: astronaut_id
         in: path
         required: true
         schema:
-          type: integer
-          minimum: 1
+          type: string
           title: Astronaut Id
       responses:
         '200':
@@ -92,80 +38,55 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Dashboard'
-        '404':
-          description: Unknown astronaut or scenario
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
         '422':
-          description: Invalid input
+          description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '503':
-          description: Local storage unavailable
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/HTTPValidationError'
   /astronauts/{astronaut_id}/checkin:
     post:
       tags:
-      - health
+      - astronauts
       summary: Checkin
-      operationId: submitAstronautCheckin
+      operationId: checkin
       parameters:
       - name: astronaut_id
         in: path
         required: true
         schema:
-          type: integer
-          minimum: 1
+          type: string
           title: Astronaut Id
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CheckInInput'
+              $ref: '#/components/schemas/CheckInRequest'
       responses:
-        '201':
+        '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CheckInResult'
-        '404':
-          description: Unknown astronaut or scenario
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/CheckInResponse'
         '422':
-          description: Invalid input
+          description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '503':
-          description: Local storage unavailable
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/HTTPValidationError'
   /companion/support:
     post:
       tags:
       - companion
-      summary: Support
-      operationId: getCompanionSupport
+      summary: Companion Support
+      operationId: companion_support
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SupportInput'
+              $ref: '#/components/schemas/SupportRequest'
         required: true
       responses:
         '200':
@@ -174,30 +95,137 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SupportResponse'
-        '404':
-          description: Unknown astronaut or scenario
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
         '422':
-          description: Invalid input
+          description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '503':
-          description: Local storage unavailable
+                $ref: '#/components/schemas/HTTPValidationError'
+  /family/messages:
+    post:
+      tags:
+      - family
+      summary: Post Family Message
+      operationId: post_family_message
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FamilyMessageIn'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/FamilyMessage'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /family/messages/{astronaut_id}:
+    get:
+      tags:
+      - family
+      summary: List Family Messages
+      operationId: list_family_messages
+      parameters:
+      - name: astronaut_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Astronaut Id
+      - name: mood_tag
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - enum:
+            - anxious
+            - lonely
+            - tired
+            - general
+            type: string
+          - type: 'null'
+          title: Mood Tag
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FamilyMessage'
+                title: Response List Family Messages
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /family/messages/{message_id}/viewed:
+    patch:
+      tags:
+      - family
+      summary: Mark Family Message Viewed
+      operationId: mark_family_message_viewed
+      parameters:
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Message Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyMessage'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /mission/sync-status:
+    get:
+      tags:
+      - mission
+      summary: Sync Status
+      operationId: sync_status
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncStatus'
+  /mission/sync:
+    post:
+      tags:
+      - mission
+      summary: Mission Sync
+      operationId: mission_sync
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncResult'
   /simulate/{scenario}:
     get:
       tags:
-      - demo
-      summary: Simulation
-      operationId: simulateScenario
+      - simulate
+      summary: Simulate
+      operationId: simulate
       parameters:
       - name: scenario
         in: path
@@ -211,640 +239,764 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SimulationResult'
-        '404':
-          description: Unknown astronaut or scenario
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/SimulationResponse'
         '422':
-          description: Invalid input
+          description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '503':
-          description: Local storage unavailable
+                $ref: '#/components/schemas/HTTPValidationError'
+  /healthz:
+    get:
+      tags:
+      - system
+      summary: Healthz
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/HealthStatus'
 components:
   schemas:
-    AnomalyResult:
+    Assessment:
       properties:
-        method:
+        risk_level:
           type: string
           enum:
-          - baseline
-          - isolation_forest
-          title: Method
-        signals:
+          - Normal
+          - Attention Required
+          - High Priority Alert
+          title: Risk Level
+        risk_score:
+          type: integer
+          title: Risk Score
+        reasons:
           items:
-            $ref: '#/components/schemas/AnomalySignal'
+            type: string
           type: array
-          title: Signals
+          title: Reasons
+        recommended_actions:
+          items:
+            type: string
+          type: array
+          maxItems: 3
+          minItems: 1
+          title: Recommended Actions
+        next_checkin_hours:
+          type: integer
+          enum:
+          - 24
+          - 6
+          - 2
+          title: Next Checkin Hours
+        routine_prompt:
+          type: string
+          title: Routine Prompt
+        baseline_comparison:
+          additionalProperties:
+            $ref: '#/components/schemas/MetricComparison'
+          type: object
+          title: Baseline Comparison
+        trend_alerts:
+          items:
+            type: string
+          type: array
+          title: Trend Alerts
         isolation_forest:
-          $ref: '#/components/schemas/IsolationResult'
-      additionalProperties: false
+          $ref: '#/components/schemas/IsolationForestResult'
+        disclaimer:
+          type: string
+          title: Disclaimer
       type: object
       required:
-      - method
-      - signals
+      - risk_level
+      - risk_score
+      - reasons
+      - recommended_actions
+      - next_checkin_hours
+      - routine_prompt
+      - baseline_comparison
+      - trend_alerts
       - isolation_forest
-      title: AnomalyResult
-    AnomalySignal:
+      - disclaimer
+      title: Assessment
+    Baseline:
       properties:
-        feature:
+        log_count:
+          type: integer
+          title: Log Count
+        sufficient_history:
+          type: boolean
+          title: Sufficient History
+        metrics:
+          additionalProperties:
+            $ref: '#/components/schemas/MetricStat'
+          type: object
+          title: Metrics
+      type: object
+      required:
+      - log_count
+      - sufficient_history
+      - metrics
+      title: Baseline
+    CheckInRequest:
+      properties:
+        heart_rate_bpm:
+          type: number
+          maximum: 250.0
+          minimum: 20.0
+          title: Heart Rate Bpm
+        systolic_bp:
+          type: number
+          maximum: 260.0
+          minimum: 50.0
+          title: Systolic Bp
+        diastolic_bp:
+          type: number
+          maximum: 160.0
+          minimum: 30.0
+          title: Diastolic Bp
+        sleep_hours:
+          type: number
+          maximum: 24.0
+          minimum: 0.0
+          title: Sleep Hours
+        stress_score:
+          type: number
+          maximum: 10.0
+          minimum: 0.0
+          title: Stress Score
+        mood:
           type: string
-          title: Feature
-        current:
+          maxLength: 40
+          minLength: 1
+          title: Mood
+          examples:
+          - calm
+        activity_minutes:
+          type: number
+          maximum: 1440.0
+          minimum: 0.0
+          title: Activity Minutes
+        radiation_msv:
+          type: number
+          maximum: 100.0
+          minimum: 0.0
+          title: Radiation Msv
+          description: Daily dose reading in mSv
+        isolation_level:
+          type: number
+          maximum: 10.0
+          minimum: 0.0
+          title: Isolation Level
+      type: object
+      required:
+      - heart_rate_bpm
+      - systolic_bp
+      - diastolic_bp
+      - sleep_hours
+      - stress_score
+      - mood
+      - activity_minutes
+      - radiation_msv
+      - isolation_level
+      title: CheckInRequest
+    CheckInResponse:
+      properties:
+        log_id:
+          type: integer
+          title: Log Id
+        astronaut_id:
+          type: string
+          title: Astronaut Id
+        sync_status:
+          type: string
+          title: Sync Status
+        sync_note:
+          type: string
+          title: Sync Note
+        assessment:
+          $ref: '#/components/schemas/Assessment'
+      type: object
+      required:
+      - log_id
+      - astronaut_id
+      - sync_status
+      - sync_note
+      - assessment
+      title: CheckInResponse
+    Dashboard:
+      properties:
+        astronaut_id:
+          type: string
+          title: Astronaut Id
+        baseline:
+          $ref: '#/components/schemas/Baseline'
+        last_logs:
+          items:
+            $ref: '#/components/schemas/LogEntry'
+          type: array
+          title: Last Logs
+        baseline_comparison:
+          additionalProperties:
+            $ref: '#/components/schemas/MetricComparison'
+          type: object
+          title: Baseline Comparison
+        trend_alerts:
+          items:
+            type: string
+          type: array
+          title: Trend Alerts
+        isolation_forest:
+          $ref: '#/components/schemas/IsolationForestResult'
+        risk_level:
+          type: string
+          enum:
+          - Normal
+          - Attention Required
+          - High Priority Alert
+          title: Risk Level
+        reasons:
+          items:
+            type: string
+          type: array
+          title: Reasons
+        recommended_actions:
+          items:
+            type: string
+          type: array
+          title: Recommended Actions
+        next_checkin_hours:
+          type: integer
+          title: Next Checkin Hours
+        routine_prompt:
+          type: string
+          title: Routine Prompt
+      type: object
+      required:
+      - astronaut_id
+      - baseline
+      - last_logs
+      - baseline_comparison
+      - trend_alerts
+      - isolation_forest
+      - risk_level
+      - reasons
+      - recommended_actions
+      - next_checkin_hours
+      - routine_prompt
+      title: Dashboard
+    FamilyMessage:
+      properties:
+        astronaut_id:
+          type: string
+          maxLength: 40
+          minLength: 1
+          title: Astronaut Id
+          examples:
+          - AST-01
+        sender_name:
+          type: string
+          maxLength: 80
+          minLength: 1
+          title: Sender Name
+        relationship:
+          type: string
+          maxLength: 60
+          minLength: 1
+          title: Relationship
+        media_type:
+          type: string
+          enum:
+          - video
+          - audio
+          - text
+          title: Media Type
+        title:
+          type: string
+          maxLength: 120
+          minLength: 1
+          title: Title
+        message_text:
+          anyOf:
+          - type: string
+            maxLength: 4000
+          - type: 'null'
+          title: Message Text
+        media_url:
+          anyOf:
+          - type: string
+            maxLength: 1000
+          - type: 'null'
+          title: Media Url
+          description: Required for audio/video
+        mood_tag:
+          type: string
+          enum:
+          - anxious
+          - lonely
+          - tired
+          - general
+          title: Mood Tag
+          default: general
+        id:
+          type: integer
+          title: Id
+        is_viewed:
+          type: boolean
+          title: Is Viewed
+        created_at:
+          type: string
+          title: Created At
+      type: object
+      required:
+      - astronaut_id
+      - sender_name
+      - relationship
+      - media_type
+      - title
+      - id
+      - is_viewed
+      - created_at
+      title: FamilyMessage
+    FamilyMessageIn:
+      properties:
+        astronaut_id:
+          type: string
+          maxLength: 40
+          minLength: 1
+          title: Astronaut Id
+          examples:
+          - AST-01
+        sender_name:
+          type: string
+          maxLength: 80
+          minLength: 1
+          title: Sender Name
+        relationship:
+          type: string
+          maxLength: 60
+          minLength: 1
+          title: Relationship
+        media_type:
+          type: string
+          enum:
+          - video
+          - audio
+          - text
+          title: Media Type
+        title:
+          type: string
+          maxLength: 120
+          minLength: 1
+          title: Title
+        message_text:
+          anyOf:
+          - type: string
+            maxLength: 4000
+          - type: 'null'
+          title: Message Text
+        media_url:
+          anyOf:
+          - type: string
+            maxLength: 1000
+          - type: 'null'
+          title: Media Url
+          description: Required for audio/video
+        mood_tag:
+          type: string
+          enum:
+          - anxious
+          - lonely
+          - tired
+          - general
+          title: Mood Tag
+          default: general
+      type: object
+      required:
+      - astronaut_id
+      - sender_name
+      - relationship
+      - media_type
+      - title
+      title: FamilyMessageIn
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    HealthStatus:
+      properties:
+        status:
+          type: string
+          title: Status
+      type: object
+      required:
+      - status
+      title: HealthStatus
+    IsolationForestResult:
+      properties:
+        available:
+          type: boolean
+          title: Available
+        anomaly_score:
           anyOf:
           - type: number
           - type: 'null'
+          title: Anomaly Score
+          description: 0-1, higher = more unusual versus own history
+        is_outlier:
+          type: boolean
+          title: Is Outlier
+          default: false
+        note:
+          type: string
+          title: Note
+      type: object
+      required:
+      - available
+      - note
+      title: IsolationForestResult
+    LogEntry:
+      properties:
+        heart_rate_bpm:
+          type: number
+          maximum: 250.0
+          minimum: 20.0
+          title: Heart Rate Bpm
+        systolic_bp:
+          type: number
+          maximum: 260.0
+          minimum: 50.0
+          title: Systolic Bp
+        diastolic_bp:
+          type: number
+          maximum: 160.0
+          minimum: 30.0
+          title: Diastolic Bp
+        sleep_hours:
+          type: number
+          maximum: 24.0
+          minimum: 0.0
+          title: Sleep Hours
+        stress_score:
+          type: number
+          maximum: 10.0
+          minimum: 0.0
+          title: Stress Score
+        mood:
+          type: string
+          maxLength: 40
+          minLength: 1
+          title: Mood
+          examples:
+          - calm
+        activity_minutes:
+          type: number
+          maximum: 1440.0
+          minimum: 0.0
+          title: Activity Minutes
+        radiation_msv:
+          type: number
+          maximum: 100.0
+          minimum: 0.0
+          title: Radiation Msv
+          description: Daily dose reading in mSv
+        isolation_level:
+          type: number
+          maximum: 10.0
+          minimum: 0.0
+          title: Isolation Level
+        id:
+          type: integer
+          title: Id
+        astronaut_id:
+          type: string
+          title: Astronaut Id
+        logged_at:
+          type: string
+          title: Logged At
+        risk_level:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Risk Level
+      type: object
+      required:
+      - heart_rate_bpm
+      - systolic_bp
+      - diastolic_bp
+      - sleep_hours
+      - stress_score
+      - mood
+      - activity_minutes
+      - radiation_msv
+      - isolation_level
+      - id
+      - astronaut_id
+      - logged_at
+      title: LogEntry
+    MetricComparison:
+      properties:
+        current:
+          type: number
           title: Current
         baseline_mean:
           anyOf:
           - type: number
           - type: 'null'
           title: Baseline Mean
-        deviation_score:
+        baseline_std:
           anyOf:
           - type: number
           - type: 'null'
-          title: Deviation Score
-        severity:
-          type: integer
-          enum:
-          - 0
-          - 1
-          - 2
-          title: Severity
+          title: Baseline Std
+        z_score:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Z Score
+        deviation_pct:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Deviation Pct
         status:
           type: string
           enum:
-          - within_pattern
-          - minor_deviation
-          - major_deviation
-          - unavailable
-          - insufficient_baseline
+          - within_range
+          - elevated
+          - markedly_elevated
+          - reduced
+          - markedly_reduced
+          - insufficient_history
           title: Status
-        explanation:
-          type: string
-          title: Explanation
-      additionalProperties: false
       type: object
       required:
-      - feature
       - current
       - baseline_mean
-      - deviation_score
-      - severity
+      - baseline_std
+      - z_score
+      - deviation_pct
       - status
-      - explanation
-      title: AnomalySignal
-    Astronaut:
-      properties:
-        id:
-          type: integer
-          title: Id
-        name:
-          type: string
-          title: Name
-        mission:
-          type: string
-          title: Mission
-        synthetic:
-          type: boolean
-          title: Synthetic
-          default: true
-      additionalProperties: false
-      type: object
-      required:
-      - id
-      - name
-      - mission
-      title: Astronaut
-    BaselineMetric:
+      title: MetricComparison
+    MetricStat:
       properties:
         mean:
-          anyOf:
-          - type: number
-          - type: 'null'
+          type: number
           title: Mean
-        standard_deviation:
-          anyOf:
-          - type: number
-          - type: 'null'
-          title: Standard Deviation
-        minimum:
-          anyOf:
-          - type: number
-          - type: 'null'
-          title: Minimum
-        maximum:
-          anyOf:
-          - type: number
-          - type: 'null'
-          title: Maximum
-        sample_count:
-          type: integer
-          title: Sample Count
-        unit:
-          type: string
-          title: Unit
-      additionalProperties: false
+        std:
+          type: number
+          title: Std
       type: object
       required:
       - mean
-      - standard_deviation
-      - minimum
-      - maximum
-      - sample_count
-      - unit
-      title: BaselineMetric
-    BaselineProfile:
+      - std
+      title: MetricStat
+    RecommendedFamilyMedia:
       properties:
-        source:
-          type: string
-          const: synthetic_baseline
-          title: Source
-          default: synthetic_baseline
-        observation_count:
-          type: integer
-          title: Observation Count
-        metrics:
-          additionalProperties:
-            $ref: '#/components/schemas/BaselineMetric'
-          type: object
-          title: Metrics
-      additionalProperties: false
-      type: object
-      required:
-      - observation_count
-      - metrics
-      title: BaselineProfile
-    CheckInInput:
-      properties:
-        heart_rate:
-          type: number
-          maximum: 220.0
-          minimum: 30.0
-          title: Heart Rate
-          description: Beats per minute.
-        sleep_hours:
-          type: number
-          maximum: 24.0
-          minimum: 0.0
-          title: Sleep Hours
-          description: Sleep in the past 24 hours.
-        stress_level:
-          type: integer
-          maximum: 10.0
-          minimum: 1.0
-          title: Stress Level
-          description: 'Self-reported: 1 low, 10 very high.'
-        mood:
-          type: string
-          enum:
-          - very_low
-          - low
-          - neutral
-          - good
-          - excellent
-          title: Mood
-        activity_minutes:
-          type: number
-          maximum: 1440.0
-          minimum: 0.0
-          title: Activity Minutes
-          description: Activity in the past 24 hours.
-        isolation_level:
-          type: integer
-          maximum: 10.0
-          minimum: 0.0
-          title: Isolation Level
-          description: 'Self-reported: 0 none, 10 very isolated.'
-        radiation_exposure:
-          anyOf:
-          - type: number
-            maximum: 1000000.0
-            minimum: 0.0
-          - type: 'null'
-          title: Radiation Exposure
-          description: Optional dose in microsieverts over the past 24 hours, NOT
-            a rate. Missing means unknown.
-      additionalProperties: false
-      type: object
-      required:
-      - heart_rate
-      - sleep_hours
-      - stress_level
-      - mood
-      - activity_minutes
-      - isolation_level
-      title: CheckInInput
-      description: Bounds reject malformed data; they are NOT medical safety limits.
-    CheckInResult:
-      properties:
-        observation:
-          $ref: '#/components/schemas/Observation'
-        risk:
-          $ref: '#/components/schemas/RiskAssessment'
-        reasons:
-          items:
-            type: string
-          type: array
-          title: Reasons
-      additionalProperties: false
-      type: object
-      required:
-      - observation
-      - risk
-      - reasons
-      title: CheckInResult
-    Dashboard:
-      properties:
-        astronaut:
-          $ref: '#/components/schemas/Astronaut'
-        personal_baseline:
-          $ref: '#/components/schemas/BaselineProfile'
-        recent_history:
-          items:
-            $ref: '#/components/schemas/Observation'
-          type: array
-          title: Recent History
-        history_window_days:
-          type: integer
-          const: 7
-          title: History Window Days
-          default: 7
-        latest_observation:
-          $ref: '#/components/schemas/Observation'
-        latest_risk_assessment:
-          $ref: '#/components/schemas/RiskAssessment'
-        mission_logs:
-          items:
-            $ref: '#/components/schemas/MissionLog'
-          type: array
-          title: Mission Logs
-        explanation:
-          type: string
-          title: Explanation
-        demo_only:
-          type: boolean
-          title: Demo Only
-          default: true
-      additionalProperties: false
-      type: object
-      required:
-      - astronaut
-      - personal_baseline
-      - recent_history
-      - latest_observation
-      - latest_risk_assessment
-      - mission_logs
-      - explanation
-      title: Dashboard
-    ErrorDetail:
-      properties:
-        code:
-          type: string
-          title: Code
         message:
-          type: string
-          title: Message
-        details:
-          items:
-            additionalProperties:
-              type: string
-            type: object
-          type: array
-          title: Details
-      additionalProperties: false
-      type: object
-      required:
-      - code
-      - message
-      title: ErrorDetail
-    ErrorResponse:
-      properties:
-        error:
-          $ref: '#/components/schemas/ErrorDetail'
-      additionalProperties: false
-      type: object
-      required:
-      - error
-      title: ErrorResponse
-    FamilyRecommendation:
-      properties:
-        kind:
-          type: string
-          enum:
-          - audio
-          - message
-          title: Kind
-        recommendation:
-          type: string
-          maxLength: 500
-          minLength: 1
-          title: Recommendation
-        reason:
-          type: string
-          maxLength: 500
-          minLength: 1
-          title: Reason
-      additionalProperties: false
-      type: object
-      required:
-      - kind
-      - recommendation
-      - reason
-      title: FamilyRecommendation
-    HealthResponse:
-      properties:
-        status:
-          type: string
-          title: Status
-        offline_mode:
-          type: boolean
-          title: Offline Mode
-        offline_mode_definition:
-          type: string
-          title: Offline Mode Definition
-          default: True when online support is disabled or not fully configured; this
-            does not probe internet connectivity. Requests default to offline support.
-        storage:
-          type: string
-          const: sqlite_local
-          title: Storage
-          default: sqlite_local
-        demo_only:
-          type: boolean
-          title: Demo Only
-          default: true
-      additionalProperties: false
-      type: object
-      required:
-      - status
-      - offline_mode
-      title: HealthResponse
-    HealthStatus:
-      properties:
-        status:
-          type: string
-          title: Status
-      additionalProperties: false
-      type: object
-      required:
-      - status
-      title: HealthStatus
-    IsolationResult:
-      properties:
-        requested:
-          type: boolean
-          title: Requested
-        status:
-          type: string
-          enum:
-          - not_requested
-          - inlier
-          - outlier
-          - unavailable
-          title: Status
-        score:
           anyOf:
-          - type: number
+          - $ref: '#/components/schemas/FamilyMessage'
           - type: 'null'
-          title: Score
-        features:
-          items:
-            type: string
-          type: array
-          title: Features
-        explanation:
+        selection_reason:
           type: string
-          title: Explanation
-      additionalProperties: false
+          title: Selection Reason
       type: object
       required:
-      - requested
-      - status
-      - explanation
-      title: IsolationResult
-    MissionLog:
-      properties:
-        recorded_at:
-          type: string
-          format: date-time
-          title: Recorded At
-        message:
-          type: string
-          title: Message
-        synthetic:
-          type: boolean
-          title: Synthetic
-      additionalProperties: false
-      type: object
-      required:
-      - recorded_at
-      - message
-      - synthetic
-      title: MissionLog
-    Observation:
-      properties:
-        id:
-          type: string
-          title: Id
-        astronaut_id:
-          type: integer
-          title: Astronaut Id
-        recorded_at:
-          type: string
-          format: date-time
-          title: Recorded At
-        source:
-          type: string
-          enum:
-          - synthetic_baseline
-          - user_checkin
-          - synthetic_simulation
-          title: Source
-        checkin:
-          $ref: '#/components/schemas/CheckInInput'
-      additionalProperties: false
-      type: object
-      required:
-      - id
-      - astronaut_id
-      - recorded_at
-      - source
-      - checkin
-      title: Observation
-    RiskAssessment:
-      properties:
-        level:
-          $ref: '#/components/schemas/RiskLevel'
-        score:
-          type: integer
-          title: Score
-        reasons:
-          items:
-            type: string
-          type: array
-          title: Reasons
-        trends:
-          items:
-            type: string
-          type: array
-          title: Trends
-        anomalies:
-          $ref: '#/components/schemas/AnomalyResult'
-        disclaimer:
-          type: string
-          title: Disclaimer
-          default: Demo prioritization, not a diagnosis, safety clearance, or validated
-            radiation exposure limit.
-      additionalProperties: false
-      type: object
-      required:
-      - level
-      - score
-      - reasons
-      - trends
-      - anomalies
-      title: RiskAssessment
-    RiskLevel:
-      type: string
-      enum:
-      - Normal
-      - Attention Required
-      - High Priority Alert
-      title: RiskLevel
-    SimulationResult:
+      - selection_reason
+      title: RecommendedFamilyMedia
+    SimulationResponse:
       properties:
         scenario:
           type: string
-          enum:
-          - normal
-          - fatigue_isolation
-          - critical_stress
           title: Scenario
-        synthetic:
-          type: boolean
-          title: Synthetic
-          default: true
-        persisted:
-          type: boolean
-          title: Persisted
-          default: false
-        observation:
-          $ref: '#/components/schemas/Observation'
-        risk:
-          $ref: '#/components/schemas/RiskAssessment'
+        description:
+          type: string
+          title: Description
+        astronaut_id:
+          type: string
+          title: Astronaut Id
+        input:
+          $ref: '#/components/schemas/CheckInRequest'
+        assessment:
+          $ref: '#/components/schemas/Assessment'
         companion:
-          $ref: '#/components/schemas/SupportContent'
-      additionalProperties: false
+          $ref: '#/components/schemas/SupportResponse'
+        saved:
+          type: boolean
+          title: Saved
+          default: false
       type: object
       required:
       - scenario
-      - observation
-      - risk
+      - description
+      - astronaut_id
+      - input
+      - assessment
       - companion
-      title: SimulationResult
-    SupportContent:
-      properties:
-        summary:
-          type: string
-          maxLength: 800
-          minLength: 1
-          title: Summary
-        action_suggestion:
-          type: string
-          maxLength: 500
-          minLength: 1
-          title: Action Suggestion
-        family_message:
-          $ref: '#/components/schemas/FamilyRecommendation'
-      additionalProperties: false
-      type: object
-      required:
-      - summary
-      - action_suggestion
-      - family_message
-      title: SupportContent
-    SupportInput:
+      title: SimulationResponse
+    SupportRequest:
       properties:
         astronaut_id:
-          type: integer
-          minimum: 1.0
+          type: string
           title: Astronaut Id
+          examples:
+          - AST-01
         allow_online:
           type: boolean
           title: Allow Online
-          description: Explicitly allow sending latest sleep, mood, stress and isolation
-            to the configured provider. Never sends identity or history.
-          default: false
-      additionalProperties: false
+          description: Set false to forbid sending state to the LLM even if LLM_API_KEY
+            is set
+          default: true
       type: object
       required:
       - astronaut_id
-      title: SupportInput
+      title: SupportRequest
     SupportResponse:
       properties:
+        astronaut_id:
+          type: string
+          title: Astronaut Id
         summary:
           type: string
-          maxLength: 800
-          minLength: 1
           title: Summary
-        action_suggestion:
+        relaxation_action:
           type: string
-          maxLength: 500
-          minLength: 1
-          title: Action Suggestion
-        family_message:
-          $ref: '#/components/schemas/FamilyRecommendation'
-        astronaut_id:
-          type: integer
-          title: Astronaut Id
-        based_on_observation_id:
+          title: Relaxation Action
+        family_message_suggestion:
           type: string
-          title: Based On Observation Id
-        mode:
+          title: Family Message Suggestion
+        selection_reason:
+          type: string
+          title: Selection Reason
+        source:
           type: string
           enum:
-          - offline
-          - online
-          title: Mode
-        fallback_reason:
+          - offline_fallback
+          - llm
+          title: Source
+        recommended_family_media:
           anyOf:
-          - type: string
-            enum:
-            - not_requested
-            - not_configured
-            - forced_offline
-            - provider_unavailable
-            - invalid_response
+          - $ref: '#/components/schemas/RecommendedFamilyMedia'
           - type: 'null'
-          title: Fallback Reason
-        non_diagnostic:
-          type: boolean
-          title: Non Diagnostic
-          default: true
-        disclaimer:
-          type: string
-          title: Disclaimer
-          default: Well-being support only, not medical advice. Contact mission medical
-            staff if you feel unwell or unsafe.
-      additionalProperties: false
       type: object
       required:
-      - summary
-      - action_suggestion
-      - family_message
       - astronaut_id
-      - based_on_observation_id
-      - mode
-      - fallback_reason
+      - summary
+      - relaxation_action
+      - family_message_suggestion
+      - selection_reason
+      - source
       title: SupportResponse
+    SyncItem:
+      properties:
+        id:
+          type: integer
+          title: Id
+        log_id:
+          type: integer
+          title: Log Id
+        astronaut_id:
+          type: string
+          title: Astronaut Id
+        status:
+          type: string
+          title: Status
+        queued_at:
+          type: string
+          title: Queued At
+        synced_at:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Synced At
+        payload:
+          additionalProperties: true
+          type: object
+          title: Payload
+      type: object
+      required:
+      - id
+      - log_id
+      - astronaut_id
+      - status
+      - queued_at
+      - payload
+      title: SyncItem
+    SyncResult:
+      properties:
+        synced_count:
+          type: integer
+          title: Synced Count
+        synced_at:
+          type: string
+          title: Synced At
+        mars_delay_minutes:
+          type: integer
+          title: Mars Delay Minutes
+        note:
+          type: string
+          title: Note
+      type: object
+      required:
+      - synced_count
+      - synced_at
+      - mars_delay_minutes
+      - note
+      title: SyncResult
+    SyncStatus:
+      properties:
+        pending_count:
+          type: integer
+          title: Pending Count
+        mars_delay_minutes:
+          type: integer
+          title: Mars Delay Minutes
+        pending_items:
+          items:
+            $ref: '#/components/schemas/SyncItem'
+          type: array
+          title: Pending Items
+      type: object
+      required:
+      - pending_count
+      - mars_delay_minutes
+      - pending_items
+      title: SyncStatus
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+servers:
+- url: /api
+  description: Shared preview API prefix; root aliases are also available

@@ -24,6 +24,11 @@ import { mergeStoredValue } from '@/lib/persistent-state';
 import { getReadingTrend, primaryReadingKeys } from '@/lib/reading-trends';
 import { applyTheme, normalizeTheme, themeStorageKey, type DisplayTheme } from '@/lib/theme';
 
+import { AiFindings } from '@/components/ai-findings';
+import { CompanionPanel } from '@/components/companion-panel';
+import { MissionSyncProvider, SyncBar, SyncOverview } from '@/components/mission-sync';
+import { useIsMobile } from '@/hooks/use-mobile';
+
 const navItems = [
   { href: '/', label: 'Readings', icon: RadiationIcon },
   { href: '/alerts', label: 'Alerts', icon: Bell },
@@ -349,6 +354,7 @@ function Layout({
 }) {
   const [location] = useLocation();
   const [astroOpen, setAstroOpen] = useState(false);
+  const isNarrow = useIsMobile();
   const [storedTheme, setTheme] = usePersistentState<DisplayTheme>(themeStorageKey, 'space');
   const theme = normalizeTheme(storedTheme);
   useEffect(() => applyTheme(theme), [theme]);
@@ -374,6 +380,7 @@ function Layout({
         <span className="sensor-live-pill" data-testid="badge-sensor-origin">
           <Watch size={13} /> Demo · no connected sensors
         </span>
+        {!isNarrow && <SyncBar />}
         <div className="mission-time">
           <span className="wrist-day">Day 142</span>
           <EarthClock />
@@ -546,6 +553,7 @@ function Overview({
   const samples = getRadiationSamples(demo.scenario);
   const analysis = analyzeRadiation(samples);
   const [period, setPeriod] = useState<7 | 14>(7);
+  const isNarrow = useIsMobile();
   const evaluated = evaluateAllVitals(readings);
   const pendingCount = Number(!reviewed)
     + Number(analysis.status !== 'baseline' && !demo.acknowledged)
@@ -576,10 +584,8 @@ function Overview({
     <Link href="/alerts" className="radiation-open" aria-label="View radiation anomaly details" data-testid="link-radiation-details"><RadiationSummary analysis={analysis} acknowledged={demo.acknowledged} trend={samples} /></Link>
     <section className="mission-context" aria-label="Mission overview" data-testid="section-mission-overview">
       <div className="mission-context-heading"><Orbit size={15} aria-hidden="true" /><strong>Mission overview</strong><span>Day 142</span></div>
-      <div className="companion-status" role="status" data-testid="status-space-companion">
-        <span className="companion-indicator" aria-hidden="true" />
-        <div><strong>Astro</strong><span>Local fictional sample · no live connection</span></div>
-      </div>
+      <CompanionPanel />
+      <SyncOverview narrow={isNarrow} />
     </section>
     <div className="readings-trend-heading">
       <strong>Readings + trends</strong>
@@ -655,6 +661,7 @@ function Alerts({ readings }: { readings: BodyReadings }) {
         {samples.slice(-3).map((sample) => <tr key={sample.minute}><td>{sample.minute}</td><td>{sample.doseRate === null ? 'No signal' : sample.doseRate.toFixed(1)}</td></tr>)}
       </tbody></table>
       </details>
+      <AiFindings />
     </details>
     <ReadingsExplained analysis={analysis} />
     <details className="rule-box radiation-demo">
@@ -695,7 +702,7 @@ function RoutedApp() {
   const [savedReadings, setReadings] = usePersistentState<BodyReadings>(storageKeys.readings, defaultBodyReadings);
   const readings = normalizeBodyReadings(savedReadings);
 
-  return <Layout readings={readings} onChangeReadings={setReadings}>
+  return <MissionSyncProvider><Layout readings={readings} onChangeReadings={setReadings}>
     {reminder.notice && <section className="daily-reminder-notice" role="alert" aria-label="Daily log reminder" data-testid="notice-daily-reminder"><Bell size={19} /><div><strong>Time for your Astronaut’s Log</strong>{reminder.settings.voiceEnabled && reminder.voiceStatus && <p className="short-hint">{reminder.voiceStatus}</p>}<div className="reminder-notice-actions"><Link href="/log" className="btn small" data-testid="link-reminder-log">Open Astronaut’s Log</Link><button className="btn outline small" onClick={reminder.dismiss} data-testid="button-dismiss-reminder">Dismiss</button></div></div></section>}
     <Switch>
       <Route path="/"><Overview readings={readings} onChangeReadings={setReadings} /></Route>
@@ -707,7 +714,7 @@ function RoutedApp() {
       <Route path="/companion"><Redirect to="/log" replace /></Route>
       <Route component={NotFound} />
     </Switch>
-  </Layout>;
+  </Layout></MissionSyncProvider>;
 }
 
 function App() {

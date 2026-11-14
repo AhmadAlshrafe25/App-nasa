@@ -11,7 +11,7 @@ from ai.anomaly_detection import analyze
 from ai.risk_assessment import assess
 from backend import database as db
 from backend.models import (Assessment, CheckInRequest, FamilyMessage, FamilyMessageIn, CheckInResponse, Dashboard, SimulationResponse,
-                            MoodTag, SupportRequest, SupportResponse, SyncResult, SyncStatus)
+                            HealthStatus, MoodTag, SupportRequest, SupportResponse, SyncResult, SyncStatus)
 from companion import companion
 
 MARS_DELAY_MINUTES = 14
@@ -35,7 +35,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Astronaut Health Monitoring System & Space Companion", version="1.0.0", lifespan=lifespan,
+app = FastAPI(generate_unique_id_function=lambda route: route.name, title="Astronaut Health Monitoring System & Space Companion", version="1.0.0", lifespan=lifespan,
               description="Offline-first onboard health backend. Detection, risk scoring and companion fallback run locally; "
                           "check-ins queue for Earth sync with a simulated 14-minute Mars delay. Not a medical device.")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -75,7 +75,7 @@ def dashboard(astronaut_id: str):
     latest, history = logs[-1], logs[:-1]
     res = _evaluate(None, astronaut_id, latest, history)
     return {"astronaut_id": astronaut_id, "baseline": res["baseline"], "last_logs": [_public_log(r) for r in logs[-14:]],
-            **{k: res[k] for k in ("baseline_comparison", "trend_alerts", "risk_level", "reasons", "recommended_actions",
+            **{k: res[k] for k in ("baseline_comparison", "trend_alerts", "isolation_forest", "risk_level", "reasons", "recommended_actions",
                                    "next_checkin_hours", "routine_prompt")}}
 
 
@@ -168,7 +168,7 @@ def simulate(scenario: str):
             "companion": {"astronaut_id": "AST-01", **comp}}
 
 
-@app.get("/healthz", include_in_schema=False)
+@app.get("/healthz", response_model=HealthStatus, operation_id="healthCheck", tags=["system"])
 def healthz():
     return {"status": "ok"}
 

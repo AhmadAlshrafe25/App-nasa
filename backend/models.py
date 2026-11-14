@@ -71,11 +71,16 @@ class Dashboard(BaseModel):
     last_logs: list[LogEntry]
     baseline_comparison: dict[str, MetricComparison]
     trend_alerts: list[str]
+    isolation_forest: IsolationForestResult
     risk_level: RiskLevel
     reasons: list[str]
     recommended_actions: list[str]
     next_checkin_hours: int
     routine_prompt: str
+
+
+class HealthStatus(BaseModel):
+    status: str
 
 
 class CheckInResponse(BaseModel):

@@ -36,7 +36,16 @@ The frontend owns `/`; the backend does not replace it.
 Root API paths also work under `/api`. `/api/healthz` preserves its original
 `{"status":"ok"}` response. Shared OpenAPI stays titled `Api`, with `/api` base URL
 and existing health identifiers preserved. Generated client files may change
-when backend contracts change; frontend consumers are not automatically wired.
+when backend contracts change. `scripts/export-openapi.py` exports from the live FastAPI `app`;
+operation IDs are the route function names (plus the fixed `healthCheck`).
+
+## Frontend and backend connection
+
+- `artifacts/spacehealth/src/lib/space-api.ts` calls the API at the root `/api` prefix (not under the app base path) with a 4-second timeout. Network failure, timeout, gateway error or a non-JSON reply returns `offline`; callers then use `space-fallback.ts` and label the data "Offline sample" or "Local simulation".
+- Live panels: Companion and Family Care and Earth sync in the Mission overview (the sync indicator is in the top bar on wide screens and in the overview on narrow screens), and statistical findings under "Why this alert?" on Alerts. All use `AST-01`.
+- Companion requests send `allow_online: false`, so demo state is never sent to an outside language model from the UI.
+- This is the only place the app sends family messages or check-ins to the backend; the on-device Daily log is still never uploaded.
+- Live-backend styles are in `src/live-backend.css`.
 
 ## Product constraints
 

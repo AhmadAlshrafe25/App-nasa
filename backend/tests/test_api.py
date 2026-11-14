@@ -39,6 +39,16 @@ def test_dashboard_shape(client):
     assert len(d["last_logs"]) == 14
 
 
+def test_dashboard_includes_isolation_forest(client):
+    forest = client.get("/astronauts/AST-01/dashboard").json()["isolation_forest"]
+    assert set(forest) == {"available", "anomaly_score", "is_outlier", "note"}
+    assert forest["available"] is True
+    assert 0 <= forest["anomaly_score"] <= 1
+    assert isinstance(forest["is_outlier"], bool)
+    assert forest["note"]
+    assert client.get("/api/astronauts/AST-01/dashboard").json()["isolation_forest"] == forest
+
+
 def test_api_prefix_alias(client):
     assert client.get("/api/health").json()["status"] == "ok"
 

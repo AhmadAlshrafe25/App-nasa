@@ -38,3 +38,9 @@ The shared mission motto must use the exact requested spelling “Ad astra per a
 **Why:** The user explicitly requested this spelling and shared branding rather than replacing status labels or repeating the motto in cards.
 
 **How to apply:** Keep the motto in shared branding across modules. The shared Earth clock is Eastern civil time, but this does not authorize changing device-local daily logs or reminders, or recalculating mission day.
+
+Family messaging was explicitly approved as a limited exception: only the Mission overview Companion and Family Care panel (text messages for AST-01, mark viewed). The Daily log stays on-device, with no chat or separate messaging page.
+
+**Why:** The user asked for family messaging in the frontend-to-backend connection request, overriding the earlier no-communications rule for that panel only.
+
+**How to apply:** Do not expand this into chat, uploads, media playback, or a new page without renewed approval.
