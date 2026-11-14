@@ -51,11 +51,11 @@ function dateLabel() {
 function timeLabel(date: string) {
   return new Intl.DateTimeFormat('en', { hour: 'numeric', minute: '2-digit' }).format(new Date(date));
 }
-function Sparkline({ values, color = '#659b83', alert = false }: { values: number[]; color?: string; alert?: boolean }) {
+function Sparkline({ values, color = 'var(--signal-color)', alert = false }: { values: number[]; color?: string; alert?: boolean }) {
   const min = Math.min(...values), max = Math.max(...values);
   const points = values.map((v, i) => `${(i / (values.length - 1)) * 300},${65 - ((v - min) / (max - min || 1)) * 48}`).join(' ');
   return <svg className="sparkline" viewBox="0 0 300 74" role="img" aria-label="Synthetic trend line over the last 14 days">
-    <path d="M0 68H300" stroke="#e8e4d9" strokeWidth="1" />
+    <path d="M0 68H300" stroke="#d4e0f2" strokeWidth="1" />
     <polyline points={points} fill="none" stroke={alert ? '#c1854f' : color} strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" />
     <circle cx="300" cy={65 - ((values.at(-1)! - min) / (max - min || 1)) * 48} r="3.5" fill={alert ? '#c1854f' : color} />
   </svg>;
@@ -196,7 +196,7 @@ function Alerts() {
         <tr><td>Latest sample · Day 142</td><td>66 bpm</td><td>Inside 58–72 bpm</td><td>Typical</td></tr>
       </tbody></table>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 19, gap: 14, flexWrap: 'wrap' }}>
-        <span style={{ color: '#8c9086', fontSize: 10 }}>Anomaly-detection demo · not a diagnosis</span>
+        <span style={{ color: 'var(--supporting-ink)', fontSize: 13 }}>Anomaly-detection demo · not a diagnosis</span>
         {reviewed ? <button className="btn outline small" onClick={() => setReviewed(false)} data-testid="button-unreview-alert"><ArrowDownRight size={13} /> Reopen review</button> : <button className="btn small" onClick={() => setReviewed(true)} data-testid="button-review-alert"><Check size={14} /> Mark as reviewed</button>}
       </div>
     </div>
@@ -231,13 +231,13 @@ function Wellbeing() {
         <div className="section-title" style={{ marginBottom: 5 }}>A moment for yourself</div><p className="page-subtitle" style={{ marginBottom: 22 }}>Nothing here is scored as good or bad.</p>
         <label className="form-label">How’s your mood?</label>
         <div className="choice-row" role="group" aria-label="Choose a mood">{['Low', 'Tense', 'Okay', 'Good', 'Bright'].map(m => <button type="button" className={`choice ${mood === m ? 'active' : ''}`} onClick={() => setMood(m)} aria-pressed={mood === m} key={m} data-testid={`button-mood-${m.toLowerCase()}`}>{m}</button>)}</div>
-        <label className="form-label" htmlFor="stress-range">How much stress are you carrying? <span style={{ color: '#9a9e95', fontWeight: 400 }}>1 = very little · 10 = a lot</span></label>
-        <div className="range-row"><span style={{ color: '#9a9e95', fontSize: 10 }}>1</span><input id="stress-range" aria-label="Stress level from one to ten" type="range" min="1" max="10" value={stress} onChange={e => setStress(Number(e.target.value))} data-testid="input-stress-level" /><span style={{ color: '#9a9e95', fontSize: 10 }}>10</span><span className="range-value" data-testid="value-stress-level">{stress}/10</span></div>
+        <label className="form-label" htmlFor="stress-range">How much stress are you carrying? <span style={{ color: 'var(--supporting-ink)', fontWeight: 400 }}>1 = very little · 10 = a lot</span></label>
+        <div className="range-row"><span style={{ color: 'var(--supporting-ink)', fontSize: 13 }}>1</span><input id="stress-range" aria-label="Stress level from one to ten" type="range" min="1" max="10" value={stress} onChange={e => setStress(Number(e.target.value))} data-testid="input-stress-level" /><span style={{ color: 'var(--supporting-ink)', fontSize: 13 }}>10</span><span className="range-value" data-testid="value-stress-level">{stress}/10</span></div>
         <label className="form-label">How did sleep feel?</label>
         <div className="choice-row" role="group" aria-label="Choose sleep quality">{['Rough', 'Restless', 'Mixed', 'Restful'].map(s => <button type="button" className={`choice ${sleep === s ? 'active' : ''}`} onClick={() => setSleep(s)} aria-pressed={sleep === s} key={s} data-testid={`button-sleep-${s.toLowerCase()}`}>{s}</button>)}</div>
-        <label className="form-label" htmlFor="wellbeing-note">Anything you’d like to remember? <span style={{ color: '#92978e', fontWeight: 400 }}>Optional and private</span></label>
+        <label className="form-label" htmlFor="wellbeing-note">Anything you’d like to remember? <span style={{ color: 'var(--supporting-ink)', fontWeight: 400 }}>Optional and private</span></label>
         <textarea id="wellbeing-note" className="text-area" maxLength={500} placeholder="A thought, a small win, or nothing at all…" value={note} onChange={e => setNote(e.target.value)} data-testid="input-wellbeing-note" />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 15, gap: 12 }}><span style={{ color: '#96998f', fontSize: 10 }}>Saved only in this browser</span><button className="btn" onClick={save} disabled={!mood || !sleep} data-testid="button-save-checkin"><Check size={14} /> Save check-in</button></div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 15, gap: 12 }}><span style={{ color: 'var(--supporting-ink)', fontSize: 13 }}>Saved only in this browser</span><button className="btn" onClick={save} disabled={!mood || !sleep} data-testid="button-save-checkin"><Check size={14} /> Save check-in</button></div>
         {saved && <div className="reflection" role="status" data-testid="reflection-latest"><strong>A reflection for this moment</strong>{reflectionFor(saved.mood, saved.stress, saved.sleep)}</div>}
       </section>
       <section className="panel panel-pad" data-testid="section-checkin-history"><div className="section-head" style={{ margin: '0 0 15px' }}><h2 className="section-title">Your check-in history</h2><span className="score-label">{entries.length} {entries.length === 1 ? 'ENTRY' : 'ENTRIES'}</span></div>
