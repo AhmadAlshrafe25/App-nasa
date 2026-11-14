@@ -1,116 +1,89 @@
-"""Deterministic support first; external generation requires configuration AND consent."""
+"""Non-diagnostic well-being companion: LLM when LLM_API_KEY is set, else offline rules."""
 import json
-import re
-import time
+import logging
+import os
 
 import httpx
-from pydantic import ValidationError
+from urllib.parse import urlsplit
 
-from backend.models import CheckInInput, FamilyRecommendation, Observation, SupportContent, SupportResponse
-from backend.settings import Settings
+log = logging.getLogger("companion")
+LLM_TIMEOUT_S = 6.0
+NEGATIVE_MOODS = {"sad", "low", "anxious", "irritable", "tense", "depressed", "angry", "lonely", "stressed", "overwhelmed"}
+KEYS = ("summary", "relaxation_action", "family_message_suggestion", "selection_reason")
 
 
-def offline_support(state: CheckInInput) -> SupportContent:
-    demanding = state.stress_level >= 7 or state.sleep_hours < 6 or state.isolation_level >= 7 or state.mood in ("low", "very_low")
-    summary = (
-        f"You reported {state.sleep_hours:g} hours of sleep, {state.mood.replace('_', ' ')} mood, "
-        f"stress {state.stress_level}/10 and isolation {state.isolation_level}/10. "
-        + ("That sounds demanding; you deserve support from your crew." if demanding else "Thank you for checking in; keeping a routine can help you stay connected.")
-    )
-    if state.stress_level >= 7:
-        action = "Take one quiet minute of comfortable, unforced breathing, then ask a crewmate for a brief check-in."
-    elif state.sleep_hours < 6:
-        action = "Ask your crew lead about a short rest opportunity that fits the mission schedule."
-    elif state.mood in ("low", "very_low") or state.isolation_level >= 7:
-        action = "Arrange a five-minute conversation with a trusted crewmate during the next suitable break."
+def offline_support(sleep_hours: float, mood: str, stress_score: float, isolation_level: float) -> dict:
+    """Deterministic: same inputs always give the same output."""
+    low_sleep, high_stress = sleep_hours < 6, stress_score >= 6
+    low_mood, isolated = mood.strip().lower() in NEGATIVE_MOODS, isolation_level >= 6
+    if high_stress:
+        relax = "Box breathing for 4 minutes: inhale 4 s, hold 4 s, exhale 4 s, hold 4 s."
+        reason = f"Chosen because stress is {stress_score:g}/10."
+    elif low_sleep:
+        relax = "A 10-minute wind-down: dim the lights, gentle stretching, and slow breathing before your next sleep period."
+        reason = f"Chosen because sleep was {sleep_hours:g} hours."
+    elif isolated or low_mood:
+        relax = "Spend 10 minutes looking out the window or at Earth photos while doing slow breathing, then message someone you trust."
+        reason = "Chosen because isolation or mood needs extra connection."
     else:
-        action = "Take a brief relaxation break within your mission plan and notice three things around you."
-    if state.isolation_level >= 7:
-        family = FamilyRecommendation(
-            kind="audio",
-            recommendation="If a familiar voice message is already stored onboard, listen to it during your next break; otherwise draft a request for the next communication window.",
-            reason="You reported feeling very isolated; a familiar voice may offer a sense of connection despite communication delays.",
-        )
+        relax = "A 5-minute body scan: relax shoulders, jaw and hands, one breath at a time."
+        reason = "Chosen as a light routine because readings look steady."
+    parts = []
+    if low_sleep:
+        parts.append(f"you slept {sleep_hours:g} hours")
+    if high_stress:
+        parts.append(f"stress feels high ({stress_score:g}/10)")
+    if low_mood:
+        parts.append(f"your mood is '{mood}'")
+    if isolated:
+        parts.append(f"isolation feels strong ({isolation_level:g}/10)")
+    if parts:
+        summary = "It sounds like " + ", ".join(parts) + ". These feelings are common on long missions. Small routines and connection can help; this is general support, not a diagnosis."
     else:
-        family = FamilyRecommendation(
-            kind="message",
-            recommendation="Draft one short update for a family member or trusted person for the next communication window.",
-            reason="A low-pressure message can maintain connection" + (" when mood is low." if state.mood in ("low", "very_low") else " while respecting mission and communication schedules."),
-        )
-    return SupportContent(summary=summary, action_suggestion=action, family_message=family)
+        summary = "Your check-in looks steady. Keep your routines going. This is general support, not a diagnosis."
+    if isolated or low_mood:
+        family = "Hi, I'm thinking of you today. The mission is going on and I'd love to hear about home: what's something good that happened this week?"
+    elif low_sleep or high_stress:
+        family = "Hi! It's been a busy stretch up here and I'm a bit tired. A short note about your day would really lift my mood."
+    else:
+        family = "Hi! All is well on my side. Here's a little update from space; tell me what's new with you."
+    return {"summary": summary, "relaxation_action": relax, "family_message_suggestion": family,
+            "selection_reason": reason, "source": "offline_fallback"}
 
 
-class InvalidProviderResponse(Exception):
-    pass
+def _safe_base(base: str) -> bool:
+    u = urlsplit(base)
+    return bool(u.hostname) and not (u.username or u.password or u.query or u.fragment) and (
+        u.scheme == "https" or (u.scheme == "http" and u.hostname in ("localhost", "127.0.0.1", "::1")))
 
 
-class Companion:
-    def __init__(self, settings: Settings, transport: httpx.BaseTransport | None = None):
-        self.settings = settings
-        self.transport = transport
+def _llm_support(state: dict) -> dict | None:
+    key = os.environ.get("LLM_API_KEY")
+    if not key:
+        return None
+    base = os.environ.get("LLM_BASE_URL", "https://api.openai.com/v1").rstrip("/")
+    if not _safe_base(base):
+        log.warning("LLM_BASE_URL must be HTTPS (loopback HTTP allowed); using offline fallback")
+        return None
+    prompt = ("You are a supportive, NON-DIAGNOSTIC well-being companion for an astronaut. Never diagnose or give medical "
+              "advice. Given this state: " + json.dumps(state) + ". Reply with JSON only, keys: summary, relaxation_action, "
+              "family_message_suggestion, selection_reason (each one or two short sentences).")
+    try:
+        resp = httpx.post(f"{base}/chat/completions", timeout=LLM_TIMEOUT_S,
+                          headers={"Authorization": f"Bearer {key}"},
+                          json={"model": os.environ.get("LLM_MODEL", "gpt-4o-mini"), "temperature": 0.3,
+                                "response_format": {"type": "json_object"},
+                                "messages": [{"role": "user", "content": prompt}]})
+        resp.raise_for_status()
+        data = json.loads(resp.json()["choices"][0]["message"]["content"])
+        if all(isinstance(data.get(k), str) and data[k].strip() for k in KEYS):
+            return {**{k: data[k].strip() for k in KEYS}, "source": "llm"}
+        log.warning("LLM reply missing fields; using offline fallback")
+    except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError) as exc:
+        log.warning("LLM unavailable (%s); using offline fallback", type(exc).__name__)
+    return None
 
-    def _online(self, state: CheckInInput, fallback: SupportContent) -> SupportContent:
-        # Deliberately omit identity, health history, notes, radiation, and API keys
-        # from the request body. The key is used only in the Authorization header.
-        prompt = {
-            "sleep_hours": state.sleep_hours, "mood": state.mood,
-            "stress_level": state.stress_level, "isolation_level": state.isolation_level,
-        }
-        payload = {
-            "model": self.settings.llm_model, "temperature": 0,
-            "max_tokens": 400, "response_format": {"type": "json_object"},
-            "messages": [
-                {"role": "system", "content": (
-                    "Provide empathetic, non-diagnostic astronaut well-being support. "
-                    "Return JSON with summary, action_suggestion (one brief relaxation or practical action), "
-                    "and family_message {kind: audio or message, recommendation, reason}. "
-                    "Do not diagnose, prescribe medication, claim medical safety, discuss radiation, or invent accessible recordings. "
-                    "Any recording recommendation must be conditional on it already being available onboard."
-                )},
-                {"role": "user", "content": json.dumps(prompt)},
-            ],
-        }
-        started = time.monotonic()
-        data = bytearray()
-        with httpx.Client(timeout=httpx.Timeout(3, connect=2), transport=self.transport, follow_redirects=False) as client:
-            with client.stream(
-                "POST", f"{self.settings.llm_base_url}/chat/completions",
-                headers={"Authorization": f"Bearer {self.settings.llm_api_key}"}, json=payload,
-            ) as response:
-                response.raise_for_status()
-                for chunk in response.iter_bytes():
-                    data.extend(chunk)
-                    if len(data) > 16_384 or time.monotonic() - started > 5:
-                        raise InvalidProviderResponse()
-        try:
-            envelope = json.loads(data)
-            content = SupportContent.model_validate_json(envelope["choices"][0]["message"]["content"])
-        except (ValueError, ValidationError, KeyError, IndexError, TypeError) as exc:
-            raise InvalidProviderResponse() from exc
-        text = f"{content.summary} {content.action_suggestion}"
-        if re.search(r"diagnos|prescrib|medicat|clinically|you have (?:a |an )?(?:disorder|depression|anxiety)|radiation|\bsafe\b", text, re.I):
-            raise InvalidProviderResponse()
-        # Family resources are unknown: retain the conditional offline selection
-        # rather than trusting a provider's claims about real recordings.
-        content.family_message = fallback.family_message
-        return content
 
-    def support(self, observation: Observation, allow_online: bool = False) -> SupportResponse:
-        fallback = offline_support(observation.checkin)
-        content, mode, reason = fallback, "offline", "not_requested"
-        if allow_online:
-            if self.settings.force_offline:
-                reason = "forced_offline"
-            elif self.settings.offline_mode:
-                reason = "not_configured"
-            else:
-                try:
-                    content, mode, reason = self._online(observation.checkin, fallback), "online", None
-                except InvalidProviderResponse:
-                    reason = "invalid_response"
-                except (httpx.HTTPError, OSError):
-                    reason = "provider_unavailable"
-        return SupportResponse(
-            **content.model_dump(), astronaut_id=observation.astronaut_id,
-            based_on_observation_id=observation.id, mode=mode, fallback_reason=reason,
-        )
+def support(sleep_hours: float, mood: str, stress_score: float, isolation_level: float, allow_online: bool = True) -> dict:
+    state = {"sleep_hours": sleep_hours, "mood": mood, "stress_score": stress_score, "isolation_level": isolation_level}
+    return (allow_online and _llm_support(state)) or offline_support(**state)

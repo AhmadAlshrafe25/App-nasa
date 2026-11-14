@@ -1,112 +1,152 @@
-"""Run with `uv run --frozen python -m backend.main` from the workspace root."""
-from contextlib import asynccontextmanager
-import logging
+"""FastAPI app. Run: `uv run --frozen python -m backend.main` (serves 0.0.0.0:8000)."""
+import json
 import os
-import sqlite3
+from contextlib import asynccontextmanager
 
-from fastapi import APIRouter, FastAPI, HTTPException, Path, Request
-from fastapi.exceptions import RequestValidationError
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from backend.database import AstronautNotFound, Database
-from backend.models import (
-    CheckInInput, CheckInResult, Dashboard, ErrorResponse, HealthResponse,
-    HealthStatus, SimulationResult, SupportInput, SupportResponse,
-)
-from backend.service import HealthService, SCENARIOS, simulate
-from backend.settings import Settings
-from companion.companion import Companion
+from ai.anomaly_detection import analyze
+from ai.risk_assessment import assess
+from backend import database as db
+from backend.models import (Assessment, CheckInRequest, CheckInResponse, Dashboard, SimulationResponse,
+                            SupportRequest, SupportResponse, SyncResult, SyncStatus)
+from companion import companion
 
-log = logging.getLogger("spacehealth")
+MARS_DELAY_MINUTES = 14
 
-
-def create_app(settings: Settings | None = None, companion: Companion | None = None) -> FastAPI:
-    settings = settings or Settings.from_env()
-    database = Database(settings.db_path)
-    service = HealthService(database, settings.anomaly_method)
-    companion = companion or Companion(settings)
-
-    @asynccontextmanager
-    async def lifespan(app: FastAPI):
-        database.initialize()
-        yield
-
-    app = FastAPI(
-        title="Api", version="1.0.0", lifespan=lifespan,
-        description="SpaceHealth synthetic-data demo. Local SQLite; offline-first, non-diagnostic support. No authentication: use only demonstration data. Statistical radiation changes are not validated exposure limits.",
-        servers=[{"url": "/api", "description": "Shared preview API prefix; root aliases are also available"}],
-        responses={
-            404: {"model": ErrorResponse, "description": "Unknown astronaut or scenario"},
-            422: {"model": ErrorResponse, "description": "Invalid input"},
-            503: {"model": ErrorResponse, "description": "Local storage unavailable"},
-        },
-    )
-    app.state.database, app.state.service = database, service
-    app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["*"], allow_credentials=False)
-
-    @app.exception_handler(AstronautNotFound)
-    async def unknown_astronaut(request, exc):
-        return JSONResponse(status_code=404, content={"error": {"code": "astronaut_not_found", "message": "Astronaut not found. Synthetic crew IDs are 1 and 2.", "details": []}})
-
-    @app.exception_handler(RequestValidationError)
-    async def invalid_input(request, exc):
-        details = [{"field": ".".join(map(str, error["loc"])), "message": error["msg"], "type": error["type"]} for error in exc.errors()]
-        return JSONResponse(status_code=422, content={"error": {"code": "invalid_input", "message": "Check the required fields, units, and allowed values.", "details": details}})
-
-    @app.exception_handler(sqlite3.Error)
-    async def storage_unavailable(request, exc):
-        log.error("Local SQLite operation failed (%s)", type(exc).__name__)
-        return JSONResponse(status_code=503, content={"error": {"code": "storage_unavailable", "message": "Local storage is unavailable. The operation was not accepted; check the database path and disk access.", "details": []}})
-
-    @app.exception_handler(StarletteHTTPException)
-    async def api_error(request, exc):
-        detail = exc.detail if isinstance(exc.detail, dict) else {"code": "not_found" if exc.status_code == 404 else "http_error", "message": str(exc.detail)}
-        return JSONResponse(status_code=exc.status_code, content={"error": {**detail, "details": []}})
-
-    router = APIRouter()
-
-    @router.get("/healthz", response_model=HealthStatus, operation_id="healthCheck", tags=["health"])
-    def healthz():
-        return HealthStatus(status="ok")
-
-    @router.get("/health", response_model=HealthResponse, operation_id="getHealth", tags=["health"])
-    def health():
-        with database.connection() as conn:
-            conn.execute("SELECT 1").fetchone()
-        return HealthResponse(status="ok", offline_mode=settings.offline_mode)
-
-    @router.get("/astronauts/{astronaut_id}/dashboard", response_model=Dashboard, operation_id="getAstronautDashboard", tags=["health"])
-    def dashboard(astronaut_id: int = Path(ge=1)):
-        return service.dashboard(astronaut_id)
-
-    @router.post("/astronauts/{astronaut_id}/checkin", response_model=CheckInResult, status_code=201, operation_id="submitAstronautCheckin", tags=["health"])
-    def checkin(data: CheckInInput, astronaut_id: int = Path(ge=1)):
-        return service.checkin(astronaut_id, data)
-
-    @router.post("/companion/support", response_model=SupportResponse, operation_id="getCompanionSupport", tags=["companion"])
-    def support(data: SupportInput):
-        latest = service.dashboard(data.astronaut_id).latest_observation
-        return companion.support(latest, data.allow_online)
-
-    @router.get("/simulate/{scenario}", response_model=SimulationResult, operation_id="simulateScenario", tags=["demo"])
-    def simulation(scenario: str):
-        if scenario not in SCENARIOS:
-            raise HTTPException(404, detail={"code": "scenario_not_found", "message": "Choose normal, fatigue_isolation, or critical_stress."})
-        return simulate(scenario, settings.anomaly_method)
-
-    app.include_router(router)
-    app.include_router(router, prefix="/api", include_in_schema=False)
-
-    @app.get("/api", include_in_schema=False)
-    def api_info():
-        return {"service": "SpaceHealth Python API", "docs": "/docs", "health": "/health", "demo_only": True}
-
-    return app
+SCENARIOS = {
+    "normal": ("Steady day close to the personal baseline.",
+               dict(heart_rate_bpm=63, systolic_bp=118, diastolic_bp=76, sleep_hours=7.4, stress_score=3,
+                    mood="calm", activity_minutes=110, radiation_msv=0.55, isolation_level=3)),
+    "fatigue_isolation": ("Poor sleep, high stress and strong isolation.",
+                          dict(heart_rate_bpm=74, systolic_bp=126, diastolic_bp=82, sleep_hours=4.6, stress_score=8,
+                               mood="lonely", activity_minutes=40, radiation_msv=0.55, isolation_level=8)),
+    "radiation_spike": ("Radiation reading well above baseline with mild physiological strain.",
+                        dict(heart_rate_bpm=82, systolic_bp=124, diastolic_bp=80, sleep_hours=5.8, stress_score=7,
+                             mood="anxious", activity_minutes=60, radiation_msv=1.6, isolation_level=4)),
+}
 
 
-app = create_app()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.state.seed_source = db.init_db()
+    yield
+
+
+app = FastAPI(title="Astronaut Health Monitoring System & Space Companion", version="1.0.0", lifespan=lifespan,
+              description="Offline-first onboard health backend. Detection, risk scoring and companion fallback run locally; "
+                          "check-ins queue for Earth sync with a simulated 14-minute Mars delay. Not a medical device.")
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+
+def _require_astronaut(conn, astronaut_id: str):
+    if not db.astronaut_exists(conn, astronaut_id):
+        raise HTTPException(404, f"Unknown astronaut '{astronaut_id}'")
+
+
+def _evaluate(conn, astronaut_id: str, current: dict, history: list[dict]) -> dict:
+    analysis = analyze(current, history)
+    result = assess(current, analysis)
+    return {**result, "baseline_comparison": analysis["baseline_comparison"], "trend_alerts": analysis["trend_alerts"],
+            "isolation_forest": analysis["isolation_forest"], "baseline": analysis["baseline"]}
+
+
+def _public_log(row: dict) -> dict:
+    return {k: row[k] for k in ("id", "astronaut_id", "logged_at", "risk_level", *db.FIELDS)}
+
+
+@app.get("/health", tags=["system"])
+def health():
+    return {"status": "ok", "service": "astronaut-health-backend", "offline_capable": True,
+            "references": {
+                "nasa_hrp": "https://www.nasa.gov/hrp/",
+                "nasa_hrp_five_hazards": "https://www.nasa.gov/hrp/hazards/",
+                "csa_space_health": "https://www.asc-csa.gc.ca/eng/astronauts/space-health/default.asp",
+                "csa_radiation": "https://www.asc-csa.gc.ca/eng/sciences/cans/radiation.asp"}}
+
+
+@app.get("/astronauts/{astronaut_id}/dashboard", response_model=Dashboard, tags=["astronauts"])
+def dashboard(astronaut_id: str):
+    with db.connect() as conn:
+        _require_astronaut(conn, astronaut_id)
+        logs = db.recent_logs(conn, astronaut_id, 15)
+    latest, history = logs[-1], logs[:-1]
+    res = _evaluate(None, astronaut_id, latest, history)
+    return {"astronaut_id": astronaut_id, "baseline": res["baseline"], "last_logs": [_public_log(r) for r in logs[-14:]],
+            **{k: res[k] for k in ("baseline_comparison", "trend_alerts", "risk_level", "reasons", "recommended_actions",
+                                   "next_checkin_hours", "routine_prompt")}}
+
+
+@app.post("/astronauts/{astronaut_id}/checkin", response_model=CheckInResponse, tags=["astronauts"])
+def checkin(astronaut_id: str, body: CheckInRequest):
+    data = body.model_dump()
+    with db.connect() as conn:
+        _require_astronaut(conn, astronaut_id)
+        history = db.recent_logs(conn, astronaut_id, 60)
+        res = _evaluate(conn, astronaut_id, data, history)
+        log_id = db.insert_log(conn, astronaut_id, data, risk_level=res["risk_level"], reasons=res["reasons"])
+        payload = {**data, "risk_level": res["risk_level"], "reasons": res["reasons"]}
+        conn.execute("INSERT INTO sync_queue (log_id, astronaut_id, payload, status, queued_at) VALUES (?,?,?,?,?)",
+                     (log_id, astronaut_id, json.dumps(payload), "PENDING_EARTH_SYNC", db.now_iso()))
+    return {"log_id": log_id, "astronaut_id": astronaut_id, "sync_status": "PENDING_EARTH_SYNC",
+            "sync_note": f"Processed onboard. Queued for Earth ({MARS_DELAY_MINUTES}-minute one-way delay, simulated).",
+            "assessment": res}
+
+
+@app.post("/companion/support", response_model=SupportResponse, tags=["companion"])
+def companion_support(body: SupportRequest):
+    with db.connect() as conn:
+        _require_astronaut(conn, body.astronaut_id)
+        latest = db.recent_logs(conn, body.astronaut_id, 1)[0]
+    out = companion.support(latest["sleep_hours"], latest["mood"], latest["stress_score"], latest["isolation_level"],
+                            allow_online=body.allow_online)
+    return {"astronaut_id": body.astronaut_id, **out}
+
+
+def _sync_item(r) -> dict:
+    return {"id": r["id"], "log_id": r["log_id"], "astronaut_id": r["astronaut_id"], "status": r["status"],
+            "queued_at": r["queued_at"], "synced_at": r["synced_at"], "payload": json.loads(r["payload"])}
+
+
+@app.get("/mission/sync-status", response_model=SyncStatus, tags=["mission"])
+def sync_status():
+    with db.connect() as conn:
+        rows = conn.execute("SELECT * FROM sync_queue WHERE status='PENDING_EARTH_SYNC' ORDER BY id").fetchall()
+    return {"pending_count": len(rows), "mars_delay_minutes": MARS_DELAY_MINUTES, "pending_items": [_sync_item(r) for r in rows]}
+
+
+@app.post("/mission/sync", response_model=SyncResult, tags=["mission"])
+def mission_sync():
+    ts = db.now_iso()
+    with db.connect() as conn:
+        n = conn.execute("UPDATE sync_queue SET status='SYNCED', synced_at=? WHERE status='PENDING_EARTH_SYNC'", (ts,)).rowcount
+    return {"synced_count": n, "synced_at": ts, "mars_delay_minutes": MARS_DELAY_MINUTES,
+            "note": "Simulated Earth-link window; no real network transfer."}
+
+
+@app.get("/simulate/{scenario}", response_model=SimulationResponse, tags=["simulate"])
+def simulate(scenario: str):
+    if scenario not in SCENARIOS:
+        raise HTTPException(404, f"Unknown scenario '{scenario}'. Use: {', '.join(SCENARIOS)}")
+    desc, data = SCENARIOS[scenario]
+    # Fixed local history and offline companion: output never depends on stored check-ins or the network.
+    history = [r for r in db.generate_synthetic() if r["astronaut_id"] == "AST-01"]
+    res = _evaluate(None, "AST-01", data, history)
+    comp = companion.offline_support(data["sleep_hours"], data["mood"], data["stress_score"], data["isolation_level"])
+    return {"scenario": scenario, "description": desc, "astronaut_id": "AST-01", "input": data, "assessment": res,
+            "companion": {"astronaut_id": "AST-01", **comp}}
+
+
+@app.get("/healthz", include_in_schema=False)
+def healthz():
+    return {"status": "ok"}
+
+
+# Preview/proxy prefix: expose every route again under /api (hidden from Swagger).
+for _route in [r for r in app.routes if getattr(r, "path", "").startswith(("/health", "/astronauts", "/companion", "/mission", "/simulate"))]:
+    app.add_api_route("/api" + _route.path, _route.endpoint, methods=list(_route.methods), include_in_schema=False)
+
 
 if __name__ == "__main__":
     import uvicorn
