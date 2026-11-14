@@ -725,7 +725,6 @@ html { min-width:240px; }
   .topbar { gap:5px;padding:0 8px; }
   .topbar .crew-name { font-size:11px; }
   .topbar .sensor-live-pill { font-size:10px;padding:3px 6px;line-height:1.3; }
-  .topbar .wrist-day { display:none; }
   .wrist-overview .page-heading h1 { font-size:20px; }
   .wrist-overview .wrist-alert { font-size:11px;padding:4px 6px;gap:4px; }
   .wrist-reading-grid { gap:6px; }
@@ -739,5 +738,27 @@ html { min-width:240px; }
   .wrist-overview .radiation-panel { padding:8px 10px; }
   .wrist-overview .radiation-state { font-size:11px; }
   .readings-trend-heading > strong { font-size:13px; }
+}
+.topbar { flex-wrap:wrap; }
+.crew-branding { min-width:0; }
+.crew-branding .crew-name { display:block; }
+.mission-motto { display:block;color:var(--supporting-ink);font-size:12px;line-height:1.5; }
+.mission-time { display:flex;align-items:center;gap:14px;margin-left:auto; }
+.mission-time .wrist-day { display:block;margin:0; }
+.earth-clock { display:grid;color:var(--ink);line-height:1.4;white-space:nowrap; }
+.earth-clock-label { color:var(--supporting-ink);font-size:12px; }
+.earth-clock time { font:13px/1.5 var(--app-font-mono);font-variant-numeric:tabular-nums; }
+@media (max-width:760px) {
+  .topbar { display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:4px 8px;padding:6px 10px; }
+  .crew-branding { grid-column:1;grid-row:1; }
+  .topbar .demo-disclosure { grid-column:2;grid-row:1 / 3;align-self:start; }
+  .topbar .demo-disclosure summary { min-width:44px;min-height:44px;justify-content:center;padding:0; }
+  .topbar .theme-summary { display:none; }
+  .topbar .sensor-live-pill { grid-column:1;grid-row:2;justify-self:start;white-space:normal; }
+  .topbar .sensor-live-pill svg { flex-shrink:0; }
+  .mission-time { grid-column:1 / -1;grid-row:3;margin:0;justify-content:space-between;gap:8px; }
+  .earth-clock { display:flex;align-items:center;gap:8px; }
+  .earth-clock-label { font-size:11px; }
+  .earth-clock time { font-size:12px; }
 }
 @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important; } }

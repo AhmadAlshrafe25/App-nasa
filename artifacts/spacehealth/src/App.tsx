@@ -13,6 +13,7 @@ import {
 import { describeRadiation } from '@/lib/radiation-copy';
 import { DailyLog } from '@/components/daily-log';
 import { Countermeasures } from '@/components/countermeasures';
+import { EarthClock } from '@/components/earth-clock';
 import { useDailyReminder } from '@/hooks/use-daily-reminder';
 import {
   defaultBodyReadings, evaluateAllVitals, normalizeBodyReadings,
@@ -259,11 +260,17 @@ function Layout({
     </aside>
     <div className="workspace">
       <header className="topbar">
-        <strong className="crew-name" data-testid="text-crew-name">Mara Velez</strong>
+        <div className="crew-branding">
+          <strong className="crew-name" data-testid="text-crew-name">Mara Velez</strong>
+          <span className="mission-motto" data-testid="mission-motto">Ad astra per asphera</span>
+        </div>
         <span className="sensor-live-pill" data-testid="badge-sensor-origin">
           <Watch size={13} /> Demo · no connected sensors
         </span>
-        <span className="wrist-day">Day 142</span>
+        <div className="mission-time">
+          <span className="wrist-day">Day 142</span>
+          <EarthClock />
+        </div>
         <details className="demo-disclosure">
           <summary data-testid="button-demo-info" title="Space / Sky theme" aria-label={`Display settings; current theme ${theme}`}>
             {theme === 'space' ? <Orbit size={18} aria-hidden="true" /> : <Sun size={18} aria-hidden="true" />}
