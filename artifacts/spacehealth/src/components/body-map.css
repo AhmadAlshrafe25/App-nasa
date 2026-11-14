@@ -36,8 +36,22 @@
 .bm-zoom-controls button:disabled { opacity:.4; cursor:not-allowed; }
 .bm-zoom-controls output { min-width:44px; text-align:center; font-size:14px; font-variant-numeric:tabular-nums; }
 
-.bm-detail { position:relative; padding:12px 48px 12px 14px; border:1px solid var(--st); border-left-width:4px; background:#0E1820; }
-.bm-detail h3 { margin:0 0 4px; font-size:22px; color:var(--ink-hi); overflow-wrap:anywhere; }
+.bm-callout { position:absolute; left:0; top:0; z-index:6; width:min(280px, calc(100% - 16px)); padding:10px 40px 10px 12px;
+  background:#090D12F2; border:1px solid var(--st); border-left-width:4px; color:var(--ink-hi); cursor:auto;
+  box-shadow:0 10px 28px #03060bcc; transition:transform .12s ease-out; animation:bm-pop .16s ease-out; }
+@keyframes bm-pop { from { opacity:0; } to { opacity:1; } }
+.bm-callout h3 { margin:2px 0 2px; font-size:18px; line-height:1.2; color:var(--ink-hi); overflow-wrap:anywhere; }
+.bm-callout .bm-status { font-size:15px; margin-bottom:4px; }
+.bm-callout-tag { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-lo); }
+.bm-callout-what { margin:0 0 4px; font-size:14px; line-height:1.35; }
+.bm-callout-next { margin:0 0 6px; font-size:13px; line-height:1.3; color:var(--st); font-weight:700; }
+.bm-callout .bm-sample strong { font-size:16px; }
+.bm-callout-off { margin:6px 0 0; font-size:12px; color:var(--ink-lo); }
+.bm-callout-pin { position:absolute; width:12px; height:12px; margin-top:-6px; background:#090D12; border:1px solid var(--st); }
+.bm-callout.is-right .bm-callout-pin { left:-7px; border-right:0; border-top:0; transform:rotate(45deg); }
+.bm-callout.is-left .bm-callout-pin { right:-7px; border-left:0; border-bottom:0; transform:rotate(45deg); }
+.bm-callout .bm-close { top:0; right:0; }
+@media (prefers-reduced-motion:reduce) { .bm-callout { transition:none; animation:none; } }
 .bm-status { display:flex; align-items:center; gap:6px; margin:0 0 6px; color:var(--st); font-weight:700; font-size:17px; }
 .bm-sample { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:4px 12px; margin:0; }
 .bm-sample span { color:var(--ink-lo); font-size:14px; }

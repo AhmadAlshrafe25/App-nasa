@@ -23,6 +23,8 @@ export type Viewer3DProps = {
   onHover: (pick: MeshPick | null) => void;
   onKeys: (keys: { key: string; name: string; uuid: string }[]) => void;
   onError: (message: string) => void;
+  /** Selected mesh center in host pixels; null when nothing selected. Fired after each render. */
+  onAnchor?: (a: { x: number; y: number; w: number; h: number; inView: boolean } | null) => void;
 };
 
 const CYAN = new THREE.Color('#62F5E2');
@@ -79,6 +81,25 @@ export default function BodyViewer3D(props: Viewer3DProps) {
 
     let frame = 0;
     let disposed = false;
+    const anchorBox = new THREE.Box3(), anchorV = new THREE.Vector3();
+    let lastAnchor = '';
+    const emitAnchor = () => {
+      const p = propsRef.current;
+      const mesh = p.selectedUuid ? meshes.find(m => m.uuid === p.selectedUuid) : undefined;
+      const w = host.clientWidth, h = host.clientHeight;
+      let a: { x: number; y: number; w: number; h: number; inView: boolean } | null = null;
+      if (mesh && w && h) {
+        scene.updateMatrixWorld(true);
+        camera.updateMatrixWorld();
+        anchorBox.setFromObject(mesh).getCenter(anchorV).project(camera);
+        const x = Math.round((anchorV.x + 1) / 2 * w), y = Math.round((1 - anchorV.y) / 2 * h);
+        a = { x, y, w, h, inView: anchorV.z >= -1 && anchorV.z <= 1 && x >= 0 && x <= w && y >= 0 && y <= h };
+      }
+      const sig = a ? `${mesh!.uuid},${a.x},${a.y},${a.w},${a.h},${a.inView}` : '';
+      if (sig === lastAnchor) return;
+      lastAnchor = sig;
+      p.onAnchor?.(a);
+    };
     const render = () => {
       if (frame || disposed) return;
       frame = requestAnimationFrame(() => {
@@ -88,6 +109,7 @@ export default function BodyViewer3D(props: Viewer3DProps) {
         camera.position.set(0, 0, 4.5 / p.zoom);
         camera.lookAt(0, 0, 0);
         renderer.render(scene, camera);
+        emitAnchor();
       });
     };
     /** Materials only: severity color always kept; hover/selection strengthen emissive and opacity. */

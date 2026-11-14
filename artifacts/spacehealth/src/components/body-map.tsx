@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { lazy, Suspense, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, CircleDot, Eye, Unplug, ZoomIn, ZoomOut, X, RotateCcw } from 'lucide-react';
 import { getBodyRegions, regionKey, statusLabel, type BodyRegion, type BodySystem, type RegionStatus } from '@/lib/body-regions';
 import { isBackFacing, MODEL_URL, yawLabel } from '@/lib/body-3d';
@@ -9,6 +9,62 @@ import './body-viewer-3d.css';
 const BodyViewer3D = lazy(() => import('./body-viewer-3d'));
 const SCENARIO = 'simulated' as const;
 const norm = (y: number) => ((y % 360) + 360) % 360;
+
+type Anchor = { x: number; y: number; w: number; h: number; inView: boolean };
+
+/** Short, plain meaning per status and system. Demo only, never a diagnosis. */
+function issueCopy(region: BodyRegion): { what: string; next?: string } {
+  const bone = region.system === 'bone';
+  const place = region.label.toLowerCase();
+  switch (region.status) {
+    case 'attention': return bone
+      ? { what: `Reduced loading in the ${place} is simulated here, indicating a bone-deconditioning concern in this demo.`, next: 'Review the sample loading trend and mission countermeasure plan.' }
+      : { what: `Reduced activity in the ${place} is simulated here, indicating a muscle-deconditioning concern in this demo.`, next: 'Review the sample activity trend and mission countermeasure plan.' };
+    case 'flagged': return bone
+      ? { what: `A severe low-loading / weakness concern is simulated in the ${place}. This is not a detected fracture.`, next: 'For a real concern, follow mission protocol and contact the medical team before loading the area.' }
+      : { what: `A marked low-activity / weakness concern is simulated in the ${place}. This is not a diagnosed injury.`, next: 'For a real concern, follow mission protocol and contact the medical team.' };
+    case 'unavailable': return { what: 'No simulated sample for this region right now.' };
+    default: return { what: `No ${bone ? 'loading' : 'activity'} concern is flagged in this demo region.` };
+  }
+}
+
+function Callout({ pick, region, anchor, onClose }: { pick: MeshPick; region: BodyRegion; anchor: Anchor; onClose: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({ w: 260, h: 160 });
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setSize(s => (s.w === el.offsetWidth && s.h === el.offsetHeight) ? s : { w: el.offsetWidth, h: el.offsetHeight }));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const pad = 8, gap = 18;
+  const cx = Math.min(Math.max(anchor.x, 0), anchor.w), cy = Math.min(Math.max(anchor.y, 0), anchor.h);
+  const right = cx + gap + size.w <= anchor.w - pad || cx < anchor.w / 2;
+  let left = right ? cx + gap : cx - gap - size.w;
+  left = Math.min(Math.max(left, pad), Math.max(pad, anchor.w - size.w - pad));
+  const top = Math.min(Math.max(cy - size.h / 2, pad), Math.max(pad, anchor.h - size.h - pad - 52));
+  const arrowY = Math.min(Math.max(cy - top, 14), size.h - 14);
+  const overlapsTarget = cx > left && cx < left + size.w;
+  const copy = issueCopy(region);
+  const st = region.status;
+  return <div ref={ref} className={`bm-callout status-${st} ${right ? 'is-right' : 'is-left'}`} role="dialog" aria-modal="false"
+    aria-labelledby="bm-callout-title" style={{ transform: `translate(${Math.round(left)}px, ${Math.round(top)}px)` }}
+    onPointerDown={e => e.stopPropagation()} onPointerUp={e => e.stopPropagation()} onPointerMove={e => e.stopPropagation()}
+    onWheel={e => e.stopPropagation()}
+    onKeyDown={e => { if (e.key === 'Escape') onClose(); e.stopPropagation(); }}
+    data-testid="panel-body-region-detail">
+    {anchor.inView && !overlapsTarget && <span className="bm-callout-pin" style={{ top: arrowY }} aria-hidden="true" />}
+    <button type="button" className="bm-close" aria-label="Close" onClick={onClose} data-testid="button-body-detail-close"><X size={16} aria-hidden="true" /></button>
+    <span className="bm-callout-tag">Simulated</span>
+    <h3 id="bm-callout-title" data-testid="text-body-region-label">{pick.name}</h3>
+    <p className="bm-status" data-testid="status-body-region"><StatusIcon status={st} />{statusLabel[st]}</p>
+    <p className="bm-callout-what" data-testid="text-body-region-issue">{copy.what}</p>
+    {copy.next && <p className="bm-callout-next">{copy.next}</p>}
+    <p className="bm-sample" data-testid="text-body-region-reading"><span>Demo · {region.label}</span><strong>{region.sampleReading ?? 'Unavailable'}</strong></p>
+    {!anchor.inView && <p className="bm-callout-off">Selected part is out of view. Rotate to see it.</p>}
+  </div>;
+}
 
 const StatusIcon = ({ status }: { status: RegionStatus }) => {
   const Icon = status === 'flagged' ? AlertTriangle : status === 'attention' ? Eye : status === 'unavailable' ? Unplug : CircleDot;
@@ -36,7 +92,9 @@ export function BodyMap() {
   const [zoom, setZoomRaw] = useState(1);
   const setZoom = (value: number) => setZoomRaw(Math.max(1, Math.min(3, Math.round(value * 100) / 100)));
   const [hover, setHover] = useState<MeshPick | null>(null);
-  const [selected, setSelected] = useState<MeshPick | null>(null);
+  const [selected, setSelectedRaw] = useState<MeshPick | null>(null);
+  const [anchor, setAnchor] = useState<Anchor | null>(null);
+  const setSelected = (p: MeshPick | null) => { if (p?.uuid !== selected?.uuid) setAnchor(null); setSelectedRaw(p); };
   const [keys, setKeys] = useState<MeshPick[]>([]);
   const [focusIdx, setFocusIdx] = useState<number | null>(null);
   const index = useRegionIndex(isBackFacing(yaw));
@@ -50,7 +108,6 @@ export function BodyMap() {
   const readout = hover ?? focusPick;
   const readoutRegion = readout ? index[readout.key] : undefined;
   const selRegion = selected ? index[selected.key] : undefined;
-  const selStatus = selRegion?.status ?? 'normal';
 
   return <div className="body-map" data-testid="panel-body-map">
     <div className="bm-stage">
@@ -81,13 +138,14 @@ export function BodyMap() {
           <BodyViewer3D key={attempt} url={MODEL_URL} statusByKey={statusByKey}
             selectedUuid={selected?.uuid ?? null} focusKey={focusPick?.key ?? null}
             yaw={yaw} zoom={zoom} label={yawLabel(yaw)} onYawChange={setYaw} onZoomChange={setZoom}
-            onSelect={setSelected} onHover={setHover} onKeys={setKeys} onError={setLoadError} />
+            onSelect={setSelected} onHover={setHover} onKeys={setKeys} onError={setLoadError} onAnchor={setAnchor} />
         </Suspense>
         <div className={`bm-hover ${readoutRegion ? `status-${readoutRegion.status}` : ''}`} aria-live="polite" data-testid="text-body-hover-readout">
           {readout && readoutRegion
             ? <><StatusIcon status={readoutRegion.status} /><strong>{focusPick && !hover ? readoutRegion.label : readout.name}</strong><span>{statusLabel[readoutRegion.status]}</span></>
             : <span className="bm-hint">Drag to rotate · Scroll to zoom · Tap a part</span>}
         </div>
+        {selected && selRegion && anchor && <Callout key={selected.uuid} pick={selected} region={selRegion} anchor={anchor} onClose={() => setSelected(null)} />}
       </div>}
 
       <div className="bm-controls">
@@ -108,15 +166,6 @@ export function BodyMap() {
       </div>
     </div>
 
-    {selected && selRegion && <article className={`bm-detail status-${selStatus}`} aria-live="polite" data-testid="panel-body-region-detail">
-      <button type="button" className="bm-close" aria-label="Close" onClick={() => setSelected(null)} data-testid="button-body-detail-close"><X size={17} aria-hidden="true" /></button>
-      <h3 data-testid="text-body-region-label">{selected.name}</h3>
-      <p className="bm-status" data-testid="status-body-region"><StatusIcon status={selStatus} />{statusLabel[selStatus]}</p>
-      <p className="bm-sample" data-testid="text-body-region-reading">
-        <span>Demo sample · {selRegion.label}</span>
-        <strong>{selRegion.sampleReading ?? 'Unavailable'}</strong>
-      </p>
-    </article>}
 
     <div className="bm-legend" aria-label="Status colors">
       {(['normal', 'attention', 'flagged', 'unavailable'] as const).map(s => <span key={s} className={`status-${s}`}><StatusIcon status={s} />{statusLabel[s].replace(' · demo', '')}</span>)}

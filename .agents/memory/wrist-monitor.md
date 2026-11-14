@@ -75,6 +75,12 @@ Show bones and muscles together in one simple 3D body; bones highlight on hover 
 
 **How to apply:** Do not restore separate anatomy-system tabs, scenario/comparison clutter, or an illustrated fallback. Keep only concise controls, selected-part details, a small simulation label, and expandable required model credits. Hovered bones must visibly highlight and remain clickable through translucent muscles.
 
+Selected anatomy details belong in a floating box beside the selected part, not below the model.
+
+**Why:** The user explicitly requested a nearby hovering box that explains what is wrong with a yellow or red bone.
+
+**How to apply:** Anchor the box to the selected anatomy through rotation/zoom and keep it inside narrow screens. Include a concise explanation of the simulated concern, not only its status color or sample number; never imply a confirmed injury.
+
 Daily logs use automatically determined Earth Day and Hour, with the entry taken from the astronaut’s voice. Only crew mood and stress are manual fields; the archive belongs below them.
 
 **Why:** The user explicitly requested this simpler recording flow and vertical archive placement.
