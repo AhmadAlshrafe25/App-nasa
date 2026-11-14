@@ -2,7 +2,7 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { Link, Redirect, Route, Router as WouterRouter, Switch, useLocation } from 'wouter';
 import {
   Activity, AlertTriangle, ArrowDownRight, Bell, Check, CheckCircle2, ClipboardList,
-  Droplets, Flame, Gauge, HeartPulse, Moon, Orbit, Radiation as RadiationIcon,
+  Droplets, Dumbbell, Flame, Gauge, HeartPulse, Moon, Orbit, Radiation as RadiationIcon,
   ShieldAlert, Siren, Sun, Thermometer, Watch, Waves, Wind,
 } from 'lucide-react';
 import {
@@ -12,6 +12,7 @@ import {
 } from '@/lib/radiation';
 import { describeRadiation } from '@/lib/radiation-copy';
 import { DailyLog } from '@/components/daily-log';
+import { Countermeasures } from '@/components/countermeasures';
 import { useDailyReminder } from '@/hooks/use-daily-reminder';
 import {
   defaultBodyReadings, evaluateAllVitals, normalizeBodyReadings,
@@ -469,6 +470,7 @@ function Overview({
         {evaluated.items.filter(item => !primaryReadingKeys.includes(item.spec.key)).map(item => <VitalSensorCard key={item.spec.key} item={item} onChange={next => onChangeReadings({ ...readings, [item.spec.key]: next })} />)}
       </div>
     </details>
+    <Link href="/countermeasures" className="cm-entry-link" data-testid="link-countermeasures"><Dumbbell size={16} aria-hidden="true" />Countermeasures · local demo</Link>
     <ReadingsExplained analysis={analysis} />
     <details className="panel sensor-architecture-banner compact-demo-settings" data-testid="banner-sensor-architecture">
       <summary>Demo settings · no connected sensors</summary>
@@ -572,6 +574,7 @@ function RoutedApp() {
       <Route path="/"><Overview readings={readings} onChangeReadings={setReadings} /></Route>
       <Route path="/signals"><Redirect to="/" replace /></Route>
       <Route path="/alerts"><Alerts readings={readings} /></Route>
+      <Route path="/countermeasures"><Countermeasures /></Route>
       <Route path="/log"><DailyLog reminder={reminder} /></Route>
       <Route path="/wellbeing"><Redirect to="/log" replace /></Route>
       <Route path="/companion"><Redirect to="/log" replace /></Route>
