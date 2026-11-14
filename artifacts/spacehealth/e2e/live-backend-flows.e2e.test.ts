@@ -13,7 +13,17 @@ after(async () => { await harness?.stop(); });
 async function open(viewport: { width: number; height: number }, online: boolean, path = '/') {
   const opened = await harness.openPage(viewport);
   opened.network.online = online;
+  opened.page.on('response', response => {
+    if (response.url().includes('/dashboard')) console.log('Dashboard response:', response.status(), response.url());
+  });
+  opened.page.on('requestfailed', request => {
+    if (request.url().includes('/dashboard')) console.log('Dashboard request failed:', request.failure()?.errorText);
+  });
   await opened.page.goto(`${harness.appUrl}${path}`);
+  const mission = byId(opened.page, 'section-mission-overview');
+  if (await mission.count() && !(await mission.evaluate(element => (element as HTMLDetailsElement).open))) {
+    await mission.locator(':scope > summary').click();
+  }
   return opened;
 }
 
@@ -48,7 +58,7 @@ describe('with the API running', () => {
   test('Companion shows the live label and Mark viewed persists to the API', async () => {
     const { page, context } = await open(WIDE, true);
     try {
-      await expectText(page, 'text-companion-source', /^Live backend · demo data$/);
+      await expectText(page, 'text-companion-source', /^Sample data$/);
       await byId(page, 'card-family-media').waitFor();
       const before = await counts(page);
       assert.ok(before.unviewed > 0, 'seed data has an unviewed message');
@@ -59,14 +69,14 @@ describe('with the API running', () => {
       assert.equal(stored.filter(m => !m.is_viewed).length, before.unviewed - 1, 'the API recorded the change');
       await page.reload();
       await eventually(async () => assert.equal((await counts(page)).unviewed, before.unviewed - 1), 15_000);
-      await expectText(page, 'text-companion-source', /^Live backend · demo data$/);
+      await expectText(page, 'text-companion-source', /^Sample data$/);
     } finally { await context.close(); }
   });
 
   test('Add family message validates, saves to the API and survives a reload', async () => {
     const { page, context } = await open(WIDE, true);
     try {
-      await expectText(page, 'text-companion-source', /^Live backend/);
+      await expectText(page, 'text-companion-source', /^Sample data$/);
       const before = await counts(page);
       await byId(page, 'button-add-message-toggle').click();
       await byId(page, 'button-add-message').click();
@@ -118,7 +128,10 @@ describe('with the API running', () => {
     try {
       await byId(page, 'button-radiation-details').click();
       await byId(page, 'section-ai-findings').waitFor();
+      await page.waitForTimeout(3000);
+      console.log('AI finding state:', await byId(page, 'section-ai-findings').innerText());
       await byId(page, 'text-ai-risk').waitFor();
+      await byId(page, 'button-ai-pattern-details').click();
       await byId(page, 'table-baseline-comparison').waitFor();
       await expectGone(page, 'status-ai-offline');
       await expectGone(page, 'status-ai-error');

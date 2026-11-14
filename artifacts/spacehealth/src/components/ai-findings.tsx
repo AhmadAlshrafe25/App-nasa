@@ -48,7 +48,7 @@ function Findings({ dashboard }: { dashboard: Dashboard }) {
   const forest = dashboard.isolation_forest;
   return <>
     <p className="ai-risk" data-testid="text-ai-risk">Overall: {dashboard.risk_level}</p>
-    <details><summary>Pattern details</summary>
+    <details><summary data-testid="button-ai-pattern-details">Pattern details</summary>
     <h5>Unusual readings</h5>
     {forest.available && forest.anomaly_score !== null && forest.anomaly_score !== undefined
       ? <p data-testid="text-forest-result">Score <strong data-testid="text-forest-score">{forest.anomaly_score.toFixed(3)}</strong> · Outlier: <strong data-testid="text-forest-outlier">{forest.is_outlier ? 'yes' : 'no'}</strong></p>
