@@ -1,9 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  appendEntry, defaultReminder, hasLogForDay, localDay, logStorageKey,
+  appendEntry, defaultReminder, earthHourLabel, formatAstronautLogHeader,
+  hasLogForDay, localDay, logStorageKey,
   readEntries, readReminder, reminderDue, reminderStorageKey,
 } from './daily-log.ts';
+import { defaultBodyReadings, evaluateAllVitals } from './vitals.ts';
 
 function store() {
   const values = new Map<string, string>();
@@ -69,4 +71,21 @@ test('reminder settings survive reload and invalid settings are not silently ena
   assert.deepEqual(readReminder(storage), settings);
   storage.setItem(reminderStorageKey, JSON.stringify({ enabled: true, time: 'not-time' }));
   assert.throws(() => readReminder(storage));
+});
+test('formats Astronaut Log header with Earth Day and Hour', () => {
+  const d = new Date(2026, 10, 14, 6, 45);
+  assert.equal(earthHourLabel(d), '06:45');
+  assert.equal(
+    formatAstronautLogHeader('2026-11-14', '06:45', 142),
+    "Astronaut's Log, Earth Day 2026-11-14, Hour 06:45 · Mission Day 142",
+  );
+});
+test('evaluates wrist and body sensor thresholds into normal, yellow, and red emergency zones', () => {
+  assert.equal(evaluateAllVitals(defaultBodyReadings).overall, 'normal');
+  const yellowState = evaluateAllVitals({ ...defaultBodyReadings, heartRate: 112 });
+  assert.equal(yellowState.overall, 'yellow');
+  assert.equal(yellowState.yellowItems.length, 1);
+  const redState = evaluateAllVitals({ ...defaultBodyReadings, heartRate: 148, oxygen: 88 });
+  assert.equal(redState.overall, 'red');
+  assert.equal(redState.redItems.length, 2);
 });

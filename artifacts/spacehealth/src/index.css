@@ -594,4 +594,98 @@ summary:focus-visible { outline:3px solid #2563eb;outline-offset:2px; }
   .log-layout { gap:10px; }
   .daily-log .checkin-actions .btn { flex:1; }
 }
+/* Wrist & Body Sensors, Yellow Caution Toast, Red Unstoppable Emergency, and Star Trek Astronaut's Log */
+.sensor-live-pill { display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:99px;background:var(--blue-soft);color:#174195;font-size:12px;font-weight:700;border:1px solid #b4cdf3; }
+.sensor-architecture-banner { padding:16px 18px;margin-bottom:14px;background:linear-gradient(135deg,#eef5ff 0%,#ffffff 100%);border:1px solid #adc8f0; }
+.sensor-arch-head { display:flex;gap:12px;align-items:flex-start; }
+.sensor-arch-icon { width:38px;height:38px;border-radius:11px;background:#1d4ed8;color:#fff;display:grid;place-items:center;flex-shrink:0; }
+.sensor-arch-head strong { display:block;color:var(--ink);font-size:16px;margin-bottom:4px; }
+.sensor-arch-head p { margin:0;color:var(--supporting-ink);font-size:13.5px;line-height:1.55; }
+.sensor-preset-bar { display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid #d4e3f7; }
+.preset-yellow-btn { background:#fffbeb!important;border-color:#f59e0b!important;color:#92400e!important;font-weight:800; }
+.preset-red-btn { background:#fef2f2!important;border-color:#dc2626!important;color:#991b1b!important;font-weight:800; }
+.metrics-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.sensor-origin-line { display:block;font-size:11px;font-weight:500;color:var(--supporting-ink);margin-top:2px; }
+.vital-status-row { display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:6px; }
+.vital-zone-pill { padding:3px 8px;border-radius:99px;font:800 10px var(--app-font-mono);letter-spacing:.05em; }
+.zone-normal { background:#dcfce7;color:#166534;border:1px solid #86efac; }
+.zone-yellow { background:#fef3c7;color:#92400e;border:1px solid #f59e0b; }
+.zone-red { background:#dc2626;color:#fff;border:1px solid #991b1b;animation:redPulse 1s infinite alternate; }
+.vital-card-yellow { background:#fffdf5;border:2px solid #f59e0b;box-shadow:0 4px 16px rgba(245,158,11,.15); }
+.vital-card-red { background:#fff5f5;border:2px solid #dc2626;box-shadow:0 0 24px rgba(220,38,38,.35);animation:redCardBorder 1.1s infinite alternate; }
+.vital-reason-line { font-size:12px;font-weight:600;color:var(--supporting-ink);margin-top:4px; }
+.vital-card-yellow .vital-reason-line { color:#92400e; }
+.vital-card-red .vital-reason-line { color:#991b1b;font-weight:800; }
+.vital-thresholds-guide { display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;font-size:10.5px;color:var(--supporting-ink); }
+.vital-thresholds-guide span { padding:2px 6px;border-radius:5px;background:#f1f5f9; }
+.vital-thresholds-guide .th-yellow { background:#fef9c3;color:#854d0e; }
+.vital-thresholds-guide .th-red { background:#fee2e2;color:#991b1b; }
+
+/* Yellow Small Emergency Notification */
+.yellow-emergency-toast { padding:14px 16px;margin-bottom:16px;border-radius:14px;background:linear-gradient(90deg,#fef3c7 0%,#fffbeb 100%);border:2px solid #f59e0b;color:#78350f;box-shadow:0 6px 20px rgba(245,158,11,.22); }
+.yellow-toast-head { display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px; }
+.yellow-toast-badge { display:inline-flex;align-items:center;gap:6px;font:800 12px var(--app-font-mono);color:#92400e;letter-spacing:.04em; }
+.yellow-toast-source { display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:#92400e; }
+.yellow-toast-body { display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px;font-size:13.5px; }
+.yellow-vital-chip { padding:4px 10px;border-radius:8px;background:#fde68a;color:#78350f; }
+.yellow-toast-actions { display:flex;gap:8px;flex-wrap:wrap; }
+
+/* Red Big Non-Stop Emergency Alarm */
+.shell-red-alert { background:#2a0808; }
+.red-emergency-takeover { position:sticky;top:8px;z-index:45;margin-bottom:20px;border-radius:16px;overflow:hidden;background:linear-gradient(145deg,#7f1d1d 0%,#991b1b 50%,#450a0a 100%);color:#fff;border:3px solid #f87171;box-shadow:0 0 38px rgba(220,38,38,.75);animation:redTakeoverPulse 0.9s infinite alternate; }
+.red-emergency-stripes { height:10px;background:repeating-linear-gradient(45deg,#facc15,#facc15 14px,#dc2626 14px,#dc2626 28px); }
+.red-emergency-inner { padding:18px 20px; }
+.red-emergency-header { display:flex;gap:14px;align-items:flex-start; }
+.red-siren-icon { width:48px;height:48px;border-radius:12px;background:#dc2626;border:2px solid #fca5a5;display:grid;place-items:center;flex-shrink:0;animation:redPulse 0.55s infinite alternate; }
+.red-emergency-kicker { font:800 11px var(--app-font-mono);letter-spacing:.1em;color:#fca5a5;text-transform:uppercase; }
+.red-emergency-header h2 { margin:4px 0 6px;font:800 clamp(20px,2.5vw,26px)/1.2 var(--app-font-serif);color:#fff; }
+.red-emergency-header p { margin:0;color:#fecaca;font-size:14px;line-height:1.5; }
+.red-breach-list { display:grid;gap:10px;margin:14px 0; }
+.red-breach-card { padding:12px 14px;border-radius:12px;background:rgba(0,0,0,.35);border:1px solid #f87171; }
+.red-breach-top { display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:16px; }
+.red-sensor-tag { font-size:12px;color:#fca5a5;font-family:var(--app-font-mono); }
+.red-breach-reason { font-size:13px;color:#fef08a;margin-top:4px;font-weight:700; }
+.red-inline-control { display:flex;align-items:center;gap:12px;margin-top:8px;font-size:13px; }
+.red-inline-control input[type=range] { flex:1;accent-color:#facc15; }
+.red-emergency-actions { display:flex;flex-wrap:wrap;gap:10px;margin-top:14px; }
+.red-to-yellow-btn { background:#f59e0b!important;color:#1c1917!important;font-weight:800; }
+.red-to-normal-btn { background:#22c55e!important;color:#052e16!important;font-weight:800; }
+
+/* Star Trek Captain's Log -> Astronaut's Log */
+.captain-log-banner { padding:18px 20px;margin-bottom:16px;border-radius:16px;background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 100%);color:#f8fafc;border-left:8px solid #f59e0b;box-shadow:0 8px 24px rgba(15,23,42,.18); }
+.captain-log-top { display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px; }
+.captain-badge { display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:99px;background:rgba(245,158,11,.2);border:1px solid #f59e0b;color:#fde68a;font:800 11px var(--app-font-mono);letter-spacing:.08em; }
+.captain-stardate { font:700 12px var(--app-font-mono);color:#93c5fd;letter-spacing:.06em; }
+.captain-log-banner h1 { color:#fff!important;margin:0; }
+.captain-log-banner .log-today { background:#1e40af;color:#dbeafe;padding:4px 10px;border-radius:99px;border:1px solid #60a5fa; }
+.captain-quote { margin:6px 0 0;font:600 14px var(--app-font-mono);color:#fde68a; }
+.log-reading-source { padding:18px 20px;margin-bottom:14px; }
+.sensor-sync-warning { padding:10px 12px;border-radius:10px;font-size:13px;margin-top:6px; }
+.sensor-sync-warning.yellow { background:#fef3c7;color:#92400e;border:1px solid #f59e0b; }
+.sensor-sync-warning.red { background:#fee2e2;color:#991b1b;border:1px solid #dc2626;font-weight:700; }
+.voice-log-deck { padding:18px 20px;margin-bottom:14px;border:1px solid #93c5fd;background:linear-gradient(180deg,#f0f7ff 0%,#ffffff 100%); }
+.voice-controls-row { display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:10px; }
+.voice-record-btn { background:#1d4ed8; }
+.voice-stop-btn { background:#dc2626!important;color:#fff!important;animation:redPulse 0.8s infinite alternate; }
+.recording-pill { padding:4px 10px;border-radius:99px;background:#fee2e2;color:#dc2626;font:800 12px var(--app-font-mono);border:1px solid #f87171; }
+.voice-audio-preview, .voice-audio-player { height:38px;max-width:260px; }
+.log-timestamp-row { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
+.captain-log-item { border-left:4px solid #2563eb; }
+.captain-log-item-head { display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px; }
+.earth-stamp-badge { padding:3px 8px;border-radius:6px;background:#1e3a8a;color:#fde68a;font:800 11px var(--app-font-mono);letter-spacing:.04em; }
+.voice-log-badge { padding:3px 8px;border-radius:6px;background:#dbeafe;color:#1e40af;font:800 11px var(--app-font-mono); }
+.captain-entry-text { font-style:italic;background:#fff;padding:10px 12px;border-radius:8px;border-left:3px solid #f59e0b;margin:10px 0;color:var(--ink); }
+.log-audio-box { margin:8px 0; }
+.log-playback-row { margin:8px 0 12px; }
+
+@keyframes redPulse { from { transform:scale(1);opacity:1; } to { transform:scale(1.04);opacity:.88; } }
+@keyframes redCardBorder { from { border-color:#dc2626; } to { border-color:#f87171; } }
+@keyframes redTakeoverPulse { from { box-shadow:0 0 22px rgba(220,38,38,.6); } to { box-shadow:0 0 44px rgba(239,68,68,.95); } }
+
+@media (max-width:760px) {
+  .metrics-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media (max-width:480px) {
+  .metrics-grid, .log-timestamp-row { grid-template-columns:1fr; }
+}
 @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important; } }

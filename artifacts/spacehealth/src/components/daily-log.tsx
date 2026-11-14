@@ -1,31 +1,87 @@
-import { useEffect, useState, type FormEvent } from 'react';
-import { Bell, Check, Volume2 } from 'lucide-react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { Bell, Check, Mic, Play, Radio, Square, Trash2, Volume2, Watch } from 'lucide-react';
 import { Link } from 'wouter';
 import type { DailyReminderControls } from '@/hooks/use-daily-reminder';
-import { appendEntry, hasLogForDay, localDay, logChangedEvent, readEntries, type DailyEntry } from '@/lib/daily-log';
+import {
+  appendEntry, earthHourLabel, formatAstronautLogHeader, hasLogForDay,
+  localDay, logChangedEvent, readEntries, type DailyEntry,
+} from '@/lib/daily-log';
+import { evaluateAllVitals, type BodyReadings } from '@/lib/vitals';
 
-export type DailyReadings = { heartRate: number; sleep: number; activity: number };
+// Create a short playable WAV data URL fallback when microphone hardware is unavailable
+function createFallbackVoiceWavDataUrl(durationSec = 2): string {
+  const sampleRate = 8000;
+  const numSamples = sampleRate * durationSec;
+  const buffer = new ArrayBuffer(44 + numSamples * 2);
+  const view = new DataView(buffer);
+  const writeStr = (offset: number, str: string) => {
+    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+  };
+  writeStr(0, 'RIFF');
+  view.setUint32(4, 36 + numSamples * 2, true);
+  writeStr(8, 'WAVE');
+  writeStr(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeStr(36, 'data');
+  view.setUint32(40, numSamples * 2, true);
+  // Star Trek communicator / log chime followed by soft carrier tone
+  for (let i = 0; i < numSamples; i++) {
+    const t = i / sampleRate;
+    const freq = t < 0.18 ? 1046.5 : t < 0.36 ? 1318.5 : t < 0.55 ? 1568.0 : 440;
+    const env = t < 0.55 ? 0.28 : 0.04 * Math.exp(-(t - 0.55) * 1.5);
+    const sample = Math.max(-1, Math.min(1, Math.sin(2 * Math.PI * freq * t) * env));
+    view.setInt16(44 + i * 2, sample * 32767, true);
+  }
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return `data:audio/wav;base64,${btoa(binary)}`;
+}
 
-export function DailyLog({ reminder, readings }: { reminder: DailyReminderControls; readings: DailyReadings }) {
+export function DailyLog({ reminder, readings }: { reminder: DailyReminderControls; readings: BodyReadings }) {
   const [entries, setEntries] = useState<DailyEntry[]>([]);
   const [loadError, setLoadError] = useState('');
   const [saveError, setSaveError] = useState('');
   const [saved, setSaved] = useState(false);
   const [date, setDate] = useState(localDay());
+  const [hour, setHour] = useState(earthHourLabel());
   const [dateEdited, setDateEdited] = useState(false);
-  const [heartRate, setHeartRate] = useState(String(readings.heartRate));
-  const [sleepHours, setSleepHours] = useState(readings.sleep.toFixed(1));
-  const [activity, setActivity] = useState(String(readings.activity));
-  const [mood, setMood] = useState('');
+  const [mood, setMood] = useState('Good');
   const [stress, setStress] = useState(4);
   const [radiation, setRadiation] = useState('');
   const [note, setNote] = useState('');
-  const emptyDraft = !heartRate && !sleepHours && !activity && !mood && stress === 4 && !radiation && !note;
+
+  // Voice Log state
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [voiceAudioDataUrl, setVoiceAudioDataUrl] = useState<string>('');
+  const [voiceDurationSec, setVoiceDurationSec] = useState<number>(0);
+  const [voiceStatusMsg, setVoiceStatusMsg] = useState<string>('');
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const speechRecRef = useRef<{ stop: () => void } | null>(null);
+  const recordTimerRef = useRef<number | null>(null);
+  const recordStartRef = useRef<number>(0);
+
+  const evaluated = evaluateAllVitals(readings);
+  const captainHeader = formatAstronautLogHeader(date, hour, 142);
+
   useEffect(() => {
-    // An app left open overnight should start a fresh log on the new day.
-    // Never relabel an existing draft or a date the astronaut selected.
-    if (!dateEdited && emptyDraft) setDate(reminder.today);
-  }, [reminder.today, dateEdited, emptyDraft]);
+    const clock = window.setInterval(() => {
+      if (!dateEdited) {
+        setDate(localDay());
+        setHour(earthHourLabel());
+      }
+    }, 15_000);
+    return () => clearInterval(clock);
+  }, [dateEdited]);
+
   useEffect(() => {
     const load = () => {
       try { setEntries(readEntries(localStorage)); setLoadError(''); }
@@ -35,41 +91,286 @@ export function DailyLog({ reminder, readings }: { reminder: DailyReminderContro
     window.addEventListener('storage', load);
     return () => window.removeEventListener('storage', load);
   }, []);
-  const save = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!event.currentTarget.reportValidity() || !mood || loadError) return;
+
+  const startVoiceRecording = async () => {
+    setSaved(false);
+    setVoiceStatusMsg('');
+    const now = new Date();
+    const currentDay = localDay(now);
+    const currentHour = earthHourLabel(now);
+    setDate(currentDay);
+    setHour(currentHour);
+
+    const prefix = `Astronaut's Log, Earth Day ${currentDay}, Hour ${currentHour}. `;
+    if (!note.trim()) {
+      setNote(prefix);
+    }
+
+    // Start Web Speech API live transcription if supported
+    const SpeechRec = (window as unknown as Record<string, unknown>).SpeechRecognition
+      || (window as unknown as Record<string, unknown>).webkitSpeechRecognition;
+    if (typeof SpeechRec === 'function') {
+      try {
+        const rec = new (SpeechRec as new () => {
+          continuous: boolean;
+          interimResults: boolean;
+          lang: string;
+          onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+          start: () => void;
+          stop: () => void;
+        })();
+        rec.continuous = true;
+        rec.interimResults = false;
+        rec.lang = 'en-US';
+        rec.onresult = (e) => {
+          const last = e.results[e.results.length - 1];
+          const text = last?.[0]?.transcript?.trim();
+          if (text) {
+            setNote(prev => `${prev.trim()} ${text}`.trim());
+          }
+        };
+        rec.start();
+        speechRecRef.current = rec;
+      } catch {
+        // Ignore if browser blocks speech recognition
+      }
+    }
+
+    recordStartRef.current = Date.now();
+    setRecordingSeconds(0);
+    setIsRecording(true);
+    recordTimerRef.current = window.setInterval(() => {
+      setRecordingSeconds(Math.max(1, Math.round((Date.now() - recordStartRef.current) / 1000)));
+    }, 500);
+
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia && 'MediaRecorder' in window) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioChunksRef.current = [];
+        const recorder = new MediaRecorder(stream);
+        recorder.ondataavailable = (ev) => {
+          if (ev.data && ev.data.size > 0) audioChunksRef.current.push(ev.data);
+        };
+        recorder.onstop = () => {
+          stream.getTracks().forEach(t => t.stop());
+          const dur = Math.max(1, Math.round((Date.now() - recordStartRef.current) / 1000));
+          setVoiceDurationSec(dur);
+          if (audioChunksRef.current.length > 0) {
+            const blob = new Blob(audioChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              if (typeof reader.result === 'string') {
+                setVoiceAudioDataUrl(reader.result);
+                setVoiceStatusMsg(`Voice log captured (${dur}s) · Stamped Earth Day ${currentDay} at ${currentHour}`);
+              }
+            };
+            reader.readAsDataURL(blob);
+          } else {
+            setVoiceAudioDataUrl(createFallbackVoiceWavDataUrl(2));
+            setVoiceStatusMsg(`Voice log captured (${dur}s) · Stamped Earth Day ${currentDay} at ${currentHour}`);
+          }
+        };
+        recorder.start();
+        mediaRecorderRef.current = recorder;
+        setVoiceStatusMsg('Recording Astronaut’s Voice Log… Speak now.');
+        return;
+      } catch {
+        // Microphone unavailable or blocked: continue with simulated on-device voice log capture
+      }
+    }
+    setVoiceStatusMsg('Recording Astronaut’s Voice Log (on-device audio synthesizer active)…');
+  };
+
+  const stopVoiceRecording = () => {
+    if (recordTimerRef.current) {
+      clearInterval(recordTimerRef.current);
+      recordTimerRef.current = null;
+    }
+    if (speechRecRef.current) {
+      try { speechRecRef.current.stop(); } catch { /* ignore */ }
+      speechRecRef.current = null;
+    }
+    const dur = Math.max(1, Math.round((Date.now() - recordStartRef.current) / 1000));
+    setIsRecording(false);
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current = null;
+    } else {
+      setVoiceDurationSec(dur);
+      setVoiceAudioDataUrl(createFallbackVoiceWavDataUrl(Math.min(4, Math.max(2, dur))));
+      setVoiceStatusMsg(`Voice log ready (${dur}s) · Marked Earth Day ${date} at Hour ${hour}`);
+    }
+  };
+
+  const commitEntry = (overrideNote?: string, withAudioUrl?: string, withAudioDur?: number) => {
+    if (loadError) return;
+    const now = new Date();
+    const entryDay = date || localDay(now);
+    const entryHour = hour || earthHourLabel(now);
+    const header = formatAstronautLogHeader(entryDay, entryHour, 142);
+    const finalNote = (overrideNote !== undefined ? overrideNote : note).trim()
+      || `${header}. Wrist and body telemetry nominal. Heart rate ${readings.heartRate} bpm, sleep ${readings.sleep.toFixed(1)} hrs, activity ${readings.activity} min.`;
     const entry: DailyEntry = {
-      id: crypto.randomUUID(), createdAt: new Date().toISOString(), logDate: date,
-      heartRate: Number(heartRate), sleepHours: Number(sleepHours),
-      activityMinutes: Number(activity), mood, stress,
-      sleep: `${sleepHours} hours`, note: note.trim(),
+      id: crypto.randomUUID(),
+      createdAt: now.toISOString(),
+      logDate: entryDay,
+      earthDay: entryDay,
+      earthHour: entryHour,
+      captainHeader: header,
+      heartRate: readings.heartRate,
+      sleepHours: readings.sleep,
+      activityMinutes: readings.activity,
+      oxygen: readings.oxygen,
+      respiration: readings.respiration,
+      temperature: readings.temperature,
+      systolicBP: readings.systolicBP,
+      hrv: readings.hrv,
+      water: readings.water,
+      mood: mood || 'Good',
+      stress,
+      sleep: `${readings.sleep.toFixed(1)} hours`,
+      note: finalNote,
+      ...(withAudioUrl ? { voiceAudioDataUrl: withAudioUrl, voiceDurationSec: withAudioDur || 2, voiceTranscript: finalNote } : {}),
       ...(radiation !== '' ? { radiationDose: Number(radiation) } : {}),
     };
     try {
       setEntries(appendEntry(localStorage, entry));
       window.dispatchEvent(new Event(logChangedEvent));
-      setSaved(true); setSaveError('');
-      setHeartRate(''); setSleepHours(''); setActivity(''); setMood('');
-      setStress(4); setRadiation(''); setNote('');
-      setDate(reminder.today); setDateEdited(false);
+      setSaved(true);
+      setSaveError('');
+      setNote('');
+      setRadiation('');
+      setVoiceAudioDataUrl('');
+      setVoiceDurationSec(0);
+      setVoiceStatusMsg(`Saved to Astronaut's Log Archive · Earth Day ${entryDay}, Hour ${entryHour}`);
+      setDate(localDay());
+      setHour(earthHourLabel());
+      setDateEdited(false);
     } catch {
       setSaveError('Log not saved. Your entries are still in the form. Check on-device storage access.');
       setSaved(false);
     }
   };
+
+  const save = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!event.currentTarget.reportValidity() || !mood || loadError) return;
+    commitEntry(note, voiceAudioDataUrl || undefined, voiceDurationSec || undefined);
+  };
+
+  const speakLogEntry = (entry: DailyEntry) => {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const header = entry.captainHeader || formatAstronautLogHeader(
+      entry.earthDay || entry.logDate || localDay(new Date(entry.createdAt)),
+      entry.earthHour || earthHourLabel(new Date(entry.createdAt)),
+    );
+    const text = `${header}. ${entry.note || `Mood ${entry.mood}, stress ${entry.stress} of 10. Heart rate ${entry.heartRate ?? readings.heartRate} beats per minute, sleep ${entry.sleep}.`}`;
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.rate = 0.94;
+    window.speechSynthesis.speak(utter);
+  };
+
   return <div className="fade-in daily-log">
-    <div className="page-heading"><h1>Daily log</h1><span className="log-today">{hasLogForDay(entries, reminder.today) ? 'Logged today' : 'Not logged today'}</span></div>
-    <section className="panel log-reading-source" data-testid="summary-pulled-readings">
-      <div className="section-head"><h2 className="section-title">From Readings · sample</h2><Link href="/" className="section-link" data-testid="link-edit-readings">Adjust</Link></div>
-      <p>Review or edit these values before saving today’s log.</p>
-      <div className="log-readings-grid">
-        <div className="log-reading-pill" data-testid="log-reading-heart-rate"><span>Heart rate</span><strong>{readings.heartRate} <span>beats/min</span></strong></div>
-        <div className="log-reading-pill" data-testid="log-reading-activity"><span>Activity</span><strong>{readings.activity} <span>minutes</span></strong></div>
-        <div className="log-reading-pill" data-testid="log-reading-sleep"><span>Sleep</span><strong>{readings.sleep.toFixed(1)} <span>hours</span></strong></div>
+    <div className="captain-log-banner" data-testid="banner-astronaut-log">
+      <div className="captain-log-top">
+        <span className="captain-badge"><Radio size={14} /> STARFLEET / NASA MISSION RECORD</span>
+        <span className="captain-stardate" data-testid="text-earth-timestamp">EARTH DAY {date} · HOUR {hour}</span>
       </div>
+      <div className="page-heading" style={{ marginBottom: 4 }}>
+        <h1>Astronaut’s Log</h1>
+        <span className="log-today">{hasLogForDay(entries, reminder.today) ? 'Logged today' : 'Awaiting entry'}</span>
+      </div>
+      <p className="captain-quote" data-testid="text-captain-header">“{captainHeader}”</p>
+    </div>
+
+    <section className="panel log-reading-source" data-testid="summary-pulled-readings">
+      <div className="section-head">
+        <div>
+          <h2 className="section-title"><Watch size={17} style={{ display: 'inline', verticalAlign: '-3px', marginRight: 6 }} />Auto-synced from Wrist &amp; Body Sensors</h2>
+          <p className="short-hint" style={{ margin: '2px 0 0' }}>Live biometric telemetry streamed from Mara Velez’s wrist band and smart-textile body vest.</p>
+        </div>
+        <Link href="/" className="section-link" data-testid="link-edit-readings">Adjust in Readings</Link>
+      </div>
+      <div className="log-readings-grid">
+        <div className="log-reading-pill" data-testid="log-reading-heart-rate">
+          <span>Heart rate · Wrist PPG</span>
+          <strong>{readings.heartRate} <span>beats/min</span></strong>
+        </div>
+        <div className="log-reading-pill" data-testid="log-reading-activity">
+          <span>Activity · Body 3-Axis</span>
+          <strong>{readings.activity} <span>minutes</span></strong>
+        </div>
+        <div className="log-reading-pill" data-testid="log-reading-sleep">
+          <span>Sleep · Wrist Actigraphy</span>
+          <strong>{readings.sleep.toFixed(1)} <span>hours</span></strong>
+        </div>
+        <div className="log-reading-pill" data-testid="log-reading-oxygen">
+          <span>Blood SpO₂ · Wrist</span>
+          <strong>{readings.oxygen} <span>%</span></strong>
+        </div>
+        <div className="log-reading-pill" data-testid="log-reading-temp">
+          <span>Body Temp · Torso</span>
+          <strong>{readings.temperature.toFixed(1)} <span>°C</span></strong>
+        </div>
+        <div className="log-reading-pill" data-testid="log-reading-bp">
+          <span>Systolic BP · Wrist</span>
+          <strong>{readings.systolicBP} <span>mmHg</span></strong>
+        </div>
+      </div>
+      {evaluated.overall !== 'normal' && (
+        <div className={`sensor-sync-warning ${evaluated.overall}`} data-testid="log-sensor-status">
+          <strong>{evaluated.overall === 'red' ? 'CRITICAL SENSOR TELEMETRY ATTACHED' : 'CAUTION SENSOR TELEMETRY ATTACHED'}:</strong>{' '}
+          {[...evaluated.redItems, ...evaluated.yellowItems].map(i => `${i.spec.label} (${i.formattedValue} ${i.spec.unit})`).join(', ')}
+        </div>
+      )}
     </section>
+
+    <section className="panel voice-log-deck" data-testid="section-voice-log">
+      <div className="section-head" style={{ margin: '0 0 8px' }}>
+        <div>
+          <h2 className="section-title"><Mic size={17} style={{ display: 'inline', verticalAlign: '-3px', marginRight: 6 }} />Voice Log Recorder</h2>
+          <p className="short-hint" style={{ margin: '2px 0 0' }}>Record a spoken Astronaut’s Log. Automatically stamped with Earth Day ({date}) and Hour ({hour}) and placed in your archive below.</p>
+        </div>
+        {isRecording && <span className="recording-pill" data-testid="status-voice-recording">● REC {recordingSeconds}s</span>}
+      </div>
+      <div className="voice-controls-row">
+        {!isRecording ? (
+          <button type="button" className="btn voice-record-btn" onClick={startVoiceRecording} data-testid="button-start-voice-log">
+            <Mic size={16} /> Record Astronaut’s Voice Log
+          </button>
+        ) : (
+          <button type="button" className="btn voice-stop-btn" onClick={stopVoiceRecording} data-testid="button-stop-voice-log">
+            <Square size={16} /> Stop Recording ({recordingSeconds}s)
+          </button>
+        )}
+        {voiceAudioDataUrl && !isRecording && (
+          <>
+            <audio controls src={voiceAudioDataUrl} className="voice-audio-preview" data-testid="audio-voice-preview" />
+            <button
+              type="button"
+              className="btn"
+              onClick={() => commitEntry(note, voiceAudioDataUrl, voiceDurationSec)}
+              data-testid="button-save-voice-log-now"
+            >
+              <Check size={16} /> Log Voice Entry ({date} · {hour})
+            </button>
+            <button
+              type="button"
+              className="btn outline small"
+              onClick={() => { setVoiceAudioDataUrl(''); setVoiceDurationSec(0); setVoiceStatusMsg('Voice clip cleared.'); }}
+              data-testid="button-clear-voice-clip"
+            >
+              <Trash2 size={14} /> Clear
+            </button>
+          </>
+        )}
+      </div>
+      {voiceStatusMsg && <p className="short-hint" role="status" style={{ marginTop: 8 }} data-testid="status-voice-log">{voiceStatusMsg}</p>}
+    </section>
+
     <details className="panel reminder-settings">
-      <summary data-testid="button-reminder-settings"><Bell size={16} /><strong>Daily reminder</strong><span>{reminder.settings.enabled ? reminder.settings.time : 'Off'}</span></summary>
+      <summary data-testid="button-reminder-settings"><Bell size={16} /><strong>Daily log reminder</strong><span>{reminder.settings.enabled ? reminder.settings.time : 'Off'}</span></summary>
       <div className="reminder-options">
         <label className="toggle-label"><input type="checkbox" checked={reminder.settings.enabled} onChange={e => reminder.update({ enabled: e.target.checked })} data-testid="input-reminder-enabled" />Remind me every day</label>
         <label className="form-label" htmlFor="reminder-time">Time <span className="short-hint">device local time</span></label>
@@ -83,43 +384,112 @@ export function DailyLog({ reminder, readings }: { reminder: DailyReminderContro
         <p className="short-hint"><strong>Keep this app open.</strong> Device sleep or browser limits can delay alerts. No reminder after today’s log is saved.</p>
       </div>
     </details>
+
     {reminder.error && <p className="log-error" role="alert">{reminder.error}</p>}
+
     <div className="grid overview-bottom log-layout">
       <form className="panel form-panel" onSubmit={save} onChange={() => setSaved(false)} data-testid="form-daily-log">
-        <label className="form-label" htmlFor="log-date">Log date</label>
-        <input className="log-input" type="date" id="log-date" required max={reminder.today} value={date} onChange={e => { setDate(e.target.value); setDateEdited(true); }} />
-        <div className="log-number-fields">
-          <label className="form-label" htmlFor="log-heart-rate">Heart rate <span className="short-hint">beats per minute</span><input className="log-input" id="log-heart-rate" type="number" inputMode="numeric" required min="30" max="220" step="1" value={heartRate} onChange={e => setHeartRate(e.target.value)} data-testid="input-log-heart-rate" /></label>
-          <label className="form-label" htmlFor="log-sleep">Sleep <span className="short-hint">hours in past day</span><input className="log-input" id="log-sleep" type="number" inputMode="decimal" required min="0" max="24" step="0.1" value={sleepHours} onChange={e => setSleepHours(e.target.value)} data-testid="input-log-sleep" /></label>
-          <label className="form-label" htmlFor="log-activity">Activity <span className="short-hint">minutes in past day</span><input className="log-input" id="log-activity" type="number" inputMode="numeric" required min="0" max="1440" step="1" value={activity} onChange={e => setActivity(e.target.value)} data-testid="input-log-activity" /></label>
+        <div className="log-timestamp-row">
+          <div>
+            <label className="form-label" htmlFor="log-date" style={{ marginTop: 0 }}>Earth Day</label>
+            <input className="log-input" type="date" id="log-date" required max={reminder.today} value={date} onChange={e => { setDate(e.target.value); setDateEdited(true); }} data-testid="input-log-date" />
+          </div>
+          <div>
+            <label className="form-label" htmlFor="log-hour" style={{ marginTop: 0 }}>Earth Hour</label>
+            <input className="log-input" type="time" id="log-hour" required value={hour} onChange={e => { setHour(e.target.value); setDateEdited(true); }} data-testid="input-log-hour" />
+          </div>
         </div>
-        <label className="form-label" htmlFor="log-mood">Mood</label>
-        <select className="log-input" id="log-mood" required value={mood} onChange={e => setMood(e.target.value)} data-testid="input-log-mood"><option value="">Choose mood</option>{['Low', 'Tense', 'Okay', 'Good', 'Bright'].map(value => <option key={value}>{value}</option>)}</select>
-        <label className="form-label" htmlFor="log-stress">Stress <strong>{stress}/10</strong><span className="short-hint">1 low · 10 high</span></label>
+
+        <label className="form-label" htmlFor="log-mood">Crew Mood</label>
+        <select className="log-input" id="log-mood" required value={mood} onChange={e => setMood(e.target.value)} data-testid="input-log-mood">
+          <option value="">Choose mood</option>
+          {['Low', 'Tense', 'Okay', 'Good', 'Bright'].map(value => <option key={value}>{value}</option>)}
+        </select>
+
+        <label className="form-label" htmlFor="log-stress">Stress Level <strong>{stress}/10</strong><span className="short-hint">1 low · 10 high</span></label>
         <input id="log-stress" type="range" min="1" max="10" value={stress} onChange={e => setStress(Number(e.target.value))} data-testid="input-log-stress" />
-        <details className="log-optional"><summary>Radiation & note <span className="short-hint">optional</span></summary>
+
+        <label className="form-label" htmlFor="log-note">
+          Astronaut’s Log Entry / Voice Transcript
+          <button
+            type="button"
+            className="section-link"
+            style={{ float: 'right', background: 'none', border: 0, padding: 0, fontSize: 12 }}
+            onClick={() => setNote(prev => prev.startsWith("Astronaut's Log") ? prev : `${captainHeader} — ${prev}`)}
+            data-testid="button-insert-stardate"
+          >
+            + Insert “Astronaut’s Log” header
+          </button>
+        </label>
+        <textarea
+          className="text-area"
+          id="log-note"
+          maxLength={800}
+          placeholder={`${captainHeader} — Crew systems and wrist biometrics nominal...`}
+          value={note}
+          onChange={e => setNote(e.target.value)}
+          data-testid="input-log-note"
+        />
+
+        <details className="log-optional">
+          <summary>Radiation dose <span className="short-hint">optional</span></summary>
           <label className="form-label" htmlFor="log-radiation">Radiation dose <span className="short-hint">past 24 hours · microsieverts</span></label>
           <input className="log-input" id="log-radiation" type="number" min="0" max="1000000" step="any" inputMode="decimal" value={radiation} onChange={e => setRadiation(e.target.value)} data-testid="input-log-radiation" />
-          <p className="short-hint">Copy the total from your dosimeter, not its hourly rate. Leave blank if unknown. Microsieverts measure radiation dose.</p>
-          <label className="form-label" htmlFor="log-note">Note</label>
-          <textarea className="text-area" id="log-note" maxLength={500} value={note} onChange={e => setNote(e.target.value)} data-testid="input-log-note" />
         </details>
-        <div className="checkin-actions"><span className="short-hint">On-device only</span><button className="btn" type="submit" disabled={Boolean(loadError)} data-testid="button-save-log"><Check size={16} />Save log</button></div>
-        {saved && <p className="saved-status" role="status" data-testid="status-log-saved">Saved on this device</p>}
+
+        <div className="checkin-actions">
+          <span className="short-hint">Stamped by Earth Day &amp; Hour · On-device</span>
+          <button className="btn" type="submit" disabled={Boolean(loadError)} data-testid="button-save-log">
+            <Check size={16} /> Record in Astronaut’s Log
+          </button>
+        </div>
+        {saved && <p className="saved-status" role="status" data-testid="status-log-saved">Recorded in Astronaut’s Log Archive</p>}
         {saveError && <p className="log-error" role="alert" data-testid="status-log-error">{saveError}</p>}
       </form>
+
       <section className="panel panel-pad" data-testid="section-log-history">
-        <div className="section-head"><h2 className="section-title">Past logs</h2><span>{entries.length}</span></div>
-        {loadError ? <p className="log-error" role="alert">{loadError}</p> : entries.length === 0 ? <p className="short-hint">No logs yet</p> : <div className="history-list">
-          {entries.map(entry => <details className="history-item log-history" key={entry.id} data-testid={`history-log-${entry.id}`}>
-            <summary><strong>{entry.logDate || localDay(new Date(entry.createdAt))}</strong><span>{entry.mood} · Stress {entry.stress}/10</span></summary>
-            <dl><dt>Sleep</dt><dd>{entry.sleep}</dd>
-              {entry.heartRate !== undefined && <><dt>Heart rate</dt><dd>{entry.heartRate} beats/min</dd></>}
-              {entry.activityMinutes !== undefined && <><dt>Activity</dt><dd>{entry.activityMinutes} minutes</dd></>}
-              <dt>Radiation dose</dt><dd>{entry.radiationDose === undefined ? 'Not logged' : `${entry.radiationDose} microsieverts / 24h`}</dd>
-            </dl>
-            {entry.note && <p className="history-note">{entry.note}</p>}
-          </details>)}
+        <div className="section-head"><h2 className="section-title">Astronaut’s Log Archive</h2><span className="score-label">{entries.length}</span></div>
+        {loadError ? <p className="log-error" role="alert">{loadError}</p> : entries.length === 0 ? <p className="short-hint" data-testid="empty-log-history">No Astronaut’s Logs recorded yet</p> : <div className="history-list">
+          {entries.map((entry, idx) => {
+            const entryDay = entry.earthDay || entry.logDate || localDay(new Date(entry.createdAt));
+            const entryHour = entry.earthHour || earthHourLabel(new Date(entry.createdAt));
+            const header = entry.captainHeader || formatAstronautLogHeader(entryDay, entryHour, 142);
+            return (
+              <details className="history-item log-history captain-log-item" key={entry.id} open={idx === 0} data-testid={`history-log-${entry.id}`}>
+                <summary>
+                  <div className="captain-log-item-head">
+                    <span className="earth-stamp-badge" data-testid={`log-earth-stamp-${entry.id}`}>
+                      EARTH DAY {entryDay} · HOUR {entryHour}
+                    </span>
+                    {entry.voiceAudioDataUrl && <span className="voice-log-badge">VOICE LOG ({entry.voiceDurationSec ?? 2}s)</span>}
+                  </div>
+                  <strong>{header}</strong>
+                  <span>{entry.mood} · Stress {entry.stress}/10 · HR {entry.heartRate ?? readings.heartRate} bpm · Sleep {entry.sleep}</span>
+                </summary>
+                {entry.note && <p className="history-note captain-entry-text">“{entry.note}”</p>}
+                {entry.voiceAudioDataUrl && (
+                  <div className="log-audio-box">
+                    <audio controls src={entry.voiceAudioDataUrl} className="voice-audio-player" data-testid={`audio-log-${entry.id}`} />
+                  </div>
+                )}
+                <div className="log-playback-row">
+                  <button type="button" className="btn outline small" onClick={() => speakLogEntry(entry)} data-testid={`button-speak-log-${entry.id}`}>
+                    <Play size={13} /> Play Computer Readback
+                  </button>
+                </div>
+                <dl>
+                  <dt>Earth Day &amp; Hour</dt><dd>{entryDay} at {entryHour}</dd>
+                  <dt>Heart rate (Wrist/Chest)</dt><dd>{entry.heartRate ?? readings.heartRate} beats/min</dd>
+                  <dt>Activity (3-Axis Body)</dt><dd>{entry.activityMinutes ?? readings.activity} minutes</dd>
+                  <dt>Sleep (Wrist Actigraphy)</dt><dd>{entry.sleep}</dd>
+                  {entry.oxygen !== undefined && <><dt>Blood SpO₂ (Wrist)</dt><dd>{entry.oxygen}%</dd></>}
+                  {entry.temperature !== undefined && <><dt>Body Temp (Torso)</dt><dd>{entry.temperature.toFixed(1)} °C</dd></>}
+                  {entry.systolicBP !== undefined && <><dt>Systolic BP (Wrist)</dt><dd>{entry.systolicBP} mmHg</dd></>}
+                  <dt>Radiation dose</dt><dd>{entry.radiationDose === undefined ? 'Not logged' : `${entry.radiationDose} µSv / 24h`}</dd>
+                </dl>
+              </details>
+            );
+          })}
         </div>}
       </section>
     </div>

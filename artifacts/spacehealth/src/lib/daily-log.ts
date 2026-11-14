@@ -8,7 +8,27 @@ export type DailyEntry = {
   id: string; createdAt: string; mood: string; stress: number; sleep: string; note: string;
   logDate?: string; heartRate?: number; sleepHours?: number; activityMinutes?: number;
   radiationDose?: number;
+  earthDay?: string;
+  earthHour?: string;
+  captainHeader?: string;
+  voiceAudioDataUrl?: string;
+  voiceDurationSec?: number;
+  voiceTranscript?: string;
+  oxygen?: number;
+  respiration?: number;
+  temperature?: number;
+  systolicBP?: number;
+  hrv?: number;
+  water?: number;
 };
+
+export function earthHourLabel(date = new Date()) {
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
+export function formatAstronautLogHeader(earthDay: string, earthHour: string, flightDay = 142) {
+  return `Astronaut's Log, Earth Day ${earthDay}, Hour ${earthHour} · Mission Day ${flightDay}`;
+}
 export type DailyReminder = {
   enabled: boolean; time: string; voiceEnabled: boolean; lastFired: string; dismissedOn: string;
 };
