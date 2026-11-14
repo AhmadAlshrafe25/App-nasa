@@ -13,7 +13,7 @@ test('missing or invalid preferences use the default Space display', () => {
   }
 });
 
-test('both themes update the display and browser color, and Sky is restored on reload', () => {
+test('both themes keep the dark browser color, and Sky is restored on reload', () => {
   const dataset: Record<string, string> = {};
   let browserColor = '';
   const originalDocument = Object.getOwnPropertyDescriptor(globalThis, 'document');
@@ -26,10 +26,10 @@ test('both themes update the display and browser color, and Sky is restored on r
   try {
     applyTheme('space');
     assert.equal(dataset.theme, 'space');
-    assert.equal(browserColor, '#080f21');
+    assert.equal(browserColor, '#10152B');
     initializeTheme();
     assert.equal(dataset.theme, 'sky');
-    assert.equal(browserColor, '#e6f3ff');
+    assert.equal(browserColor, '#10152B');
   } finally {
     if (originalDocument) Object.defineProperty(globalThis, 'document', originalDocument);
     else Reflect.deleteProperty(globalThis, 'document');

@@ -223,10 +223,10 @@ function Sparkline({ values, label = 'Simulated trend', alert = false }: { value
     else segments.at(-1)!.push(`${x(index)},${y(value)}`);
   });
   const last = values.at(-1);
-  const color = alert ? 'var(--trend-alert, #a5620c)' : 'var(--signal-color)';
+  const color = alert ? 'var(--trend-alert)' : 'var(--signal-color)';
   return <svg className="sparkline" viewBox="0 0 300 74" role="img" aria-label={label}>
     <title>{label}</title>
-    <path d="M6 68H294" stroke="#d4e0f2" strokeWidth="1" />
+    <path d="M6 68H294" stroke="var(--space-line)" strokeWidth="1" />
     {segments.filter(segment => segment.length > 1).map((segment, index) => <polyline key={index} points={segment.join(' ')} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />)}
     {last !== null && last !== undefined && Number.isFinite(last) && <circle cx={x(values.length - 1)} cy={y(last)} r="4" fill={color} />}
   </svg>;
@@ -461,6 +461,13 @@ function Overview({
     <Heading title="Readings" right={<Link href="/alerts" className={`wrist-alert ${pendingCount === 0 ? 'is-reviewed' : ''}`} data-testid="link-alert-status"><Bell size={15} />{pendingCount ? `${pendingCount} demo flags` : 'No demo flags'}</Link>} />
 
     <Link href="/alerts" className="radiation-open" aria-label="View radiation anomaly details" data-testid="link-radiation-details"><RadiationSummary analysis={analysis} acknowledged={demo.acknowledged} trend={samples} /></Link>
+    <section className="mission-context" aria-label="Mission overview" data-testid="section-mission-overview">
+      <div className="mission-context-heading"><Orbit size={15} aria-hidden="true" /><strong>Mission overview</strong><span>Day 142</span></div>
+      <div className="companion-status" role="status" data-testid="status-space-companion">
+        <span className="companion-indicator" aria-hidden="true" />
+        <div><strong>Space Companion</strong><span>Not connected · no chat or communication</span></div>
+      </div>
+    </section>
     <div className="readings-trend-heading">
       <strong>Readings + trends</strong>
       <div className="period-tabs" role="group" aria-label="Trend period">{([7, 14] as const).map(days => <button key={days} type="button" aria-pressed={period === days} className={period === days ? 'selected' : ''} onClick={() => setPeriod(days)} data-testid={`button-period-${days}`}>{days}d</button>)}</div>

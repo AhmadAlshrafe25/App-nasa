@@ -51,3 +51,36 @@
   .cm-glance-values { grid-template-columns:1fr 1fr; }
   .cm-scenarios { grid-template-columns:1fr; }
 }
+
+.cm-back,.cm-entry-link { font-size:18px; }
+.cm-local,.cm-glance-values small,.cm-fields label span,.cm-list li span:first-child,
+.cm-completions li,.cm-fine,.cm-empty { font-size:16px; }
+.cm-glance-head,.cm-status,.cm-score,.cm-scenarios .choice,.cm-list li,
+.cm-list li b { font-size:17px; }
+.cm-glance-head span,.cm-list h2 span,.cm-sub span { font-size:16px; }
+.cm-glance-values b { font-size:34px; }
+.cm-form-head,.cm-list h2,.cm-sub { font-size:21px; }
+.cm-fields input { font-size:18px; }
+@media (max-width:340px) {
+  .cm-glance-values b { font-size:30px; }
+  .cm-scenarios .choice { font-size:16px; }
+}
+
+/* Keep the local demo surface inside the shared deep-space instrument palette. */
+.cm-page .cm-glance,.cm-page .cm-form,.cm-page .cm-error,.cm-page .cm-details,
+.cm-page .cm-list li,.cm-page .cm-glance-values,.cm-page .cm-audio {
+  background-color:#8B72D61A;
+  border-color:#8B72D655;
+}
+.cm-page .cm-heading,.cm-page .cm-back,.cm-page .cm-local,.cm-page .cm-glance-head,
+.cm-page .cm-glance-values b,.cm-page .cm-status,.cm-page .cm-form-head,
+.cm-page .cm-score,.cm-page .cm-list h2,.cm-page .cm-sub,.cm-page .cm-list li,
+.cm-page .cm-list li b,.cm-page .cm-prompts li,.cm-page .cm-empty { color:#E8DCC8; }
+.cm-page .cm-local,.cm-page .cm-glance-head span,.cm-page .cm-glance-values small,
+.cm-page .cm-fine,.cm-page .cm-list li span:first-child,.cm-page .cm-completions li {
+  color:#E8DCC8B8;
+}
+.cm-page .cm-back,.cm-page .cm-entry-link,.cm-page .cm-ok { color:#8CCFFF; }
+.cm-page .cm-prompts li { border-left-color:#8B72D6; }
+.cm-page .cm-fields input { color:#E8DCC8;background:#10152B;border-color:#8B72D655; }
+.cm-page .cm-fields input[aria-invalid='true'],.cm-page .cm-error { border-color:#8B72D6; }

@@ -1,43 +1,43 @@
 @import 'tailwindcss';
 
 :root {
-  color-scheme: light;
-  --background: 252 55% 97%;
-  --foreground: 249 30% 29%;
-  --card: 0 0% 100%;
-  --card-foreground: 249 30% 29%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 249 30% 29%;
-  --primary: 255 42% 54%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 204 78% 94%;
-  --secondary-foreground: 224 38% 36%;
-  --muted: 250 40% 94%;
-  --muted-foreground: 248 19% 48%;
-  --accent: 204 78% 93%;
-  --accent-foreground: 248 34% 39%;
-  --destructive: 264 34% 54%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 249 35% 84%;
-  --input: 249 31% 78%;
-  --ring: 255 48% 57%;
-  --chart-1: 255 48% 57%;
-  --chart-2: 204 72% 67%;
-  --chart-3: 264 30% 72%;
-  --chart-4: 35 31% 77%;
-  --chart-5: 218 46% 75%;
+  color-scheme: dark;
+  --background: 230 46% 12%;
+  --foreground: 36 39% 85%;
+  --card: 230 46% 12%;
+  --card-foreground: 36 39% 85%;
+  --popover: 230 46% 12%;
+  --popover-foreground: 36 39% 85%;
+  --primary: 253 52% 64%;
+  --primary-foreground: 230 46% 12%;
+  --secondary: 203 100% 77%;
+  --secondary-foreground: 230 46% 12%;
+  --muted: 230 35% 20%;
+  --muted-foreground: 36 28% 72%;
+  --accent: 253 40% 28%;
+  --accent-foreground: 36 39% 85%;
+  --destructive: 253 52% 64%;
+  --destructive-foreground: 230 46% 12%;
+  --border: 253 28% 40%;
+  --input: 253 28% 40%;
+  --ring: 203 100% 77%;
+  --chart-1: 253 52% 64%;
+  --chart-2: 203 100% 77%;
+  --chart-3: 36 39% 85%;
+  --chart-4: 253 28% 40%;
+  --chart-5: 230 35% 20%;
   --radius: 0;
   --app-font-sans: "Arabic Typesetting", "Noto Naskh Arabic", "Traditional Arabic", serif;
   --app-font-serif: "Arabic Typesetting", "Noto Naskh Arabic", "Traditional Arabic", serif;
   --app-font-mono: "Arabic Typesetting", "Noto Naskh Arabic", "Traditional Arabic", serif;
-  --ink: #4e4774;
-  --supporting-ink: #716b95;
-  --blue: #648bb9;
-  --blue-dark: #4d719f;
-  --blue-soft: #e9f4fb;
-  --navy: #eeeafb;
-  --signal-color: #806eb5;
-  --trend-alert: #7863a5;
+  --ink: #E8DCC8;
+  --supporting-ink: #8CCFFF;
+  --blue: #8CCFFF;
+  --blue-dark: #8CCFFF;
+  --blue-soft: #8CCFFF22;
+  --navy: #10152B;
+  --signal-color: #8B72D6;
+  --trend-alert: #8CCFFF;
 }
 
 * { box-sizing: border-box; border-radius: 0 !important; }
@@ -54,7 +54,7 @@ body {
 button, input, textarea, select { font: inherit; }
 button { cursor: pointer; }
 button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, summary:focus-visible {
-  outline: 3px solid #789ac5;
+  outline: 3px solid #8CCFFF;
   outline-offset: 2px;
 }
 a { color: inherit; text-decoration: none; }
@@ -411,6 +411,135 @@ input[type=range] { accent-color:#8172b2;flex:1; }
 .reminder-banner p { margin:2px 0 0;color:#777191; }
 .reminder-banner .btn { margin-left:auto; }
 
+/* Deep-space instrument palette: all surfaces are tones of the four mission colors. */
+:root {
+  --space-navy: #10152B;
+  --space-purple: #8B72D6;
+  --space-sky: #8CCFFF;
+  --space-beige: #E8DCC8;
+  --space-panel: #8B72D61A;
+  --space-panel-strong: #8B72D633;
+  --space-line: #8B72D655;
+  --space-muted: #E8DCC8B8;
+}
+html, body { background:var(--space-navy);color:var(--space-beige); }
+body, button, input, textarea, select { font-family:"Arabic Typesetting","Noto Naskh Arabic","Traditional Arabic",serif; }
+.app-shell { background:var(--space-navy); }
+.sidebar,.mobile-nav { background:var(--space-navy);color:var(--space-beige);border-color:var(--space-line); }
+.sidebar { border-right:1px solid var(--space-line); }
+.brand,.brand-name,.crew-name,h1,h2,h3,.section-title,.metric-value,.radiation-value,
+.reading-definitions dt,.alert-callout h3,.form-label,.history-summary,.history-score,
+.captain-log-banner h1 { color:var(--space-beige)!important; }
+.brand-mark,.metric-icon,.empty-icon,.activity-icon { color:var(--space-sky);border-color:var(--space-line);background:var(--space-panel); }
+.nav-link,.nav-label,.sidebar-note,.brand-sub,.mission-motto,.mission-time,.earth-clock,
+.earth-clock-label,.earth-clock time,.topbar,.page-subtitle,.short-hint,.score-label,
+.metric-top,.metric-unit,.metric-foot,.reading-definitions dd,.history-date,.history-note,
+.sensor-origin-line,.vital-reason-line,.chart-labels,.sensor-arch-head p { color:var(--space-muted); }
+.nav-link:hover,.nav-link.active { color:var(--space-beige);background:var(--space-panel-strong); }
+.nav-link.active { box-shadow:inset 3px 0 var(--space-sky); }
+.topbar { background:var(--space-navy);border-color:var(--space-line); }
+.panel,.rule-box,.form-panel,.voice-log-deck,.captain-log-banner,.history-item,
+.alert-callout,.reviewed-box,.notice,.radiation-panel,.sensor-architecture-banner,
+.yellow-emergency-toast,.red-breach-card,.reminder-settings,.daily-reminder-notice,
+.reminder-banner,.cm-glance,.cm-form,.cm-error,.reflection,.log-history,
+.chat-panel,.chat-aside { background:var(--space-panel);border-color:var(--space-line);color:var(--space-beige); }
+.radiation-panel { background:var(--space-panel-strong);border:1px solid var(--space-purple);border-left:5px solid var(--space-sky); }
+.radiation-flagged,.vital-card-yellow,.vital-card-red { background:var(--space-panel-strong);border-color:var(--space-purple); }
+.radiation-caption,.radiation-state,.radiation-comparison,.rule-box p,.notice p,
+.alert-callout p,.history-item,.log-history,.cm-fine,.cm-status { color:var(--space-beige); }
+.radiation-caption svg,.radiation-state svg,.section-link,.cm-back,.cm-entry-link { color:var(--space-sky); }
+.panel { border-color:var(--space-line); }
+.btn { color:var(--space-navy);background:var(--space-purple);border-color:var(--space-purple); }
+.btn:hover { background:var(--space-sky);border-color:var(--space-sky);color:var(--space-navy); }
+.btn.secondary,.btn.outline { color:var(--space-beige);background:transparent;border-color:var(--space-purple); }
+.btn.outline:hover { color:var(--space-navy);background:var(--space-sky); }
+.choice,.period-tabs,.period-tabs button,.theme-picker button { color:var(--space-beige);background:var(--space-panel);border-color:var(--space-line); }
+.choice:hover,.choice.active,.period-tabs button.selected,.theme-picker button[aria-pressed='true'] { color:var(--space-navy);background:var(--space-sky);border-color:var(--space-sky); }
+.period-tabs button.selected { box-shadow:none; }
+.vital-zone-pill,.sensor-live-pill,.wrist-alert,.status-pill,.signal-status,.recording-pill,
+.captain-log-banner .log-today,.captain-stardate,.yellow-vital-chip,.red-siren-icon,
+.alert-symbol,.reviewed-box,.radiation-seen { color:var(--space-sky);background:var(--space-panel);border-color:var(--space-line); }
+.zone-yellow,.zone-red,.vital-card-yellow .vital-zone-pill,.vital-card-red .vital-zone-pill { color:var(--space-beige);background:var(--space-panel-strong);border-color:var(--space-purple); }
+.wrist-alert.is-reviewed { color:var(--space-sky);background:var(--space-panel); }
+.reading-controls,.readings-table th,.readings-table td,.signal-foot,.score-foot,.activity-card { border-color:var(--space-line); }
+.reading-controls > summary,.secondary-vitals > summary,.compact-demo-settings > summary,
+.rule-box summary,.reminder-settings > summary { color:var(--space-sky); }
+.reading-controls > summary::before,.secondary-vitals > summary::before,.rule-box > summary::before { color:var(--space-purple); }
+.readings-table th,.readings-table td,.reading-outlier { color:var(--space-beige)!important; }
+.sparkline > path { stroke:var(--space-line); }
+.sparkline polyline { stroke-linecap:butt;stroke-linejoin:miter; }
+.metric-adjust input[type=range],input[type=range],.toggle-label input { accent-color:var(--space-sky); }
+.log-input,.text-area,.chat-input,.cm-fields input { color:var(--space-beige);background:var(--space-navy);border-color:var(--space-line); }
+.log-input::placeholder,.text-area::placeholder,.chat-input::placeholder { color:var(--space-muted); }
+option { color:var(--space-beige);background:var(--space-navy); }
+.history-item,.history-list .history-item { background:var(--space-panel); }
+.captain-entry-text,.log-error,.daily-reminder-notice,.reminder-banner { color:var(--space-beige);background:var(--space-panel);border-color:var(--space-line); }
+.chat-messages,.message,.message.user,.chat-compose,.prompt-chip { color:var(--space-beige);background:var(--space-panel);border-color:var(--space-line); }
+.sidebar-bottom .orbit-card { background:var(--space-panel);border-color:var(--space-line); }
+.orbit-card strong,.orbit-caption { color:var(--space-beige); }
+.vital-zone-pill,.sensor-live-pill,.wrist-alert,.status-pill,.signal-status,.recording-pill { border:1px solid var(--space-line); }
+.demo-info { color:var(--space-beige);background:var(--space-navy);border-color:var(--space-line);box-shadow:none; }
+.demo-info strong,.demo-disclosure summary { color:var(--space-sky); }
+.theme-demo-note { color:var(--space-muted); }
+.empty-state,.empty-state strong { color:var(--space-beige); }
+.cm-list li,.cm-prompts li { color:var(--space-beige);background:var(--space-panel);border-color:var(--space-purple); }
+.cm-list li span:first-child,.cm-completions li,.cm-glance-values small { color:var(--space-muted); }
+.daily-log .saved-status,.cm-ok,.cm-entry-link,.cm-back,.section-link { color:var(--space-sky); }
+.daily-log .log-history,.daily-log .history-summary,.daily-log .history-score,
+.daily-log .captain-log-top strong,.daily-log .captain-entry-text { color:var(--space-beige); }
+.daily-log .log-history > summary > span,.daily-log .history-date,
+.daily-log .history-note,.daily-log .log-history dd { color:var(--space-muted); }
+.daily-log .captain-stardate,.daily-log .log-today,.daily-log .recording-pill {
+  color:var(--space-sky);background:var(--space-panel);border-color:var(--space-line);
+}
+.daily-log .voice-log-deck,.daily-log .form-panel,.daily-log .panel-pad,
+.daily-log .reminder-options,.daily-log .history-item { background:var(--space-panel);border-color:var(--space-line); }
+.daily-log .voice-audio-preview,.daily-log .voice-audio-player { accent-color:var(--space-sky); }
+.daily-log .log-error { color:var(--space-beige);background:var(--space-panel);border-color:var(--space-line); }
+.chat-header,.chat-compose { border-color:var(--space-line); }
+.chat-header strong,.chat-aside h3 { color:var(--space-beige); }
+.chat-header small,.chat-aside p,.message-time { color:var(--space-muted); }
+.prompt-chip:hover { color:var(--space-navy);background:var(--space-sky);border-color:var(--space-sky); }
+.secondary-vitals { border-color:var(--space-line); }
+.sensor-arch-head strong,.red-emergency-header h2,.red-breach-top strong,
+.yellow-toast-badge,.yellow-toast-source,.yellow-vital-chip { color:var(--space-beige); }
+.red-emergency-kicker,.red-emergency-header p,.red-breach-reason,.red-sensor-tag { color:var(--space-muted); }
+.red-breach-card,.yellow-emergency-toast { border-color:var(--space-purple); }
+.red-to-yellow-btn,.red-to-normal-btn { color:var(--space-navy)!important;background:var(--space-purple)!important; }
+.red-siren-icon,.alert-symbol { color:var(--space-sky);background:var(--space-panel);border-color:var(--space-line); }
+.fade-in { animation:arrive .28s ease both; }
+
+@media (max-width:767px) {
+  .app-shell { display:block;min-height:100dvh;padding-bottom:62px; }
+  .sidebar { display:none; }
+  .topbar { min-height:unset;padding:7px 10px;gap:6px; }
+  .crew-branding { flex:1 1 40%; }
+  .crew-branding .crew-name { font-size:17px; }
+  .mission-motto { font-size:13px; }
+  .sensor-live-pill { font-size:13px;padding:4px 5px; }
+  .mission-time { gap:6px;margin-left:0; }
+  .mission-time .wrist-day,.earth-clock time,.earth-clock-label { font-size:13px; }
+  .main-content { padding:12px 10px 24px; }
+  .mobile-nav { position:fixed;z-index:20;bottom:0;left:0;right:0;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--space-line);padding-bottom:env(safe-area-inset-bottom); }
+  .mobile-nav a { min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--space-muted);font-size:13px; }
+  .mobile-nav a.active { color:var(--space-sky);background:var(--space-panel); }
+  .page-heading h1 { font-size:27px; }
+  .wrist-reading-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .radiation-with-trend { grid-template-columns:1fr;gap:3px; }
+  .radiation-inline-trend .sparkline { height:44px; }
+}
+@media (max-width:340px) {
+  .topbar { gap:4px; }
+  .sensor-live-pill { font-size:12px; }
+  .mission-time .wrist-day { display:none; }
+  .main-content { padding-left:8px;padding-right:8px; }
+  .wrist-reading-grid { gap:6px; }
+  .compact-reading { padding:8px; }
+  .compact-reading .metric-top span { font-size:15px; }
+  .compact-reading .metric-value { font-size:25px; }
+  .radiation-value { font-size:35px; }
+}
+
 @media (max-width:1020px) {
   .app-shell { grid-template-columns:198px minmax(0,1fr); }
   .metrics-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
@@ -554,4 +683,85 @@ input[type=range] { accent-color:#8172b2;flex:1; }
 }
 @media (prefers-reduced-motion: reduce) {
   *,*::before,*::after { animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important; }
+}
+
+/* Larger type scale for quick reading across desktop and wrist-sized screens. */
+body { font-size:20px; }
+.nav-link { font-size:20px; }
+.page-heading h1 { font-size:34px; }
+.section-title { font-size:23px; }
+.section-link,.cm-entry-link,.cm-back { font-size:18px; }
+.readings-trend-heading > strong { font-size:20px; }
+.wrist-alert { font-size:16px; }
+.radiation-caption { font-size:19px; }
+.radiation-caption > span { font-size:17px; }
+.radiation-value { font-size:48px; }
+.radiation-value.reading-unknown { font-size:36px; }
+.radiation-state,.radiation-comparison { font-size:18px; }
+.alert-callout h3 { font-size:21px; }
+.alert-callout p,.rule-box p { font-size:18px; }
+.rule-box summary { font-size:18px; }
+.technical-rule > summary { font-size:17px; }
+.readings-table th { font-size:15px; }
+.readings-table td { font-size:17px; }
+.reading-definitions { font-size:17px; }
+.short-hint { font-size:16px; }
+.metric-top { font-size:18px; }
+.metric-value { font-size:34px; }
+.metric-unit { font-size:16px; }
+.metric-foot,.activity-info span,.activity-value { font-size:16px; }
+.chart-labels { font-size:15px; }
+.compact-reading .metric-top span { font-size:17px; }
+.compact-reading .metric-value { font-size:32px; }
+.compact-reading .metric-unit { font-size:15px; }
+.vital-zone-pill { font-size:14px; }
+.period-tabs button { font-size:17px; }
+.btn { font-size:18px; }
+.choice { font-size:17px; }
+.form-label { font-size:19px; }
+.history-date,.history-note,.history-score { font-size:16px; }
+.daily-log .saved-status { font-size:18px; }
+.captain-log-top strong { font-size:21px; }
+.captain-stardate,.log-today { font-size:16px; }
+.log-input,.text-area { font-size:18px; }
+.daily-log .form-label .short-hint { font-size:15px; }
+.log-history dl { font-size:17px; }
+
+@media (max-width:767px) {
+  .page-heading h1 { font-size:30px; }
+  .section-title { font-size:21px; }
+  .radiation-caption { font-size:17px; }
+  .radiation-value { font-size:40px; }
+  .radiation-value.reading-unknown { font-size:32px; }
+  .radiation-state,.radiation-comparison { font-size:16px; }
+  .chart-labels { font-size:14px; }
+  .compact-reading .metric-top span { font-size:16px; }
+  .compact-reading .metric-value { font-size:29px; }
+  .compact-reading .metric-unit { font-size:14px; }
+  .mobile-nav a { font-size:14px; }
+  .earth-clock-label,.earth-clock time,.mission-time .wrist-day { font-size:14px; }
+  .cm-local { font-size:16px; }
+}
+
+@media (max-width:340px) {
+  .page-heading h1,.wrist-overview .page-heading h1 { font-size:26px; }
+  .readings-trend-heading > strong { font-size:17px; }
+  .wrist-alert { font-size:14px; }
+  .radiation-caption { font-size:16px; }
+  .radiation-caption > span { font-size:14px; }
+  .radiation-value { font-size:36px; }
+  .radiation-value.reading-unknown { font-size:30px; }
+  .wrist-overview .radiation-value { font-size:34px; }
+  .radiation-comparison { font-size:16px; }
+  .radiation-state { font-size:15px; }
+  .wrist-overview .radiation-state { font-size:14px; }
+  .radiation-inline-trend .chart-labels { font-size:13px; }
+  .compact-reading .metric-top span { font-size:15px; }
+  .compact-reading .metric-value { font-size:26px; }
+  .compact-reading .metric-unit { font-size:13px; }
+  .compact-reading .vital-zone-pill { font-size:12px; }
+  .reading-controls > summary { font-size:14px; }
+  .mobile-nav a { font-size:13px; }
+  .earth-clock-label { font-size:13px; }
+  .earth-clock time { font-size:14px; }
 }
