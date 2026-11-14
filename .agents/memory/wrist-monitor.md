@@ -57,6 +57,12 @@ The body map should have a holographic presentation with green good regions, yel
 
 **How to apply:** Apply the same colors to anatomy overlays, labels, legends, and region details. Keep unavailable gray and all injury-related examples explicitly simulated, not a diagnosis.
 
+Do not display a full body-region list beside the anatomy; show a region's simulation sample only after that body part is selected.
+
+**Why:** The user explicitly requested removing the list and opening details by clicking the body itself.
+
+**How to apply:** Keep anatomy hotspots directly clickable and keyboard-accessible, start without a selected detail, and clear details when switching body systems or front/back views.
+
 Daily logs use automatically determined Earth Day and Hour, with the entry taken from the astronaut’s voice. Only crew mood and stress are manual fields; the archive belongs below them.
 
 **Why:** The user explicitly requested this simpler recording flow and vertical archive placement.

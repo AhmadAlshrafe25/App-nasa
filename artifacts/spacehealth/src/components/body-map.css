@@ -15,6 +15,10 @@
 .body-scenario button.active { background:#62F5E21F; border-color:var(--holo); color:var(--holo); font-weight:700; }
 
 .body-map-grid { display:grid; grid-template-columns:minmax(280px,1.1fr) minmax(0,1fr); gap:18px; align-items:start; }
+.body-map-grid.no-selection { grid-template-columns:minmax(0,1fr); }
+.body-map-grid.no-selection .body-figure { width:100%;max-width:700px;justify-self:center; }
+.region-detail-close { float:right;display:grid;place-items:center;min-width:44px;min-height:44px;border:1px solid var(--st);background:transparent;color:var(--st);cursor:pointer; }
+.region-shape:focus-visible { outline:none;stroke:var(--st);stroke-opacity:1;stroke-width:4;fill-opacity:.35; }
 .body-figure { margin:0; padding:10px; border:1px solid #62F5E238; background:#04070d; min-width:0; }
 .body-orient { display:flex; justify-content:space-between; align-items:center; gap:6px; font-size:13px; color:var(--ink-lo); margin-bottom:4px; }
 .body-orient b { color:var(--holo); font-size:13px; letter-spacing:.06em; text-align:center; }

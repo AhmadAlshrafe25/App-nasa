@@ -1,5 +1,5 @@
 import { useEffect, useState, type KeyboardEvent } from 'react';
-import { AlertTriangle, CircleDot, Info, Unplug, Eye, ZoomIn, ZoomOut } from 'lucide-react';
+import { AlertTriangle, CircleDot, Info, Unplug, Eye, ZoomIn, ZoomOut, X } from 'lucide-react';
 import muscleFront from '@/assets/anatomy/body-0.webp';
 import muscleBack from '@/assets/anatomy/body-1.webp';
 import boneFront from '@/assets/anatomy/body-2.webp';
@@ -28,9 +28,9 @@ export function BodyMap({ system }: { system: BodySystem }) {
   const [zoom, setZoom] = useState(0);
   const [hoverId, setHoverId] = useState<string | null>(null);
   const regions = getBodyRegions(system, view, scenario);
-  const [selectedId, setSelectedId] = useState(regions[0].id);
-  useEffect(() => { setSelectedId(getBodyRegions(system, view, 'simulated')[0].id); }, [system, view]);
-  const selected = regions.find(r => r.id === selectedId) ?? regions[0];
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  useEffect(() => { setSelectedId(null); setHoverId(null); }, [system, view]);
+  const selected = regions.find(r => r.id === selectedId);
   const readout = regions.find(r => r.id === hoverId) ?? selected;
   const counts = regions.reduce<Record<RegionStatus, number>>((acc, r) => { acc[r.status]++; return acc; }, { normal: 0, attention: 0, flagged: 0, unavailable: 0 });
 
@@ -43,7 +43,7 @@ export function BodyMap({ system }: { system: BodySystem }) {
     if (next === null) return;
     event.preventDefault();
     setSelectedId(regions[next].id);
-    document.getElementById(`body-region-btn-${regions[next].id}`)?.focus();
+    document.getElementById(`body-region-shape-${regions[next].id}`)?.focus();
   };
 
   return <div className={`body-map system-${system}`} data-testid="panel-body-map">
@@ -63,7 +63,7 @@ export function BodyMap({ system }: { system: BodySystem }) {
         className={view === v ? 'active' : ''} onClick={() => setView(v)}
         data-testid={`button-body-view-${v}`}>{v === 'front' ? 'Front' : 'Back'}</button>)}
     </div>
-    <div className="body-map-grid">
+    <div className={`body-map-grid ${selected ? 'has-selection' : 'no-selection'}`}>
       <figure className="body-figure">
         <div className="body-orient" data-testid="text-body-orientation">
           {view === 'front'
@@ -76,20 +76,27 @@ export function BodyMap({ system }: { system: BodySystem }) {
           <output data-testid="value-body-zoom">{Math.round(ZOOMS[zoom] * 100)}%</output>
           <button type="button" aria-label="Zoom in" disabled={zoom === ZOOMS.length - 1} onClick={() => setZoom(z => Math.min(ZOOMS.length - 1, z + 1))} data-testid="button-body-zoom-in"><ZoomIn size={18} aria-hidden="true" /></button>
         </div>
-        <div className={`holo-readout status-${readout.status}`} aria-live="polite" data-testid="text-body-hover-readout">
+        {readout ? <div className={`holo-readout status-${readout.status}`} aria-live="polite" data-testid="text-body-hover-readout">
           <StatusIcon status={readout.status} />
           <span className="holo-readout-name">{readout.label}</span>
           <span className="holo-readout-status">{statusLabel[readout.status]}</span>
-        </div>
+        </div> : <p className="holo-readout" data-testid="text-body-select-hint">Tap a body part to see its status and simulation sample. Keyboard: Tab to a region, then Enter.</p>}
         <div className="body-art-scroll">
           <div className="body-art holo" style={{ width: `${ZOOMS[zoom] * 100}%` }}>
             <img src={ART[system][view]} alt={`Illustrative ${system === 'muscle' ? 'muscle' : 'skeleton'} anatomy, ${view} view. Not a scan.`} width={512} height={512} draggable={false} data-testid="img-body-anatomy" />
             <span className="holo-grid" aria-hidden="true" />
             <span className="holo-scan" aria-hidden="true" />
-            <svg viewBox="0 0 512 512" aria-hidden="true" onPointerLeave={() => setHoverId(null)}>
-              {regions.map(r => <path key={r.id} d={r.d}
-                className={`region-shape status-${r.status} ${r.id === selected.id ? 'is-selected' : ''}`}
+            <svg viewBox="0 0 512 512" role="group" aria-label="Select a body part for its simulation sample" onPointerLeave={() => setHoverId(null)}>
+              {regions.map((r, index) => <path key={r.id} d={r.d} id={`body-region-shape-${r.id}`}
+                role="button" tabIndex={0} aria-label={`${r.label}: ${statusLabel[r.status]}. Show simulation sample`}
+                aria-pressed={r.id === selectedId}
+                className={`region-shape status-${r.status} ${r.id === selectedId ? 'is-selected' : ''}`}
                 onPointerEnter={() => setHoverId(r.id)}
+                onFocus={() => setHoverId(r.id)} onBlur={() => setHoverId(null)}
+                onKeyDown={event => {
+                  if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setSelectedId(r.id); setHoverId(null); }
+                  else onKey(event, index);
+                }}
                 onClick={() => { setSelectedId(r.id); setHoverId(null); }} data-testid={`shape-body-region-${r.id}`}><title>{`${r.label}: ${statusLabel[r.status]}`}</title></path>)}
             </svg>
           </div>
@@ -98,19 +105,9 @@ export function BodyMap({ system }: { system: BodySystem }) {
           {(['normal', 'attention', 'flagged', 'unavailable'] as const).map(s => <span key={s} className={`legend-chip status-${s}`}><StatusIcon status={s} />{statusLabel[s]} <b>{counts[s]}</b></span>)}
         </figcaption>
       </figure>
-      <div className="body-side">
-        <p className="region-count">{regions.length} mapped {system} regions · {view} view · use arrow keys in the list</p>
-        <div className="region-list" role="listbox" aria-label={`${system === 'muscle' ? 'Muscle' : 'Bone'} regions, ${view} view`}>
-          {regions.map((r, i) => <button key={r.id} id={`body-region-btn-${r.id}`} type="button" role="option"
-            aria-selected={r.id === selected.id} tabIndex={r.id === selected.id ? 0 : -1}
-            className={`region-btn status-${r.status} ${r.id === selected.id ? 'is-selected' : ''}`}
-            onClick={() => setSelectedId(r.id)} onKeyDown={e => onKey(e, i)}
-            data-testid={`button-body-region-${r.id}`}>
-            <span className="region-btn-label">{r.label}</span>
-            <span className="region-btn-status"><StatusIcon status={r.status} />{statusLabel[r.status]}</span>
-          </button>)}
-        </div>
+      {selected && <div className="body-side">
         <article className={`region-detail status-${selected.status}`} aria-live="polite" data-testid="panel-body-region-detail">
+          <button type="button" className="region-detail-close" aria-label="Close body part details" onClick={() => setSelectedId(null)}><X size={18} aria-hidden="true" /></button>
           <span className="region-detail-kicker">Selected region · simulated sample</span>
           <h3 data-testid="text-body-region-label">{selected.label}</h3>
           <p className="region-detail-status" data-testid="status-body-region"><StatusIcon status={selected.status} />{statusLabel[selected.status]}</p>
@@ -123,7 +120,7 @@ export function BodyMap({ system }: { system: BodySystem }) {
           <p className="region-detail-explain">{selected.explanation}</p>
           {selected.status === 'flagged' && <p className="region-detail-next">Review the sample. For any real concern, follow mission protocol and contact the medical team.</p>}
         </article>
-      </div>
+      </div>}
     </div>
   </div>;
 }
