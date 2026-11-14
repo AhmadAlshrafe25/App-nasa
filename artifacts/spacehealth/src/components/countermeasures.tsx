@@ -10,6 +10,7 @@ import { SOUNDSCAPE_DISCLAIMER, startSoundscape, type SoundscapeHandle } from '@
 import './countermeasures.css';
 
 const LIMIT = 50;
+const changedEvent = 'spacehealth-countermeasures-changed';
 type Scenario = CountermeasureState['scenario'];
 const scenarios: { value: Scenario; label: string }[] = [
   { value: 'example', label: 'Example' },
@@ -31,6 +32,7 @@ function loadState(): { state: CountermeasureState; error: string | null; blocke
 function persist(next: CountermeasureState): string | null {
   try {
     localStorage.setItem(countermeasureStorageKey, JSON.stringify(next));
+    window.dispatchEvent(new CustomEvent(changedEvent));
     return null;
   } catch (error) {
     return `Not saved: local storage failed${error instanceof Error && error.message ? ` (${error.message})` : ''}. Your draft is kept.`;

@@ -21,11 +21,17 @@ The app's current scope excludes Chat and family/remote communication features; 
 
 **How to apply:** Do not restore communications features from older plans without renewed approval. Keep reminder speech on-device and explain browser/open-app/audio limitations rather than promising background alarms on a closed web app.
 
-The user selected a labeled, fictional Astro sample with browser-generated speech instead of real family media or a live Earth connection.
+Astro now uses real audio/video recordings sent by invited family members through a private account flow; it is not a live Earth feed.
 
-**Why:** Real voice/video delivery needs authentic media and secure transmission, which this demo does not have.
+**Why:** The user later asked for real messages from family, chose email/password accounts, and approved the private invitation flow.
 
-**How to apply:** Keep the transcript visible, disclose that the voice is computer-generated and the example is fictional, and do not imply real messages or video are connected.
+**How to apply:** Keep family recordings behind invitation-based access and private storage. Do not imply a live Earth connection or reuse the earlier fictional Astro voice sample as a real message.
+
+Astro belongs in a floating button near the lower-right side of the dashboard, not in the navigation tabs.
+
+**Why:** The user explicitly corrected its placement and asked for a side button down on the dashboard rather than a new tab.
+
+**How to apply:** Keep the main navigation focused on Readings, Alerts, and Log. Open the existing Astro dialog from the floating button and keep it above the mobile navigation.
 
 Daily logs use automatically determined Earth Day and Hour, with the entry taken from the astronaut’s voice. Only crew mood and stress are manual fields; the archive belongs below them.
 
@@ -39,8 +45,8 @@ The shared mission motto must use the exact requested spelling “Ad astra per a
 
 **How to apply:** Keep the motto in shared branding across modules. The shared Earth clock is Eastern civil time, but this does not authorize changing device-local daily logs or reminders, or recalculating mission day.
 
-Family messaging was explicitly approved as a limited exception: only the Mission overview Companion and Family Care panel (text messages for AST-01, mark viewed). The Daily log stays on-device, with no chat or separate messaging page.
+Family messaging was explicitly approved as a limited exception and now includes invitation-only real audio/video recordings in Astro and the family sender portal. The Daily log stays on-device; this is not open chat.
 
-**Why:** The user asked for family messaging in the frontend-to-backend connection request, overriding the earlier no-communications rule for that panel only.
+**Why:** The user explicitly requested voice or video messages from family on Earth and selected email/password access.
 
-**How to apply:** Do not expand this into chat, uploads, media playback, or a new page without renewed approval.
+**How to apply:** Keep recordings scoped to the private family channel; do not expand this into general chat or broaden who can access media without renewed approval.

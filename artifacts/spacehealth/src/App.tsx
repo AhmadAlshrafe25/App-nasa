@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type FocusEvent as ReactFocusEvent, type PointerEvent as ReactPointerEvent, type ReactNode, useEffect, useRef, useState } from 'react';
 import { Link, Redirect, Route, Router as WouterRouter, Switch, useLocation } from 'wouter';
 import { ClerkProvider, SignIn, SignUp, useClerk } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
@@ -36,6 +36,7 @@ import {
 import { mergeStoredValue } from '@/lib/persistent-state';
 import { getReadingTrend, primaryReadingKeys } from '@/lib/reading-trends';
 import { applyTheme, normalizeTheme, themeStorageKey, type DisplayTheme } from '@/lib/theme';
+import { getExampleAlert, getExampleTrends, normalizeCountermeasureState, countermeasureStorageKey, emptyCountermeasureState } from '@/lib/countermeasures';
 
 import { AiFindings } from '@/components/ai-findings';
 import { CompanionPanel } from '@/components/companion-panel';
@@ -54,6 +55,7 @@ const storageKeys = {
 };
 
 const readingsChangedEvent = 'spacehealth-readings-changed';
+const countermeasuresChangedEvent = 'spacehealth-countermeasures-changed';
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 const clerkPubKey = publishableKeyFromHost(
@@ -104,6 +106,120 @@ function usePersistentState<T>(key: string, initial: T) {
     };
   }, [key, initial]);
   return [value, setValue] as const;
+}
+
+type CountermeasureSignal = { scenario: 'example' | 'low' | 'missing'; unavailable: boolean };
+function readCountermeasureSignal(): CountermeasureSignal {
+  try {
+    const raw = localStorage.getItem(countermeasureStorageKey);
+    const state = raw ? normalizeCountermeasureState(JSON.parse(raw)) : emptyCountermeasureState;
+    return { scenario: state.scenario, unavailable: false };
+  } catch {
+    return { scenario: 'missing', unavailable: true };
+  }
+}
+
+function useCountermeasureSignal() {
+  const [signal, setSignal] = useState<CountermeasureSignal>(readCountermeasureSignal);
+  useEffect(() => {
+    const update = () => setSignal(readCountermeasureSignal());
+    window.addEventListener(countermeasuresChangedEvent, update);
+    window.addEventListener('storage', update);
+    return () => {
+      window.removeEventListener(countermeasuresChangedEvent, update);
+      window.removeEventListener('storage', update);
+    };
+  }, []);
+  return signal;
+}
+
+function CriticalDemoBanner({ readings, signal }: { readings: BodyReadings; signal: CountermeasureSignal }) {
+  const { redItems } = evaluateAllVitals(readings);
+  const workloadAlert = !signal.unavailable && signal.scenario === 'low';
+  if (!redItems.length && !workloadAlert) return null;
+  return <aside className="critical-demo-banner" role="status" aria-live="polite" data-testid="banner-critical-demo">
+    <div className="critical-banner-icon"><AlertTriangle size={19} aria-hidden="true" /></div>
+    <div className="critical-banner-copy">
+      <strong>SIMULATED DEMO ALERT <span>· not a live emergency alarm</span></strong>
+      <p>{redItems.length > 0
+        ? `Red demo example${redItems.length > 1 ? 's' : ''}: ${redItems.map(item => `${item.spec.label} ${item.formattedValue} ${item.spec.unit}`).join(' · ')}.`
+        : 'A fictional low-workload muscle/bone example has reached its demo flag.'}</p>
+      <p className="critical-next-step">Review the flagged sample. If this reflects a real reading, follow your established mission protocol and contact the medical team.</p>
+    </div>
+  </aside>;
+}
+
+function MicrogravityVisualizer() {
+  const signal = useCountermeasureSignal();
+  const [selectedDay, setSelectedDay] = useState(30);
+  const exampleTrends = getExampleTrends('example');
+  const lowWorkloadTrends = getExampleTrends('low');
+  const sampleUnavailable = signal.unavailable || signal.scenario === 'missing';
+  const lowWorkloadAlert = !signal.unavailable && signal.scenario === 'low' ? getExampleAlert('low') : null;
+  const alert = !!lowWorkloadAlert;
+  const selectedIndex = exampleTrends.days.indexOf(selectedDay);
+  const exampleMuscle = exampleTrends.muscle[selectedIndex];
+  const exampleBone = exampleTrends.bone[selectedIndex];
+  const lowMuscle = lowWorkloadTrends.muscle[selectedIndex];
+  const lowBone = lowWorkloadTrends.bone[selectedIndex];
+  const sampleValue = (value: number | null | undefined) =>
+    !sampleUnavailable && typeof value === 'number' && Number.isFinite(value) ? value : null;
+  const values = [
+    { name: 'Example routine', muscle: sampleValue(exampleMuscle), bone: sampleValue(exampleBone), flagged: false },
+    { name: 'Low workload', muscle: sampleValue(lowMuscle), bone: sampleValue(lowBone), flagged: !!lowWorkloadAlert },
+  ];
+  return <section className={`microgravity-panel ${alert ? 'is-flagged' : ''}`} aria-labelledby="microgravity-title" data-testid="visualizer-microgravity">
+    <header className="microgravity-header">
+      <div><span className="eyebrow">MICROGRAVITY · LOCAL SIMULATION</span><h2 id="microgravity-title">Muscle + bone impact</h2></div>
+      <span className="demo-stamp"><Orbit size={13} aria-hidden="true" /> DEMO ONLY</span>
+    </header>
+    <div className="microgravity-body">
+      <div className="body-schematic" aria-label="Illustrative astronaut body schematic">
+        <svg viewBox="0 0 118 184" role="img" aria-label="Illustration highlighting muscle and bone systems; not a scan">
+          <path className="suit-outline" d="M59 9c-12 0-19 9-19 21 0 9 4 15 10 19v12L31 70 18 98l11 6 15-24 5 25-14 48 13 4 11-34 11 34 13-4-14-48 5-25 15 24 11-6-13-28-19-9V49c6-4 10-10 10-19 0-12-7-21-19-21Z"/>
+          <path className="suit-joints" d="M50 60h18M46 80l13 10 13-10M47 105h24M51 123l8-4 8 4M40 51l19 9 19-9"/>
+          <circle className="body-node node-muscle" cx="37" cy="82" r="4"/><circle className="body-node node-bone" cx="59" cy="93" r="4"/>
+          <circle className="body-node node-muscle" cx="79" cy="82" r="4"/><circle className="body-node node-bone" cx="59" cy="126" r="4"/>
+          <path className="body-orbit" d="M7 108c8 39 36 64 66 59 18-3 31-16 37-34"/>
+        </svg>
+        <div className="body-legend"><span><i className="legend-muscle" /> Muscle</span><span><i className="legend-bone" /> Bone</span></div>
+      </div>
+      <div className="impact-readouts">
+        <p className="impact-disclaimer">Fictional demo comparison · indices relative to a fictional 100% baseline. Not measured tissue, not g/cm², and not a personal medical forecast.</p>
+        <p className="impact-mitigation-note">In this fictional example, the regular countermeasure routine stays closer to baseline than the low-workload case. This is not evidence of a real workout effect.</p>
+        <label className="impact-day-control" htmlFor="impact-day-range">
+          <span>Demo day</span><output htmlFor="impact-day-range" data-testid="value-impact-day">{selectedDay} / 30</output>
+          <input id="impact-day-range" type="range" min="0" max="30" step="5" value={selectedDay}
+            aria-label="Select fictional comparison day, 0 to 30"
+            aria-describedby="impact-day-help"
+            onChange={event => setSelectedDay(Number(event.target.value))}
+            data-testid="input-impact-day" />
+          <small id="impact-day-help">Choose one of the existing 5-day sample points.</small>
+        </label>
+        <div className="impact-comparison" role="group" aria-label={`Fictional muscle and bone comparison at day ${selectedDay}`}>
+          {values.map((scenario, index) => <article className={`impact-scenario ${scenario.flagged ? 'low-workload-flagged' : ''}`} key={scenario.name}
+            data-testid={`metric-demo-scenario-${index}`} tabIndex={0}>
+            <h3>{scenario.name}{scenario.flagged && <span className="scenario-flag">Demo flag</span>}</h3>
+            <div className="impact-pair">
+              <div className="impact-meter" role="group" aria-label={`${scenario.name} muscle index`} tabIndex={0} data-testid={`metric-demo-muscle-${index}`}>
+                <div className="impact-meter-heading"><span>Muscle</span><strong>{scenario.muscle === null ? 'Unavailable' : `${scenario.muscle.toFixed(1)}%`}</strong></div>
+                {scenario.muscle !== null && <progress aria-label={`${scenario.name} fictional muscle index at day ${selectedDay}`} max="100" value={scenario.muscle} data-testid={`progress-demo-muscle-${index}`} />}
+              </div>
+              <div className="impact-meter bone-meter" role="group" aria-label={`${scenario.name} bone index`} tabIndex={0} data-testid={`metric-demo-bone-${index}`}>
+                <div className="impact-meter-heading"><span>Bone</span><strong>{scenario.bone === null ? 'Unavailable' : `${scenario.bone.toFixed(1)}%`}</strong></div>
+                {scenario.bone !== null && <progress aria-label={`${scenario.name} fictional bone index at day ${selectedDay}`} max="100" value={scenario.bone} data-testid={`progress-demo-bone-${index}`} />}
+              </div>
+            </div>
+          </article>)}
+        </div>
+      </div>
+    </div>
+    <footer className="microgravity-foot">
+      <span className={lowWorkloadAlert ? 'impact-alert' : ''} data-testid="status-demo-impact">{signal.unavailable ? 'Unavailable — saved simulation is unreadable' : signal.scenario === 'missing' ? 'Unavailable — sample data missing' : lowWorkloadAlert ? 'Low-workload fictional example flagged' : 'Example trajectories · not measurements'}</span>
+      <Link href="/countermeasures" data-testid="link-impact-countermeasures">Review scenario <ArrowDownRight size={14} aria-hidden="true" /></Link>
+    </footer>
+    <p className="impact-log-note">Saved workout logs do not alter these sample curves. {sampleUnavailable ? 'All comparison values are unavailable.' : `Selected sample point: day ${selectedDay}.`}</p>
+  </section>;
 }
 
 function AstroDialog({ onClose }: { onClose: () => void }) {
@@ -419,8 +535,87 @@ function Layout({
   const [storedTheme, setTheme] = usePersistentState<DisplayTheme>(themeStorageKey, 'space');
   const theme = normalizeTheme(storedTheme);
   useEffect(() => applyTheme(theme), [theme]);
+  const countermeasureSignal = useCountermeasureSignal();
+  const [tooltip, setTooltip] = useState<{ id: string; text: string; left: number; top: number } | null>(null);
+  const tooltipTarget = useRef<HTMLElement | null>(null);
+  const pointerTarget = useRef<HTMLElement | null>(null);
+  const tooltipIdCounter = useRef(0);
+  const originalDescriptions = useRef(new WeakMap<HTMLElement, string | null>());
+  const findTooltipTarget = (target: EventTarget | null) => {
+    if (!(target instanceof Element)) return null;
+    const candidate = target.closest<HTMLElement>('button, article.metric-card, [data-testid^="metric-demo-"]');
+    return candidate && candidate.closest('.app-shell') ? candidate : null;
+  };
+  const revealTooltip = (element: HTMLElement) => {
+    if (tooltipTarget.current && tooltipTarget.current !== element) {
+      const previous = tooltipTarget.current;
+      const previousId = previous.dataset.spacehealthTooltipId;
+      const original = originalDescriptions.current.get(previous);
+      if (previousId) {
+        if (original) previous.setAttribute('aria-describedby', original);
+        else previous.removeAttribute('aria-describedby');
+      }
+    }
+    tooltipTarget.current = element;
+    let id = element.dataset.spacehealthTooltipId;
+    if (!id) {
+      tooltipIdCounter.current += 1;
+      id = `spacehealth-tooltip-${tooltipIdCounter.current}`;
+      element.dataset.spacehealthTooltipId = id;
+      originalDescriptions.current.set(element, element.getAttribute('aria-describedby'));
+    }
+    const original = originalDescriptions.current.get(element);
+    const describedBy = (original || '').split(/\s+/).filter(Boolean);
+    if (!describedBy.includes(id)) describedBy.push(id);
+    element.setAttribute('aria-describedby', describedBy.join(' '));
+    const visibleText = element.matches('article.metric-card')
+      ? `${element.querySelector('.metric-top')?.textContent ?? ''} ${element.querySelector('.metric-value')?.textContent ?? ''}`.trim()
+      : (element.getAttribute('aria-label') || element.textContent || '').replace(/\s+/g, ' ').trim();
+    const text = element.matches('article.metric-card')
+      ? `${visibleText}. Simulated example metric.`
+      : visibleText || 'Dashboard control';
+    const rect = element.getBoundingClientRect();
+    setTooltip({ id, text, left: Math.max(8, Math.min(rect.left, window.innerWidth - 258)), top: Math.min(rect.bottom + 7, window.innerHeight - 68) });
+  };
+  const dismissTooltip = (element: HTMLElement) => {
+    if (element.contains(document.activeElement) || pointerTarget.current === element) return;
+    const id = element.dataset.spacehealthTooltipId;
+    const original = originalDescriptions.current.get(element);
+    if (id) {
+      if (original) element.setAttribute('aria-describedby', original);
+      else element.removeAttribute('aria-describedby');
+    }
+    if (tooltipTarget.current === element) {
+      tooltipTarget.current = null;
+      setTooltip(null);
+    }
+  };
+  const focusTooltip = (event: ReactFocusEvent<HTMLDivElement>) => {
+    const element = findTooltipTarget(event.target);
+    if (element) revealTooltip(element);
+  };
+  const blurTooltip = (event: ReactFocusEvent<HTMLDivElement>) => {
+    const element = findTooltipTarget(event.target);
+    const nextTarget = event.relatedTarget;
+    if (element && (!(nextTarget instanceof Node) || !element.contains(nextTarget))) dismissTooltip(element);
+  };
+  const pointerOverTooltip = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const element = findTooltipTarget(event.target);
+    if (element) {
+      pointerTarget.current = element;
+      revealTooltip(element);
+    }
+  };
+  const pointerOutTooltip = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const element = findTooltipTarget(event.target);
+    const relatedTarget = event.relatedTarget;
+    if (!element || (relatedTarget instanceof Node && element.contains(relatedTarget))) return;
+    if (pointerTarget.current === element) pointerTarget.current = null;
+    dismissTooltip(element);
+  };
   const evaluated = evaluateAllVitals(readings);
-  return <div className={`app-shell ${evaluated.overall === 'red' ? 'shell-red-alert' : evaluated.overall === 'yellow' ? 'shell-yellow-caution' : ''}`}>
+  return <div className={`app-shell ${evaluated.overall === 'red' ? 'shell-red-alert' : evaluated.overall === 'yellow' ? 'shell-yellow-caution' : ''}`}
+    onFocusCapture={focusTooltip} onBlurCapture={blurTooltip} onPointerOver={pointerOverTooltip} onPointerOut={pointerOutTooltip}>
     <aside className="sidebar">
       <Link href="/" className="brand" data-testid="link-brand">
         <span className="brand-mark"><Orbit size={19} /></span>
@@ -430,7 +625,6 @@ function Layout({
         {navItems.map(({ href, label, icon: Icon }) => <Link key={href} href={href} className={`nav-link ${location === href ? 'active' : ''}`} aria-current={location === href ? 'page' : undefined} data-testid={`link-nav-${label.toLowerCase().replaceAll(' ', '-')}`}>
           <Icon aria-hidden="true" /><span>{label}</span>
         </Link>)}
-        <button type="button" className="nav-link astro-nav-button" onClick={() => setAstroOpen(true)} data-testid="button-astro-desktop"><Orbit aria-hidden="true" /><span>Astro</span></button>
       </nav>
     </aside>
     <div className="workspace">
@@ -467,6 +661,7 @@ function Layout({
         </details>
       </header>
       <main className="main-content">
+        <CriticalDemoBanner readings={readings} signal={countermeasureSignal} />
         <EmergencyMonitor readings={readings} onChangeReadings={onChangeReadings} />
         {children}
       </main>
@@ -477,9 +672,10 @@ function Layout({
     </div>
     <nav className="mobile-nav" aria-label="Mobile navigation">
       {navItems.map(({ href, label, icon: Icon }) => <Link key={href} href={href} className={location === href ? 'active' : ''} aria-label={label} aria-current={location === href ? 'page' : undefined} data-testid={`mobile-link-${href.slice(1) || 'overview'}`}><Icon /><span>{label}</span></Link>)}
-      <button type="button" className="mobile-astro-button" onClick={() => setAstroOpen(true)} data-testid="button-astro-mobile"><Orbit aria-hidden="true" /><span>Astro</span></button>
     </nav>
+    <button type="button" className="astro-floating-button" aria-label="Open Astro messages" aria-haspopup="dialog" aria-expanded={astroOpen} onClick={() => setAstroOpen(true)} data-testid="button-astro-floating"><Orbit size={24} aria-hidden="true" /><span>Astro</span></button>
     {astroOpen && <AstroDialog onClose={() => setAstroOpen(false)} />}
+    {tooltip && <div className="ui-tooltip" id={tooltip.id} role="tooltip" style={{ left: tooltip.left, top: tooltip.top }} data-testid="tooltip-active">{tooltip.text}</div>}
   </div>;
 }
 
@@ -505,6 +701,9 @@ function VitalSensorCard({
     <article
       className={`panel metric-card compact-reading vital-card-${severity}`}
       data-testid={`metric-${slug}`}
+      role="group"
+      tabIndex={0}
+      aria-label={`${spec.label}: ${formattedValue} ${spec.unit}, ${severity} demo example`}
     >
       <div className="metric-top">
         <div>
@@ -648,6 +847,7 @@ function Overview({
       <CompanionPanel />
       <SyncOverview narrow={isNarrow} />
     </section>
+    <MicrogravityVisualizer />
     <div className="readings-trend-heading">
       <strong>Readings + trends</strong>
       <div className="period-tabs" role="group" aria-label="Trend period">{([7, 14] as const).map(days => <button key={days} type="button" aria-pressed={period === days} className={period === days ? 'selected' : ''} onClick={() => setPeriod(days)} data-testid={`button-period-${days}`}>{days}d</button>)}</div>
