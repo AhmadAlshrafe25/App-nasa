@@ -76,7 +76,7 @@ export function MissionSyncProvider({ children }: { children: ReactNode }) {
       setMessage({ kind: 'error', text: `Could not queue: ${result.message}` });
     } else {
       goLocal(queueLocalPacket(localPending.current));
-      setMessage({ kind: 'info', text: 'Local queue · sample packet queued (simulated)' });
+      setMessage({ kind: 'info', text: 'Sample check-in queued.' });
     }
     setBusy(null);
   }, [goLocal, refresh]);
@@ -97,7 +97,7 @@ function SyncReadout({ suffix }: { suffix: string }) {
   return <div className="sync-readout">
     <span className="sync-count" data-testid={`text-sync-pending${suffix}`}>{pending === null ? '–' : pending} pending</span>
     <span className="sync-state" data-testid={`status-earth-sync${suffix}`}>{pending === null ? state : `${state} · ${delayMinutes}m Mars Delay`}</span>
-    {source === 'local' && <span className="sync-source" data-testid={`text-sync-source${suffix}`}>Local simulation</span>}
+    {source === 'local' && <span className="sync-source" data-testid={`text-sync-source${suffix}`}>Sample</span>}
   </div>;
 }
 
@@ -128,8 +128,8 @@ export function SyncOverview({ narrow }: { narrow: boolean }) {
     <div className="care-subhead"><Rocket size={14} aria-hidden="true" /><strong>Earth sync</strong></div>
     {narrow && <div className="sync-row"><SyncReadout suffix="-narrow" /><SyncEarthButton suffix="-narrow" /></div>}
     <div className="sync-row">
-      <button type="button" className="care-btn" disabled={busy !== null} onClick={() => void queueSample()} data-testid="button-queue-sample-packet">Queue sample packet</button>
-      <span className="care-reason">Sample check-in · normal values · simulated</span>
+      <button type="button" className="care-btn" disabled={busy !== null} onClick={() => void queueSample()} data-testid="button-queue-sample-packet">Queue check-in</button>
+      <span className="care-reason">Sample check-in</span>
     </div>
     {narrow && <SyncMessage suffix="-narrow" />}
   </div>;

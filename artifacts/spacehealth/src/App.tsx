@@ -143,11 +143,11 @@ function CriticalDemoBanner({ readings, signal }: { readings: BodyReadings; sign
   return <aside className="critical-demo-banner" role="status" aria-live="polite" data-testid="banner-critical-demo">
     <div className="critical-banner-icon"><AlertTriangle size={19} aria-hidden="true" /></div>
     <div className="critical-banner-copy">
-      <strong>SIMULATED DEMO ALERT <span>· not a live emergency alarm</span></strong>
+      <strong>Demo alert <span>· not a live alarm</span></strong>
       <p>{redItems.length > 0
-        ? `Red demo example${redItems.length > 1 ? 's' : ''}: ${redItems.map(item => `${item.spec.label} ${item.formattedValue} ${item.spec.unit}`).join(' · ')}.`
-        : 'A fictional low-workload muscle/bone example has reached its demo flag.'}</p>
-      <p className="critical-next-step">Review the flagged sample. If this reflects a real reading, follow your established mission protocol and contact the medical team.</p>
+        ? redItems.map(item => `${item.spec.label} ${item.formattedValue} ${item.spec.unit}`).join(' · ')
+        : 'Muscle and bone trend needs attention.'}</p>
+      <p className="critical-next-step">For a real concern, follow your mission plan and contact the medical team.</p>
     </div>
   </aside>;
 }
@@ -573,7 +573,7 @@ function Layout({
           <strong className="crew-name" data-testid="text-crew-name">Mara Velez</strong>
         </div>
         <span className="sensor-live-pill" data-testid="badge-sensor-origin">
-          <Watch size={13} /> Demo · no connected sensors
+          <Watch size={13} /> Demo · no live sensors
         </span>
         {!isNarrow && <SyncBar />}
         <div className="mission-time">
@@ -596,7 +596,7 @@ function Layout({
                 {choice === 'space' ? 'Space' : 'Sky'}
               </button>)}
             </div>
-            <p className="theme-demo-note" role="note">Simulated readings; no connected sensors. Flags are sample comparisons, not safety limits or medical advice.</p>
+            <p className="theme-demo-note" role="note">Simulated readings, not medical advice or safety limits.</p>
           </div>
         </details>
       </header>
@@ -656,19 +656,17 @@ function VitalSensorCard({
           {formattedValue} <span className="metric-unit">{spec.unit}</span>
         </div>
         <span className={`vital-zone-pill zone-${severity}`} data-testid={`status-zone-${spec.key}`}>
-          {severity === 'red' ? 'RED · DEMO' : severity === 'yellow' ? 'YELLOW · DEMO' : 'NORMAL · DEMO'}
+          {severity === 'red' ? 'Alert' : severity === 'yellow' ? 'Attention' : 'Normal'}
         </span>
       </div>
       {trend && <div className="reading-inline-trend" data-testid={`trend-${spec.key}`}>
         <Sparkline values={trend} label={`${spec.label}: ${days} simulated daily readings in ${spec.unit}; latest ${formattedValue}`} />
-        <div className="chart-labels"><span>{days} days · demo</span><span>Now</span></div>
+        <div className="chart-labels"><span>{days} days</span><span>Now</span></div>
       </div>}
       <details className="reading-controls">
-        <summary data-testid={`details-reading-${spec.key}`}>Details &amp; adjust</summary>
-        <small className="sensor-origin-line">Simulated {spec.sensorLocation} · {spec.sensorDetail}</small>
-        <div className="vital-reason-line">{severity === 'normal' ? 'Within the default demo band' : 'Outside the default demo band'} · not a clinical assessment</div>
+        <summary data-testid={`details-reading-${spec.key}`}>Adjust sample</summary>
       <div className="vital-thresholds-guide">
-        <span>Unvalidated example bands:</span>
+        <span>Sample ranges · not medical limits</span>
         <span className="th-normal">Normal: {spec.normalRangeText}</span>
         <span className="th-yellow">Yellow: {spec.yellowRangeText}</span>
         <span className="th-red">Red: {spec.redRangeText}</span>
@@ -779,7 +777,7 @@ function Overview({
   };
 
   return <div className="fade-in wrist-overview" data-testid="page-readings-trends">
-    <Heading title="Readings" right={<Link href="/alerts" className={`wrist-alert ${pendingCount === 0 ? 'is-reviewed' : ''}`} data-testid="link-alert-status"><Bell size={15} />{pendingCount ? `${pendingCount} demo flags` : 'No demo flags'}</Link>} />
+    <Heading title="Readings" right={<Link href="/alerts" className={`wrist-alert ${pendingCount === 0 ? 'is-reviewed' : ''}`} data-testid="link-alert-status"><Bell size={15} />{pendingCount ? `${pendingCount} alerts` : 'No alerts'}</Link>} />
 
     <Link href="/alerts" className="radiation-open" aria-label="View radiation anomaly details" data-testid="link-radiation-details"><RadiationSummary analysis={analysis} acknowledged={demo.acknowledged} trend={samples} /></Link>
     <section className="mission-context" aria-label="Mission overview" data-testid="section-mission-overview">
@@ -803,27 +801,27 @@ function Overview({
         {evaluated.items.filter(item => !primaryReadingKeys.includes(item.spec.key)).map(item => <VitalSensorCard key={item.spec.key} item={item} onChange={next => onChangeReadings({ ...readings, [item.spec.key]: next })} />)}
       </div>
     </details>
-    <Link href="/countermeasures" className="cm-entry-link" data-testid="link-countermeasures"><Dumbbell size={16} aria-hidden="true" />Countermeasures · local demo</Link>
+    <Link href="/countermeasures" className="cm-entry-link" data-testid="link-countermeasures"><Dumbbell size={16} aria-hidden="true" />Workouts</Link>
     <ReadingsExplained analysis={analysis} />
     <details className="panel sensor-architecture-banner compact-demo-settings" data-testid="banner-sensor-architecture">
-      <summary>Demo settings · no connected sensors</summary>
+      <summary>Try sample readings</summary>
       <div className="sensor-arch-head">
         <span className="sensor-arch-icon"><Watch size={20} /></span>
         <div>
-          <strong>Simulated wrist and body readings</strong>
-          <p>These readings and trends are local examples, <strong>not measurements from connected devices</strong>. Colors use unvalidated demonstration bands, not medical safety limits.</p>
+          <strong>Demo controls</strong>
+          <p>Change sample values. No sensors are connected.</p>
         </div>
       </div>
       <div className="sensor-preset-bar" role="group" aria-label="Test sensor alert thresholds">
-        <span className="short-hint">Simulate sensor state:</span>
+        <span className="short-hint">Choose a sample:</span>
         <button type="button" className="choice" onClick={() => onChangeReadings({ ...defaultBodyReadings })} data-testid="button-preset-normal">
-          All Normal (Green)
+          Normal
         </button>
         <button type="button" className="choice preset-yellow-btn" onClick={triggerYellowPreset} data-testid="button-preset-yellow">
-          Test Yellow Point (Small Alert)
+          Attention
         </button>
         <button type="button" className="choice preset-red-btn" onClick={triggerRedPreset} data-testid="button-preset-red">
-          Load red demo values · silent
+          High
         </button>
       </div>
     </details>

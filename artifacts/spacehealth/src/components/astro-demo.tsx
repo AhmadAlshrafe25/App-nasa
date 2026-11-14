@@ -43,20 +43,20 @@ export function AstroDemo({ onClose, privateInbox }: { onClose: () => void; priv
     <div className="astro-dialog-content">
       <div className="astro-dialog-heading">
         <span className="astro-mark" aria-hidden="true"><Orbit size={20} /></span>
-        <div><span className="astro-kicker">DEMO EARTH CHANNEL · NO LOGIN NEEDED</span><h2 id="astro-demo-title">Astro · Messages from Earth</h2></div>
+        <div><span className="astro-kicker">FROM EARTH</span><h2 id="astro-demo-title">Astro</h2></div>
         <button type="button" className="astro-close" onClick={onClose} aria-label="Close Astro"><X size={19} /></button>
       </div>
-      <p className="astro-disclosure" id="astro-demo-disclosure">Test data only. These fictional messages use your browser’s computer-generated voice, not recordings from real family members. No account is required.</p>
+      <p className="astro-disclosure" id="astro-demo-disclosure">Sample messages with a computer voice—not real family recordings.</p>
       <div className="astro-message-list">
         {samples.map(sample => <article className="astro-message" key={sample.id}>
-          <div className="astro-message-heading"><div><strong>{sample.title}</strong><span>{sample.sender} · Fictional sample</span></div></div>
+          <div className="astro-message-heading"><div><strong>{sample.title}</strong><span>{sample.sender} · Sample</span></div></div>
           <p>{sample.text}</p>
-          <button type="button" className="btn" onClick={() => play(sample.text)}>Play sample voice</button>
+          <button type="button" className="btn" onClick={() => play(sample.text)}>Play</button>
         </article>)}
       </div>
       <p role="status" aria-live="polite">{status}</p>
-      <button type="button" className="btn outline" onClick={() => { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); setStatus('Playback stopped.'); }}>Stop voice</button>
-      <details className="astro-invite-panel"><summary>Real family recordings</summary><p>Real recordings still require private, invited account access.</p><button type="button" className="btn outline" onClick={() => setShowPrivate(true)}>Open private inbox</button></details>
+      <button type="button" className="btn outline" onClick={() => { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); setStatus('Playback stopped.'); }}>Stop</button>
+      <details className="astro-invite-panel"><summary>Family recordings</summary><p>Invitation required.</p><button type="button" className="btn outline" onClick={() => setShowPrivate(true)}>Open private inbox</button></details>
     </div>
   </dialog>;
 }

@@ -130,7 +130,7 @@ export function DailyLog({ reminder }: { reminder: DailyReminderControls }) {
                   <strong>{entry.captainHeader || formatAstronautLogHeader(day, hour)}</strong>
                   <span>{entry.mood} · Stress {entry.stress}/10</span>
                   {entry.voiceAudioDataUrl && entry.voiceCaptureSource !== 'microphone' && <span>Legacy recording · source unverified</span>}
-                  {entry.readingsSource === 'simulated' && <span>Legacy simulated readings</span>}
+                  {entry.readingsSource === 'simulated' && <span>Sample readings</span>}
                 </summary>
                 {entry.voiceAudioDataUrl && <audio controls src={entry.voiceAudioDataUrl} className="voice-audio-player" data-testid={`audio-log-${entry.id}`} />}
                 {entry.note && <p className="dl-transcript" dir="auto">{entry.note}</p>}

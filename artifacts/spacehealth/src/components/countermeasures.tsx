@@ -121,10 +121,10 @@ export function Countermeasures() {
       <h1>Countermeasures</h1>
       <Link href="/" className="cm-back" data-testid="link-back-readings"><ArrowLeft size={15} aria-hidden="true" />Readings</Link>
     </div>
-    <p className="cm-local" role="note" data-testid="text-local-simulation">Local simulation · no ARED or wearable connection · stored on this device only</p>
+    <p className="cm-local" role="note" data-testid="text-local-simulation">Demo · saved on this device</p>
 
     <section className={`panel cm-glance ${alert ? 'cm-flag' : ''} ${unknown ? 'cm-unknown' : ''}`} aria-label="Fictional demo trend summary" data-testid="card-cm-glance">
-      <div className="cm-glance-head"><strong>Demo indices · {span}-day</strong><span>Fictional</span></div>
+      <div className="cm-glance-head"><strong>{span}-day trend</strong><span>Sample</span></div>
       <div className="cm-glance-values">
         <div><small>Muscle retention</small><b data-testid="value-muscle-latest">{unknown ? 'Unavailable' : fmtPct(muscleNow)}</b></div>
         <div><small>Bone density</small><b data-testid="value-bone-latest">{unknown ? 'Unavailable' : fmtPct(boneNow)}</b></div>
@@ -132,9 +132,9 @@ export function Countermeasures() {
       <div className="cm-status" data-testid="status-cm-alert">
         {unknown ? <><AlertTriangle size={15} aria-hidden="true" /><strong>{!blocked && alert ? alert : 'Status unavailable — demo data missing or unreadable'}</strong></>
           : alert ? <><AlertTriangle size={15} aria-hidden="true" /><strong>{alert}</strong></>
-          : <span>Demo mechanic not triggered for this example. Not a health assessment.</span>}
+          : <span>No change flagged.</span>}
       </div>
-      <p className="cm-fine">Demo indices: % of a fictional pre-flight 100% baseline. Not a measurement, no g/cm². Unvalidated mechanics, never a diagnosis or prediction.</p>
+      <p className="cm-fine">Fictional percentages, not measured muscle or bone density.</p>
     </section>
 
     <div className="cm-scenarios" role="group" aria-label="Demo scenario">
@@ -149,11 +149,11 @@ export function Countermeasures() {
         <thead><tr><th scope="col">Day</th><th scope="col">Muscle</th><th scope="col">Bone</th></tr></thead>
         <tbody>{(blocked ? [] : trends.days).map((day, i) => <tr key={day} data-testid={`row-cm-trend-${day}`}><td>{day}</td><td>{fmtPct(trends.muscle[i])}</td><td>{fmtPct(trends.bone[i])}</td></tr>)}</tbody>
       </table>
-      <p>Low-workload example shows a 0.5–1.5% demo decline; the early flag at a 1% or greater drop is an unvalidated mechanic only. Saved workouts never change these values.</p>
+      <p>Saved workouts do not change these sample trends.</p>
     </details>
 
     <form className="panel cm-form" onSubmit={save} noValidate data-testid="form-cm-session">
-      <div className="cm-form-head"><Dumbbell size={16} aria-hidden="true" /><strong>Record sample session</strong></div>
+      <div className="cm-form-head"><Dumbbell size={16} aria-hidden="true" /><strong>Log workout</strong></div>
       <div className="cm-fields">
         {([['loadKg', 'Load kg', '0–300', 'decimal'], ['repetitions', 'Reps', '1–100', 'numeric'], ['sets', 'Sets', '1–20', 'numeric']] as const).map(([key, label, hint, mode]) =>
           <label key={key}><span>{label}</span>
@@ -162,10 +162,10 @@ export function Countermeasures() {
           </label>)}
       </div>
       <div className="cm-form-foot">
-        <span className="cm-score" data-testid="text-cm-score-preview">Axial score: {preview === null ? '—' : `${preview.toFixed(1)} pts`}</span>
+        <span className="cm-score" data-testid="text-cm-score-preview">Sample score: {preview === null ? '—' : `${preview.toFixed(1)} pts`}</span>
         <button type="submit" className="btn small" data-testid="button-cm-save">Save session</button>
       </div>
-      <p className="cm-fine">Arbitrary 0–100 points: min(100, load × reps × sets ÷ 60). Not a physical or clinical measure.</p>
+      <p className="cm-fine">Sample points, not a measure of strength or health.</p>
       {formError && <p className="cm-error" role="alert" data-testid="error-cm-validation">{formError}</p>}
     </form>
     {storageError && <p className="cm-error" role="alert" data-testid="error-cm-storage">{storageError}</p>}
@@ -180,17 +180,16 @@ export function Countermeasures() {
 
     <details className="rule-box cm-details" data-testid="details-cm-recovery">
       <summary data-testid="button-cm-recovery">Recovery prompts</summary>
-      <p className="cm-fine">ARED-style discussion examples, not prescribed workouts: squat, heel raise, deadlift.</p>
+      <p className="cm-fine">Follow your approved exercise plan.</p>
       <ul className="cm-prompts">
-        <li>Discuss your approved resistance and mobility plans with the flight team.</li>
-        <li>Review any concerns about these demo indices with the flight team.</li>
-        <li>Nutrition: follow only your approved flight food and medical plan.</li>
+        <li>Review exercise concerns with the flight team.</li>
+        <li>Follow your approved food and medical plan.</li>
       </ul>
       <button type="button" className="btn small outline" data-testid="button-cm-plan-complete"
         onClick={() => commit({ ...state, completions: [new Date().toISOString(), ...state.completions].slice(0, LIMIT) }, 'Plan completion time recorded. Scenario and trends unchanged.')}>
         <Check size={15} aria-hidden="true" />Plan completed
       </button>
-      <p className="cm-fine">Records your action only, not muscle or bone recovery. The newest 50 sessions and completion times stay on this device.</p>
+      <p className="cm-fine">Saves the last 50 actions on this device, not a recovery result.</p>
       <h3 className="cm-sub">Completion history <span>{state.completions.length}/{LIMIT}</span></h3>
       {state.completions.length ? <ul className="cm-completions" data-testid="list-cm-completions">{state.completions.map((c, i) => <li key={`${c}-${i}`} data-testid={`row-cm-completion-${i}`}>{fmtTime(c)}</li>)}</ul>
         : <p className="cm-empty" data-testid="text-cm-no-completions">No completions recorded.</p>}

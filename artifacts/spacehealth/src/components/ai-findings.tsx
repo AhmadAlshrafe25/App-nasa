@@ -29,11 +29,11 @@ export function AiFindings() {
   useEffect(() => { void load(); }, [load]);
 
   return <section className="ai-findings" aria-label="Statistical findings" data-testid="section-ai-findings">
-    <h4>Statistical findings · AI demo</h4>
-    <p className="ai-note">Demo data compared with this crew member’s own history. Not diagnostic, no live sensors.</p>
+    <h4>Health trends</h4>
+    <p className="ai-note">Sample history · not a diagnosis.</p>
     {state.kind === 'loading' && <p role="status" data-testid="status-ai-loading">Loading findings…</p>}
     {state.kind === 'offline' && <div role="status" data-testid="status-ai-offline">
-      <p><strong>Offline sample.</strong> Backend findings are unavailable, so no scores are shown. Unknown does not mean normal.</p>
+      <p>Trends unavailable. Check your connection.</p>
       <button type="button" className="care-btn" onClick={() => void load()} data-testid="button-ai-retry">Retry</button>
     </div>}
     {state.kind === 'error' && <div role="alert" data-testid="status-ai-error">
@@ -48,13 +48,14 @@ function Findings({ dashboard }: { dashboard: Dashboard }) {
   const forest = dashboard.isolation_forest;
   return <>
     <p className="ai-risk" data-testid="text-ai-risk">Overall: {dashboard.risk_level}</p>
-    <h5>Isolation Forest</h5>
+    <details><summary>Pattern details</summary>
+    <h5>Unusual readings</h5>
     {forest.available && forest.anomaly_score !== null && forest.anomaly_score !== undefined
       ? <p data-testid="text-forest-result">Score <strong data-testid="text-forest-score">{forest.anomaly_score.toFixed(3)}</strong> · Outlier: <strong data-testid="text-forest-outlier">{forest.is_outlier ? 'yes' : 'no'}</strong></p>
       : <p data-testid="text-forest-unavailable">Not available. {forest.note}</p>}
     {forest.available && <p className="ai-note">{forest.note}</p>}
 
-    <h5>Own-baseline comparison</h5>
+    <h5>Compared with your usual range</h5>
     <table className="readings-table" data-testid="table-baseline-comparison"><thead><tr><th>Metric</th><th>Z-score</th><th>Status</th></tr></thead><tbody>
       {Object.entries(dashboard.baseline_comparison).map(([key, item]) => <tr key={key} data-testid={`row-baseline-${key}`}>
         <td>{metricLabels[key] ?? key}</td>
@@ -63,14 +64,16 @@ function Findings({ dashboard }: { dashboard: Dashboard }) {
       </tr>)}
     </tbody></table>
 
-    <h5>3-day trend alerts</h5>
+    </details>
+    <h5>Recent changes</h5>
     {dashboard.trend_alerts.length
       ? <ul data-testid="list-trend-alerts">{dashboard.trend_alerts.map(alert => <li key={alert}>{alert}</li>)}</ul>
       : <p data-testid="text-trend-none">No 3-day trend alerts from the logs checked.</p>}
 
-    <h5>Why (NASA HRP / CSA-based)</h5>
+    <details><summary>Why this was flagged</summary>
     <ul data-testid="list-ai-reasons">{dashboard.reasons.map(reason => <li key={reason}>{reason}</li>)}</ul>
-    <h5>Suggested next steps</h5>
+    </details>
+    <h5>Next steps</h5>
     <ul data-testid="list-ai-actions">{dashboard.recommended_actions.map(action => <li key={action}>{action}</li>)}</ul>
   </>;
 }

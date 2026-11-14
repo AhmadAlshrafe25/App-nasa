@@ -18,13 +18,13 @@ function issueCopy(region: BodyRegion): { what: string; next?: string } {
   const place = region.label.toLowerCase();
   switch (region.status) {
     case 'attention': return bone
-      ? { what: `Reduced loading in the ${place} is simulated here, indicating a bone-deconditioning concern in this demo.`, next: 'Review the sample loading trend and mission countermeasure plan.' }
-      : { what: `Reduced activity in the ${place} is simulated here, indicating a muscle-deconditioning concern in this demo.`, next: 'Review the sample activity trend and mission countermeasure plan.' };
+      ? { what: `Low bone loading in the ${place}.`, next: 'Review the sample trend and exercise plan.' }
+      : { what: `Low muscle activity in the ${place}.`, next: 'Review the sample trend and exercise plan.' };
     case 'flagged': return bone
-      ? { what: `A severe low-loading / weakness concern is simulated in the ${place}. This is not a detected fracture.`, next: 'For a real concern, follow mission protocol and contact the medical team before loading the area.' }
-      : { what: `A marked low-activity / weakness concern is simulated in the ${place}. This is not a diagnosed injury.`, next: 'For a real concern, follow mission protocol and contact the medical team.' };
-    case 'unavailable': return { what: 'No simulated sample for this region right now.' };
-    default: return { what: `No ${bone ? 'loading' : 'activity'} concern is flagged in this demo region.` };
+      ? { what: `Weakness warning in the ${place}. Not a detected fracture.`, next: 'For a real concern, contact the medical team before loading this area.' }
+      : { what: `Weakness warning in the ${place}. Not a diagnosed injury.`, next: 'For a real concern, contact the medical team.' };
+    case 'unavailable': return { what: 'No sample available.' };
+    default: return { what: 'No concern in this sample.' };
   }
 }
 

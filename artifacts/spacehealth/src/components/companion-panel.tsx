@@ -89,7 +89,7 @@ export function CompanionPanel() {
 
   const unviewed = messages.filter(m => !m.is_viewed).length;
   const message = recommended?.message ?? null;
-  const label = mode === 'offline' ? 'Offline sample' : mode === 'live' ? 'Live backend · demo data' : mode === 'error' ? 'Backend error' : 'Checking backend…';
+  const label = mode === 'offline' ? 'Offline sample' : mode === 'live' ? 'Sample data' : mode === 'error' ? 'Connection error' : 'Connecting…';
 
   return <div className="care-panel" role="group" aria-label="Astro companion and family care" data-testid="status-space-companion" data-mode={mode}>
     <div className="care-head">
@@ -138,6 +138,6 @@ export function CompanionPanel() {
       {actionError && <p className="care-error" role="alert" data-testid="text-family-error">{actionError}</p>}
       {notice && <p className="care-notice" data-testid="text-family-notice">{notice}</p>}
     </div>}
-    <p className="care-foot"><Orbit size={12} aria-hidden="true" /> General support, not a diagnosis. Demo data, no live sensors.</p>
+    <p className="care-foot"><Orbit size={12} aria-hidden="true" />Support, not medical advice.</p>
   </div>;
 }
