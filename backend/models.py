@@ -91,6 +91,32 @@ class SupportRequest(BaseModel):
     allow_online: bool = Field(True, description="Set false to forbid sending state to the LLM even if LLM_API_KEY is set")
 
 
+MediaType = Literal["video", "audio", "text"]
+MoodTag = Literal["anxious", "lonely", "tired", "general"]
+
+
+class FamilyMessageIn(BaseModel):
+    astronaut_id: str = Field(min_length=1, max_length=40, examples=["AST-01"])
+    sender_name: str = Field(min_length=1, max_length=80)
+    relationship: str = Field(min_length=1, max_length=60)
+    media_type: MediaType
+    title: str = Field(min_length=1, max_length=120)
+    message_text: Optional[str] = Field(None, max_length=4000)
+    media_url: Optional[str] = Field(None, max_length=1000, description="Required for audio/video")
+    mood_tag: MoodTag = "general"
+
+
+class FamilyMessage(FamilyMessageIn):
+    id: int
+    is_viewed: bool
+    created_at: str
+
+
+class RecommendedFamilyMedia(BaseModel):
+    message: Optional[FamilyMessage] = None
+    selection_reason: str
+
+
 class SupportResponse(BaseModel):
     astronaut_id: str
     summary: str
@@ -98,6 +124,7 @@ class SupportResponse(BaseModel):
     family_message_suggestion: str
     selection_reason: str
     source: Literal["offline_fallback", "llm"]
+    recommended_family_media: Optional[RecommendedFamilyMedia] = None
 
 
 class SyncItem(BaseModel):

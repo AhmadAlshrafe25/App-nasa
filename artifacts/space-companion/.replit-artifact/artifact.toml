@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/space-companion/"
+title = "Space Companion"
+description = "Standalone astronaut emotional well-being and family connection prototype with sample family messages, rule-based recommendations, and mood check-ins."
+version = "1.0.0"
+id = "artifacts/space-companion"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/space-companion/" ]
+localPort = 23358
+
+[services.development]
+run = "pnpm --filter @workspace/space-companion run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/space-companion", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/space-companion/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23358"
+BASE_PATH = "/space-companion/"

@@ -87,3 +87,31 @@ def _llm_support(state: dict) -> dict | None:
 def support(sleep_hours: float, mood: str, stress_score: float, isolation_level: float, allow_online: bool = True) -> dict:
     state = {"sleep_hours": sleep_hours, "mood": mood, "stress_score": stress_score, "isolation_level": isolation_level}
     return (allow_online and _llm_support(state)) or offline_support(**state)
+
+
+ANXIOUS_MOODS = {"anxious", "tense", "stressed", "overwhelmed", "irritable", "angry"}
+LONELY_MOODS = {"lonely", "sad", "low", "depressed"}
+
+
+def pick_family_media(messages: list[dict], mood: str, isolation_level: float) -> dict:
+    """Top unviewed message (newest first) matching mood or isolation; else an unviewed general one."""
+    m = mood.strip().lower()
+    wanted, why = None, ""
+    if m in ANXIOUS_MOODS:
+        wanted, why = "anxious", f"your mood is '{mood}'"
+    elif m in LONELY_MOODS:
+        wanted, why = "lonely", f"your mood is '{mood}'"
+    elif m == "tired":
+        wanted, why = "tired", "you reported feeling tired"
+    elif isolation_level >= 6:
+        wanted, why = "lonely", f"isolation feels strong ({isolation_level:g}/10)"
+    unviewed = [x for x in messages if not x["is_viewed"]]
+    if wanted:
+        for x in unviewed:
+            if x["mood_tag"] == wanted:
+                return {"message": x, "selection_reason": f"Unviewed '{wanted}' message chosen because {why}."}
+    for x in unviewed:
+        if x["mood_tag"] == "general":
+            reason = "no unviewed message matches your current state; showing a general one" if wanted else "readings look steady; showing a general message"
+            return {"message": x, "selection_reason": reason.capitalize() + "."}
+    return {"message": None, "selection_reason": "No unviewed family or friend messages are waiting."}

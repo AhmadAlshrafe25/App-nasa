@@ -1,6 +1,7 @@
 """FastAPI app. Run: `uv run --frozen python -m backend.main` (serves 0.0.0.0:8000)."""
 import json
 import os
+from typing import Optional
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
@@ -9,8 +10,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from ai.anomaly_detection import analyze
 from ai.risk_assessment import assess
 from backend import database as db
-from backend.models import (Assessment, CheckInRequest, CheckInResponse, Dashboard, SimulationResponse,
-                            SupportRequest, SupportResponse, SyncResult, SyncStatus)
+from backend.models import (Assessment, CheckInRequest, FamilyMessage, FamilyMessageIn, CheckInResponse, Dashboard, SimulationResponse,
+                            MoodTag, SupportRequest, SupportResponse, SyncResult, SyncStatus)
 from companion import companion
 
 MARS_DELAY_MINUTES = 14
@@ -99,9 +100,38 @@ def companion_support(body: SupportRequest):
     with db.connect() as conn:
         _require_astronaut(conn, body.astronaut_id)
         latest = db.recent_logs(conn, body.astronaut_id, 1)[0]
+        media = companion.pick_family_media(db.family_messages(conn, body.astronaut_id, unviewed_only=True),
+                                            latest["mood"], latest["isolation_level"])
     out = companion.support(latest["sleep_hours"], latest["mood"], latest["stress_score"], latest["isolation_level"],
                             allow_online=body.allow_online)
-    return {"astronaut_id": body.astronaut_id, **out}
+    return {"astronaut_id": body.astronaut_id, **out, "recommended_family_media": media}
+
+
+@app.post("/family/messages", response_model=FamilyMessage, status_code=201, tags=["family"])
+def post_family_message(body: FamilyMessageIn):
+    if body.media_type in ("audio", "video") and not body.media_url:
+        raise HTTPException(422, "media_url is required for audio and video messages")
+    if body.media_type == "text" and not (body.message_text or "").strip():
+        raise HTTPException(422, "message_text is required for text messages")
+    with db.connect() as conn:
+        _require_astronaut(conn, body.astronaut_id)
+        return db.insert_family_message(conn, body.model_dump())
+
+
+@app.get("/family/messages/{astronaut_id}", response_model=list[FamilyMessage], tags=["family"])
+def list_family_messages(astronaut_id: str, mood_tag: Optional[MoodTag] = None):
+    with db.connect() as conn:
+        _require_astronaut(conn, astronaut_id)
+        return db.family_messages(conn, astronaut_id, mood_tag)
+
+
+@app.patch("/family/messages/{message_id}/viewed", response_model=FamilyMessage, tags=["family"])
+def mark_family_message_viewed(message_id: int):
+    with db.connect() as conn:
+        msg = db.mark_family_viewed(conn, message_id)
+    if not msg:
+        raise HTTPException(404, f"Unknown message '{message_id}'")
+    return msg
 
 
 def _sync_item(r) -> dict:
@@ -144,7 +174,7 @@ def healthz():
 
 
 # Preview/proxy prefix: expose every route again under /api (hidden from Swagger).
-for _route in [r for r in app.routes if getattr(r, "path", "").startswith(("/health", "/astronauts", "/companion", "/mission", "/simulate"))]:
+for _route in [r for r in app.routes if getattr(r, "path", "").startswith(("/health", "/astronauts", "/companion", "/family", "/mission", "/simulate"))]:
     app.add_api_route("/api" + _route.path, _route.endpoint, methods=list(_route.methods), include_in_schema=False)
 
 

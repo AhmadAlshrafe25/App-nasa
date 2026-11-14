@@ -35,7 +35,37 @@ CREATE TABLE IF NOT EXISTS sync_queue (
     queued_at TEXT NOT NULL,
     synced_at TEXT
 );
+CREATE TABLE IF NOT EXISTS family_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    astronaut_id TEXT NOT NULL,
+    sender_name TEXT NOT NULL,
+    relationship TEXT NOT NULL,
+    media_type TEXT NOT NULL CHECK (media_type IN ('video','audio','text')),
+    title TEXT NOT NULL,
+    message_text TEXT,
+    media_url TEXT,
+    mood_tag TEXT NOT NULL DEFAULT 'general' CHECK (mood_tag IN ('anxious','lonely','tired','general')),
+    is_viewed INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_family_astronaut ON family_messages (astronaut_id, is_viewed, created_at);
 """
+
+# Fictional sample content; media URLs are placeholders, not real recordings.
+FAMILY_SEED = [
+    ("Mom", "Mother", "video", "You're doing amazing, sweetheart",
+     "Hi love! The whole street asks about you. Look out the window tonight; we're all looking up at the same sky.",
+     "https://example.invalid/demo/mom-encouragement.mp4", "lonely"),
+    ("Jake", "Close friend", "audio", "Voice note: the worst joke of the year",
+     "A silly voice note about the time we got lost on the way to the lake. Laugh, then rest.",
+     "https://example.invalid/demo/jake-funny-note.mp3", "tired"),
+    ("Dad & Lena", "Father and sister", "audio", "Breathe with us: 2-minute grounding",
+     "Slow breathing together: in for 4, hold for 4, out for 6. Feel your feet, name three things you can see.",
+     "https://example.invalid/demo/family-grounding.mp3", "anxious"),
+    ("Mom", "Mother", "text", "Halfway there!",
+     "You've passed the halfway mark of the mission. We made a countdown chain at home and just removed another link.",
+     None, "general"),
+]
 
 
 def now_iso() -> str:
@@ -102,6 +132,14 @@ def init_db() -> str:
     """Create tables and seed when empty. Returns the seed source."""
     with connect() as conn:
         conn.executescript(SCHEMA)
+        if not conn.execute("SELECT COUNT(*) FROM family_messages").fetchone()[0]:
+            base = datetime.now(timezone.utc) - timedelta(days=4)
+            for i, (name, rel, mt, title, text, url, tag) in enumerate(FAMILY_SEED):
+                conn.execute(
+                    "INSERT INTO family_messages (astronaut_id, sender_name, relationship, media_type, title, message_text,"
+                    " media_url, mood_tag, is_viewed, created_at) VALUES (?,?,?,?,?,?,?,?,0,?)",
+                    ("AST-01", name, rel, mt, title, text, url, tag,
+                     (base + timedelta(days=i)).isoformat(timespec="seconds")))
         if conn.execute("SELECT COUNT(*) FROM astronaut_logs").fetchone()[0]:
             return "existing"
         source, rows = ("csv", _read_csv()) if CSV_PATH.exists() else ("synthetic", generate_synthetic())
@@ -131,3 +169,37 @@ def recent_logs(conn, astronaut_id: str, limit: int) -> list[dict]:
 
 def astronaut_exists(conn, astronaut_id: str) -> bool:
     return conn.execute("SELECT 1 FROM astronaut_logs WHERE astronaut_id=? LIMIT 1", (astronaut_id,)).fetchone() is not None
+
+
+def insert_family_message(conn, d: dict) -> dict:
+    cur = conn.execute(
+        "INSERT INTO family_messages (astronaut_id, sender_name, relationship, media_type, title, message_text,"
+        " media_url, mood_tag, is_viewed, created_at) VALUES (?,?,?,?,?,?,?,?,0,?)",
+        (d["astronaut_id"], d["sender_name"], d["relationship"], d["media_type"], d["title"], d.get("message_text"),
+         d.get("media_url"), d["mood_tag"], now_iso()))
+    return family_message(conn, cur.lastrowid)
+
+
+def family_message(conn, message_id: int) -> dict | None:
+    r = conn.execute("SELECT * FROM family_messages WHERE id=?", (message_id,)).fetchone()
+    return _fam(r) if r else None
+
+
+def family_messages(conn, astronaut_id: str, mood_tag: str | None = None, unviewed_only: bool = False) -> list[dict]:
+    q, args = "SELECT * FROM family_messages WHERE astronaut_id=?", [astronaut_id]
+    if mood_tag:
+        q += " AND mood_tag=?"; args.append(mood_tag)
+    if unviewed_only:
+        q += " AND is_viewed=0"
+    return [_fam(r) for r in conn.execute(q + " ORDER BY created_at DESC, id DESC", args).fetchall()]
+
+
+def mark_family_viewed(conn, message_id: int) -> dict | None:
+    conn.execute("UPDATE family_messages SET is_viewed=1 WHERE id=?", (message_id,))
+    return family_message(conn, message_id)
+
+
+def _fam(r) -> dict:
+    d = dict(r)
+    d["is_viewed"] = bool(d["is_viewed"])
+    return d
