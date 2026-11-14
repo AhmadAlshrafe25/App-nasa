@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
-import { History, Home, Info, MessageCircleHeart, Orbit, SmilePlus } from 'lucide-react';
+import { History, Home, Info, MessageCircleHeart, Orbit, ShieldAlert, SmilePlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV = [
   { href: '/', label: 'Home', icon: Home },
+  { href: '/hazards', label: 'Hazards', icon: ShieldAlert },
   { href: '/messages', label: 'Messages', icon: MessageCircleHeart },
   { href: '/check-in', label: 'Check-in', icon: SmilePlus },
   { href: '/history', label: 'History', icon: History },
@@ -46,14 +47,14 @@ export function Layout({ children }: { children: ReactNode }) {
         <aside className="mt-12 flex gap-3 rounded-xl border border-border/70 bg-card/40 p-4 text-xs text-muted-foreground" aria-label="Notice" data-testid="text-notice">
           <Info className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
           <p>
-            Space Companion supports connection and reflection. It is <strong className="text-foreground">not a medical or diagnostic tool</strong> and
-            does not assess health. All messages, audio, metrics and rules shown are demonstration samples. Reach out to your crew surgeon or support team for any concern.
+            Space Companion includes offline examples for connection, reflection, and the five spaceflight hazards. It is <strong className="text-foreground">not a medical or diagnostic tool</strong>.
+            All statuses, values, messages, and rules shown are demonstrations, not live measurements or validated safety limits. Follow mission procedures for real concerns.
           </p>
         </aside>
       </main>
 
       <nav aria-label="Primary" className="fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-background/90 backdrop-blur-md md:hidden">
-        <ul className="grid grid-cols-4 pb-[env(safe-area-inset-bottom)]">
+        <ul className="grid grid-cols-5 pb-[env(safe-area-inset-bottom)]">
           {NAV.map((n) => {
             const on = loc === n.href;
             return (

@@ -8,6 +8,7 @@ import HomePage from '@/pages/home';
 import MessagesPage from '@/pages/messages';
 import CheckInPage from '@/pages/check-in';
 import HistoryPage from '@/pages/history';
+import HazardsPage from '@/pages/hazards';
 import { Layout } from '@/components/layout';
 import { CompanionContextProvider } from '@/lib/companion-context';
 import { PlayerProvider } from '@/lib/player-context';
@@ -31,6 +32,7 @@ function Router() {
         <Route path="/messages" component={MessagesPage} />
         <Route path="/check-in" component={CheckInPage} />
         <Route path="/history" component={HistoryPage} />
+        <Route path="/hazards" component={HazardsPage} />
         <Route component={NotFound} />
       </Switch>
     </RoutedErrorBoundary>
