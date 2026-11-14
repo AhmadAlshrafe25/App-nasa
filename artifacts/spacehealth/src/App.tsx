@@ -25,6 +25,7 @@ import {
 } from '@/lib/radiation';
 import { describeRadiation } from '@/lib/radiation-copy';
 import { DailyLog } from '@/components/daily-log';
+import { AstroDemo } from '@/components/astro-demo';
 import { Countermeasures } from '@/components/countermeasures';
 import { EarthClock } from '@/components/earth-clock';
 import { useDailyReminder } from '@/hooks/use-daily-reminder';
@@ -674,7 +675,7 @@ function Layout({
       {navItems.map(({ href, label, icon: Icon }) => <Link key={href} href={href} className={location === href ? 'active' : ''} aria-label={label} aria-current={location === href ? 'page' : undefined} data-testid={`mobile-link-${href.slice(1) || 'overview'}`}><Icon /><span>{label}</span></Link>)}
     </nav>
     <button type="button" className="astro-floating-button" aria-label="Open Astro messages" aria-haspopup="dialog" aria-expanded={astroOpen} onClick={() => setAstroOpen(true)} data-testid="button-astro-floating"><Orbit size={24} aria-hidden="true" /><span>Astro</span></button>
-    {astroOpen && <AstroDialog onClose={() => setAstroOpen(false)} />}
+    {astroOpen && <AstroDemo onClose={() => setAstroOpen(false)} privateInbox={() => <AstroDialog onClose={() => setAstroOpen(false)} />} />}
     {tooltip && <div className="ui-tooltip" id={tooltip.id} role="tooltip" style={{ left: tooltip.left, top: tooltip.top }} data-testid="tooltip-active">{tooltip.text}</div>}
   </div>;
 }
