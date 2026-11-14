@@ -4,20 +4,22 @@ import { Link } from 'wouter';
 import './daily-log.css';
 import type { DailyReminderControls } from '@/hooks/use-daily-reminder';
 import { useVoiceLog } from '@/hooks/use-voice-log';
+import { useDeviceJourney } from '@/hooks/use-device-journey';
+import { JourneyStatus, JourneyStorageFooter, ProtectedImport } from './device-journey-storage';
 import {
-  appendEntry, createVoiceLogEntry, earthHourLabel, formatAstronautLogHeader, hasLogForDay,
-  localDay, logChangedEvent, readEntries, type DailyEntry,
+  createVoiceLogEntry, earthHourLabel, formatAstronautLogHeader, hasLogForDay,
+  localDay,
 } from '@/lib/daily-log';
 
 export function DailyLog({ reminder }: { reminder: DailyReminderControls }) {
-  const [entries, setEntries] = useState<DailyEntry[]>([]);
-  const [loadError, setLoadError] = useState('');
   const [saveError, setSaveError] = useState('');
   const [saved, setSaved] = useState(false);
   const [now, setNow] = useState(() => new Date());
   const [mood, setMood] = useState('Good');
   const [stress, setStress] = useState(4);
   const voice = useVoiceLog();
+  const journey = useDeviceJourney();
+  const entries = journey.entries;
   const date = localDay(now);
   const hour = earthHourLabel(now);
 
@@ -25,26 +27,17 @@ export function DailyLog({ reminder }: { reminder: DailyReminderControls }) {
     const clock = window.setInterval(() => setNow(new Date()), 15_000);
     return () => clearInterval(clock);
   }, []);
-  useEffect(() => {
-    const load = () => {
-      try { setEntries(readEntries(localStorage)); setLoadError(''); }
-      catch { setLoadError('Saved logs could not be read. Existing data has not been changed.'); }
-    };
-    load();
-    window.addEventListener('storage', load);
-    return () => window.removeEventListener('storage', load);
-  }, []);
 
-  const save = (event: FormEvent<HTMLFormElement>) => {
+  const blocked = journey.phase !== 'ready' || journey.saving || journey.importing;
+  const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (loadError || !voice.audio || !voice.capturedAt || voice.recording || voice.processing) return;
+    if (blocked || !voice.audio || !voice.capturedAt || voice.recording || voice.processing) return;
     try {
       const entry = createVoiceLogEntry({
         id: crypto.randomUUID(), capturedAt: voice.capturedAt, audio: voice.audio,
         duration: voice.seconds, transcript: voice.transcript, mood, stress,
       });
-      setEntries(appendEntry(localStorage, entry));
-      window.dispatchEvent(new Event(logChangedEvent));
+      await journey.save(entry);
       voice.clear();
       setSaved(true); setSaveError('');
     } catch {
@@ -53,14 +46,14 @@ export function DailyLog({ reminder }: { reminder: DailyReminderControls }) {
     }
   };
 
-  const loggedToday = hasLogForDay(entries, reminder.today);
-  const busy = voice.recording || voice.pending || voice.processing;
+  const loggedToday = journey.phase === 'ready' && hasLogForDay(entries, reminder.today);
+  const busy = voice.recording || voice.pending || voice.processing || blocked;
 
   return <div className="fade-in daily-log">
     <section className="dl-box" data-testid="section-voice-log" aria-labelledby="dl-title">
       <header className="dl-head" data-testid="banner-astronaut-log">
         <h1 id="dl-title">Daily log</h1>
-        <span className={`dl-today ${loggedToday ? 'is-done' : ''}`}>{loggedToday ? 'Logged today' : 'Not logged today'}</span>
+        <span className={`dl-today ${loggedToday ? 'is-done' : ''}`}>{journey.phase !== 'ready' ? '' : loggedToday ? 'Logged today' : 'Not logged today'}</span>
         <span className="dl-clock" data-testid="text-earth-timestamp">Day {date} · {hour}</span>
       </header>
 
@@ -69,18 +62,20 @@ export function DailyLog({ reminder }: { reminder: DailyReminderControls }) {
         <button type="button" className="dl-btn ghost" onClick={reminder.dismiss}>Dismiss today</button>
       </div>}
       {reminder.error && <p className="log-error" role="alert">{reminder.error}</p>}
+      <JourneyStatus journey={journey} />
+      <ProtectedImport journey={journey} />
 
       <form className="dl-form" onSubmit={save} onChange={() => setSaved(false)} data-testid="form-daily-log">
         <div className="dl-record">
           {voice.recording || voice.pending ? <button type="button" className="dl-btn dl-big is-live" onClick={voice.stop} data-testid="button-stop-voice-log">
             <Square size={20} aria-hidden="true" />{voice.pending ? 'Cancel' : 'Stop'}
-          </button> : <button type="button" className="dl-btn dl-big" disabled={voice.processing} onClick={() => { setSaved(false); voice.start(); }} data-testid="button-start-voice-log">
+          </button> : <button type="button" className="dl-btn dl-big" disabled={voice.processing || blocked} onClick={() => { setSaved(false); voice.start(); }} data-testid="button-start-voice-log">
             <Mic size={20} aria-hidden="true" />{voice.processing ? 'Preparing…' : voice.audio ? 'Record again' : 'Record'}
           </button>}
           {voice.recording && <span className="dl-rec" data-testid="status-voice-recording"><span className="dl-rec-dot" aria-hidden="true" />REC {voice.seconds}s</span>}
-          {voice.audio && !busy && <div className="dl-clip">
+          {voice.audio && !(voice.recording || voice.pending || voice.processing) && <div className="dl-clip">
             <audio controls src={voice.audio} className="voice-audio-preview" data-testid="audio-voice-preview" />
-            <button type="button" className="dl-btn ghost" onClick={voice.clear} aria-label="Clear recording" data-testid="button-clear-voice-clip"><Trash2 size={16} aria-hidden="true" />Clear</button>
+            <button type="button" className="dl-btn ghost" onClick={voice.clear} disabled={blocked} aria-label="Clear recording" data-testid="button-clear-voice-clip"><Trash2 size={16} aria-hidden="true" />Clear</button>
           </div>}
         </div>
         {voice.status && <p className="dl-hint" role="status" data-testid="status-voice-log">{voice.status}</p>}
@@ -98,8 +93,9 @@ export function DailyLog({ reminder }: { reminder: DailyReminderControls }) {
           </label>
         </div>
 
-        <button className="dl-btn dl-big dl-save" type="submit" disabled={Boolean(loadError) || !voice.audio || busy} data-testid="button-save-log"><Check size={20} aria-hidden="true" />Save log</button>
+        <button className="dl-btn dl-big dl-save" type="submit" disabled={!voice.audio || busy} data-testid="button-save-log"><Check size={20} aria-hidden="true" />Save log</button>
         {!voice.audio && !busy && <p className="dl-hint">Record first, then save.</p>}
+        {journey.saving && <p className="dl-hint" role="status">Saving…</p>}
         {saved && <p className="saved-status dl-saved" role="status" data-testid="status-log-saved"><Check size={16} aria-hidden="true" />Saved</p>}
         {saveError && <p className="log-error" role="alert" data-testid="status-log-error">{saveError}</p>}
       </form>
@@ -125,7 +121,7 @@ export function DailyLog({ reminder }: { reminder: DailyReminderControls }) {
       <details className="dl-fold" data-testid="section-log-history">
         <summary>Past logs<span className="score-label">{entries.length}</span></summary>
         <div className="dl-fold-body">
-          {loadError ? <p className="log-error" role="alert">{loadError}</p> : entries.length === 0 ? <p className="dl-hint" data-testid="empty-log-history">No logs yet</p> : <div className="dl-list">
+          {entries.length === 0 ? <p className="dl-hint" data-testid="empty-log-history">No logs yet</p> : <div className="dl-list">
             {entries.map(entry => {
               const day = entry.earthDay || entry.logDate || localDay(new Date(entry.createdAt));
               const hour = entry.earthHour || earthHourLabel(new Date(entry.createdAt));
@@ -145,10 +141,7 @@ export function DailyLog({ reminder }: { reminder: DailyReminderControls }) {
         </div>
       </details>
 
-      <details className="dl-foot">
-        <summary>On this device only</summary>
-        <p>Logs and audio stay in this browser. Clearing browser data deletes them. Nothing is uploaded.</p>
-      </details>
+      <JourneyStorageFooter journey={journey} />
     </section>
     <Link href="/" className="section-link">Back to readings</Link>
   </div>;

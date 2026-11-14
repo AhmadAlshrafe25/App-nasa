@@ -3,3 +3,4 @@
 - [Manual artifact checks](manual-artifact-checks.md) — standalone shell builds do not inherit the managed workflow’s injected service environment.
 - [SpaceHealth visual identity](spacehealth-visual-identity.md) — Keep all screens dark and wrist-readable with one navy/cyan palette, square corners, and Arabic Typesetting first.
 - [Anatomy asset constraints](anatomy-assets.md) — Preserve detailed licensed 3D anatomy; preflight storage auth before mirroring public models without touching private media.
+- [Accessible on-device journey](device-journey.md) — No app password for daily logs; keep the journey readable on-device and preserve any earlier protected recordings for one-time import.

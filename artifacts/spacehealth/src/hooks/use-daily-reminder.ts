@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   defaultReminder, hasLogForDay, localDay, logChangedEvent, readEntries,
-  readReminder, reminderDue, reminderMessage, reminderStorageKey, type DailyReminder,
+  readReminder, reminderDue, reminderMessage, reminderStorageKey, logDayMarkerKey, type DailyReminder,
 } from '@/lib/daily-log';
 
 export function useDailyReminder() {
@@ -43,7 +43,7 @@ export function useDailyReminder() {
       try {
         const now = new Date(), day = localDay(now);
         let config = readReminder(localStorage);
-        const logged = hasLogForDay(readEntries(localStorage), day);
+        const logged = localStorage.getItem(logDayMarkerKey) === day || hasLogForDay(readEntries(localStorage), day);
         if (reminderDue(config, now, logged)) {
           config = { ...config, lastFired: day, dismissedOn: '' };
           // Save the daily claim before audio/notification, including across reloads.

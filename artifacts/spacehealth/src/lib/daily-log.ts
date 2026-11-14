@@ -1,6 +1,7 @@
 export const logStorageKey = 'spacehealth-checkins-v1';
 export const reminderStorageKey = 'spacehealth-daily-reminder-v1';
 export const logChangedEvent = 'spacehealth-log-saved';
+export const logDayMarkerKey = 'spacehealth-log-day-marker-v1';
 export const reminderMessage = "SpaceHealth reminder. It's time to record your daily health log.";
 
 // Keep the original fields/key so existing on-device check-ins remain readable.

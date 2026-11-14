@@ -58,3 +58,11 @@
   .dl-clock { margin-left:0; flex-basis:100%; }
 }
 @media (prefers-reduced-motion:reduce) { .dl-rec-dot { animation:none; } }
+.dl-head h1 { display:inline-flex; align-items:center; gap:8px; }
+
+
+.dl-gate-error { display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; padding:10px; border-left:4px solid #F87171; background:#F871711A; }
+.dl-gate-error svg { color:#F87171; }
+.dl-gate-error p { margin:0; flex:1; min-width:180px; }
+.dl-foot > summary svg { color:#62F5E2; }
+.dl-foot .dl-btn { margin:4px 0; }
