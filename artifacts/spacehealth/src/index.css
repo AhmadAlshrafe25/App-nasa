@@ -546,4 +546,52 @@ summary:focus-visible { outline:3px solid #2563eb;outline-offset:2px; }
   .radiation-scenarios { display:grid;grid-template-columns:1fr; }
   .signal-large span, .metric-unit { display:inline-block; }
 }
+.daily-log .page-heading { flex-wrap:wrap;gap:6px; }
+.log-today { font-size:13px;font-weight:700;color:#174195; }
+.reminder-settings { margin-bottom:12px;overflow:hidden; }
+.reminder-settings > summary { min-height:48px;display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;color:#174195;font-size:14px; }
+.reminder-settings > summary > span { margin-left:auto;font-weight:800; }
+.reminder-options { padding:4px 14px 14px;display:flex;flex-direction:column;gap:10px; }
+.reminder-options .form-label { margin:0; }
+.toggle-label { display:flex;gap:10px;align-items:center;min-height:44px;color:var(--ink);font-size:14px;font-weight:700; }
+.toggle-label input { width:20px;height:20px;accent-color:#2563eb;flex-shrink:0; }
+.log-layout { margin-top:0;align-items:start; }
+.log-input { display:block;width:100%;max-width:100%;min-width:0;min-height:44px;padding:10px;border:1px solid #9db6d9;border-radius:8px;background:#fff;color:var(--ink);font:inherit;font-size:16px; }
+.daily-log .form-label { display:block;margin-top:14px; }
+.daily-log .form-label .short-hint { display:block;font-size:12px;font-weight:500; }
+.daily-log .form-label strong { margin-left:8px; }
+.log-number-fields { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px; }
+.log-number-fields .log-input { margin-top:6px; }
+.daily-log input[type=range] { width:100%;min-height:44px; }
+.daily-log .log-optional { margin:14px 0; }
+.log-optional > summary { cursor:pointer;min-height:44px;align-content:center;font-size:14px;font-weight:700;color:#174195; }
+.daily-log .short-hint { line-height:1.5; }
+.daily-log .checkin-actions { flex-wrap:wrap;gap:10px;margin-top:14px; }
+.log-error { background:#fff0e7;color:#812e0c;padding:10px;border:1px solid #d38d6a;border-radius:8px;font-size:14px;line-height:1.4; }
+.daily-log .saved-status { color:#174195;font-weight:700; }
+.log-history { display:block;width:100%; }
+.log-history > summary { min-height:44px;cursor:pointer;overflow-wrap:anywhere; }
+.log-history > summary > span { display:block;font-size:13px;margin-top:4px; }
+.log-history dl { font-size:13px;display:grid;grid-template-columns:1fr 1fr;gap:6px; }
+.log-history dt { font-weight:700; }
+.log-history dd { margin:0;overflow-wrap:anywhere; }
+.daily-reminder-notice { display:flex;gap:9px;padding:12px;margin-bottom:12px;background:#fff4df;color:#744206;border:1px solid #d5a04f;border-radius:12px; }
+.daily-reminder-notice > svg { flex-shrink:0;margin-top:3px; }
+.daily-reminder-notice > div { min-width:0; }
+.daily-reminder-notice .short-hint { color:#604b30;line-height:1.4; }
+.reminder-notice-actions { display:flex;flex-wrap:wrap;gap:8px;margin-top:10px; }
+.daily-reminder-notice .btn { min-height:44px; }
+@media (max-width:760px) {
+  .mobile-nav { display:flex;justify-content:space-around; }
+  .mobile-nav a { flex:1; }
+}
+@media (max-width:480px) {
+  .log-today { font-size:11px; }
+  .log-number-fields { grid-template-columns:1fr;gap:0; }
+  .daily-log .form-panel { padding:12px; }
+  .reminder-options { padding:4px 10px 12px; }
+  .reminder-settings > summary { padding:8px 10px;gap:6px;font-size:13px; }
+  .log-layout { gap:10px; }
+  .daily-log .checkin-actions .btn { flex:1; }
+}
 @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important; } }

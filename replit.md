@@ -6,7 +6,7 @@ a radiation safety system.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/spacehealth run dev` — existing wrist frontend, unchanged by the Python backend task.
+- `pnpm --filter @workspace/spacehealth run dev` — wrist frontend with radiation monitoring and an on-device Daily log.
 - `pnpm --filter @workspace/api-server run dev` — Python FastAPI on `0.0.0.0:8000`.
 - `uv sync --frozen` — reproducible Python dependencies (Python 3.11/3.12; Replit module is 3.12).
 - `uv run --frozen --extra ml pytest -q` — backend tests including the optional model.
@@ -27,7 +27,7 @@ a radiation safety system.
 
 The API artifact routes `/api`, `/health`, `/healthz`, `/astronauts`,
 `/companion/support`, `/simulate`, `/docs`, `/redoc`, and `/openapi.json`.
-Do not route all of `/companion` to Python: it would intercept the existing Chat page.
+Do not route all of `/companion` to Python: that legacy frontend route now redirects to the Daily log.
 The frontend owns `/`; the backend does not replace it.
 
 Root API paths also work under `/api`. `/api/healthz` preserves its original
@@ -41,7 +41,10 @@ when backend contracts change; frontend consumers are not automatically wired.
 - Never imply simulated measurements came from a real dosimeter.
 - Statistical radiation deviations are not validated exposure limits. Missing is unknown, never zero; marking an alert seen does not resolve a condition.
 - Risk labels: `Normal`, `Attention Required`, `High Priority Alert`. A single minor spike cannot trigger high priority.
-- Backend-only scope: no frontend changes, login, or browser automation.
+- Current frontend scope excludes Chat, family connection, and remote communications. `/log` replaces Check-in; `/wellbeing` and `/companion` redirect there. Do not restore communications features from older tasks without renewed approval.
+- Daily logs retain the previous on-device check-in storage and are not uploaded. Existing stored chat records are left untouched rather than deleted.
+- Daily reminders use device-local time, fire once per calendar day while the web app runs, and skip a day already logged. Closed browsers, device sleep, permissions, or audio restrictions can prevent or delay alerts; do not promise a closed-app alarm.
+- Spoken reminders select only locally installed speech voices. Unsupported or blocked voice/notification features must visibly report their limitations.
 - Offline companion output is non-diagnostic, with one action and a conditional family-message recommendation. No actual family recordings are assumed accessible.
 
 ## Storage and privacy limitations

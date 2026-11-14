@@ -1,10 +1,9 @@
-import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { Link, Route, Router as WouterRouter, Switch, useLocation } from 'wouter';
+import { type ReactNode, useEffect, useState } from 'react';
+import { Link, Redirect, Route, Router as WouterRouter, Switch, useLocation } from 'wouter';
 import {
-  Activity, ArrowDownRight, ArrowUpRight, Bell, Check, CheckCircle2,
-  Droplets, Heart, HeartPulse, MessageCircle,
-  Moon, Orbit, Radiation as RadiationIcon, Send, ShieldAlert,
-  Waves, Wind, X,
+  Activity, ArrowDownRight, Bell, Check, CheckCircle2, ClipboardList,
+  Droplets, HeartPulse, Moon, Orbit, Radiation as RadiationIcon, ShieldAlert,
+  Waves, Wind,
 } from 'lucide-react';
 import {
   analyzeRadiation, defaultRadiationDemo, getRadiationSamples,
@@ -12,17 +11,9 @@ import {
   type RadiationAnalysis, type RadiationDemo, type RadiationScenario,
 } from '@/lib/radiation';
 import { describeRadiation } from '@/lib/radiation-copy';
+import { DailyLog } from '@/components/daily-log';
+import { useDailyReminder } from '@/hooks/use-daily-reminder';
 
-type CheckIn = {
-  id: string;
-  createdAt: string;
-  mood: string;
-  stress: number;
-  sleep: string;
-  heartRate?: number;
-  activity?: number;
-  note: string;
-};
 type BodyReadings = {
   heartRate: number;
   activity: number;
@@ -30,14 +21,12 @@ type BodyReadings = {
   oxygen: number;
   water: number;
 };
-type ChatMessage = { id: string; role: 'assistant' | 'user'; text: string; at: string };
 
 const navItems = [
   { href: '/', label: 'Readings', icon: RadiationIcon },
   { href: '/signals', label: 'Trends', icon: Activity },
   { href: '/alerts', label: 'Alerts', icon: Bell },
-  { href: '/wellbeing', label: 'Log', icon: Heart },
-  { href: '/companion', label: 'Chat', icon: MessageCircle },
+  { href: '/log', label: 'Log', icon: ClipboardList },
 ];
 const defaultBodyReadings: BodyReadings = {
   heartRate: 64,
@@ -65,16 +54,8 @@ const telemetry = {
   sleep: [7.1, 6.8, 7.4, 6.9, 7.6, 7.2, 6.6, 7.8, 7.1, 7.4, 6.9, 7.7, 7.3, 7.4],
   stress: [26, 29, 27, 31, 34, 28, 26, 32, 35, 30, 27, 33, 31, 29],
 };
-const syntheticCheckins: CheckIn[] = [];
-const initialMessage: ChatMessage = {
-  id: 'welcome', role: 'assistant',
-  text: 'How are you feeling, Mara?',
-  at: 'Companion',
-};
 const storageKeys = {
-  checkins: 'spacehealth-checkins-v1',
   reviewed: 'spacehealth-alert-reviewed-v1',
-  messages: 'spacehealth-companion-messages-v1',
   readings: 'spacehealth-readings-v1',
 };
 function readStored<T>(key: string, fallback: T): T {
@@ -87,9 +68,6 @@ function usePersistentState<T>(key: string, initial: T) {
   const [value, setValue] = useState<T>(() => readStored(key, initial));
   useEffect(() => { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* local-only prototype */ } }, [key, value]);
   return [value, setValue] as const;
-}
-function timeLabel(date: string) {
-  return new Intl.DateTimeFormat('en', { hour: 'numeric', minute: '2-digit' }).format(new Date(date));
 }
 function Sparkline({ values, color = 'var(--signal-color)', alert = false }: { values: number[]; color?: string; alert?: boolean }) {
   const min = Math.min(...values), max = Math.max(...values);
@@ -338,123 +316,24 @@ function Alerts() {
     </details>
   </div>;
 }
-function Wellbeing() {
-  const [entries, setEntries] = usePersistentState<CheckIn[]>(storageKeys.checkins, syntheticCheckins);
-  const [savedReadings] = usePersistentState<BodyReadings>(storageKeys.readings, defaultBodyReadings);
-  const readings = normalizeBodyReadings(savedReadings);
-  const [mood, setMood] = useState('');
-  const [stress, setStress] = useState(4);
-  const [note, setNote] = useState('');
-  const [saved, setSaved] = useState<CheckIn | null>(null);
-  const save = () => {
-    if (!mood) return;
-    const entry: CheckIn = {
-      id: `${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      mood,
-      stress,
-      sleep: `${readings.sleep.toFixed(1)} hrs`,
-      heartRate: readings.heartRate,
-      activity: readings.activity,
-      note: note.trim(),
-    };
-    setEntries([entry, ...entries]);
-    setSaved(entry);
-    setMood(''); setStress(4); setNote('');
-  };
-  return <div className="fade-in">
-    <Heading title="Log" />
-    <div className="grid overview-bottom" style={{ marginTop: 0 }}>
-      <section className="panel form-panel" data-testid="form-wellbeing">
-        <div className="section-head" style={{ margin: '0 0 10px' }}>
-          <span className="form-label" style={{ marginBottom: 0 }}>From Readings</span>
-          <Link href="/" className="section-link" data-testid="link-edit-readings">Adjust in Readings</Link>
-        </div>
-        <div className="log-readings-grid" data-testid="summary-pulled-readings">
-          <div className="log-reading-pill" data-testid="log-reading-heart-rate">
-            <span className="log-reading-label"><HeartPulse size={14} /> Heart rate</span>
-            <strong>{readings.heartRate} <span>bpm</span></strong>
-          </div>
-          <div className="log-reading-pill" data-testid="log-reading-activity">
-            <span className="log-reading-label"><Activity size={14} /> Activity</span>
-            <strong>{readings.activity} <span>min</span></strong>
-          </div>
-          <div className="log-reading-pill" data-testid="log-reading-sleep">
-            <span className="log-reading-label"><Moon size={14} /> Sleep</span>
-            <strong>{readings.sleep.toFixed(1)} <span>hrs</span></strong>
-          </div>
-        </div>
-        <label className="form-label">Mood</label>
-        <div className="choice-row" role="group" aria-label="Choose a mood">{['Low', 'Tense', 'Okay', 'Good', 'Bright'].map(m => <button type="button" className={`choice ${mood === m ? 'active' : ''}`} onClick={() => setMood(m)} aria-pressed={mood === m} key={m} data-testid={`button-mood-${m.toLowerCase()}`}>{m}</button>)}</div>
-        <label className="form-label" htmlFor="stress-range">Stress <span className="short-hint">1 low · 10 high</span></label>
-        <div className="range-row"><span style={{ color: 'var(--supporting-ink)', fontSize: 13 }}>1</span><input id="stress-range" aria-label="Stress level from one to ten" type="range" min="1" max="10" value={stress} onChange={e => setStress(Number(e.target.value))} data-testid="input-stress-level" /><span style={{ color: 'var(--supporting-ink)', fontSize: 13 }}>10</span><span className="range-value" data-testid="value-stress-level">{stress}/10</span></div>
-        <label className="form-label" htmlFor="wellbeing-note">Note <span className="short-hint">optional</span></label>
-        <textarea id="wellbeing-note" className="text-area" maxLength={500} placeholder="Add note…" value={note} onChange={e => setNote(e.target.value)} data-testid="input-wellbeing-note" />
-        <div className="checkin-actions"><span className="short-hint">On-device only</span><button className="btn" onClick={save} disabled={!mood} data-testid="button-save-checkin"><Check size={16} /> Save</button></div>
-        {saved && <div className="saved-status" role="status" data-testid="reflection-latest"><CheckCircle2 size={16} /> Saved</div>}
-      </section>
-      <section className="panel panel-pad" data-testid="section-checkin-history"><div className="section-head" style={{ margin: '0 0 15px' }}><h2 className="section-title">History</h2><span className="score-label">{entries.length}</span></div>
-        {entries.length === 0 ? <div className="empty-state" data-testid="empty-checkin-history">No logs yet</div> :
-          <div className="history-list">{entries.map(entry => <article className="history-item" key={entry.id} data-testid={`history-checkin-${entry.id}`}><div><div className="history-date">{new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(entry.createdAt))}</div><div className="history-summary">{entry.mood} · {entry.heartRate !== undefined ? `${entry.heartRate} bpm · ` : ''}{entry.activity !== undefined ? `${entry.activity} min · ` : ''}{entry.sleep}</div>{entry.note && <div className="history-note">{entry.note}</div>}</div><div className="history-score">{entry.stress}/10</div></article>)}</div>}
-      </section>
-    </div>
-  </div>;
-}
-const prompts = ['Feeling stressed', 'Sleep check', 'Talk about today'];
-const urgentPattern = /\b(chest pain|can.t breathe|cannot breathe|trouble breathing|difficulty breathing|severe bleeding|fainting|passed out|urgent|emergency|hurt myself|harm myself|suicid|danger|immediate danger)\b/i;
-function supportiveReply(text: string) {
-  if (urgentPattern.test(text)) return 'Contact mission medical staff immediately through your urgent channel. I cannot assess emergencies.';
-  const s = text.toLowerCase();
-  if (s.includes('sleep') || s.includes('tired') || s.includes('rest')) return 'What was hardest: falling asleep, waking up, or feeling rested?';
-  if (s.includes('stress') || s.includes('busy') || s.includes('overwhelm')) return 'What is the main thing weighing on you?';
-  if (s.includes('pattern') || s.includes('signal') || s.includes('pulse')) return 'What stands out in the sample readings?';
-  if (s.includes('thank') || s.includes('good') || s.includes('win')) return 'What would you like to remember about that?';
-  return 'I’m listening. What matters most right now?';
-}
-function Companion() {
-  const [messages, setMessages] = usePersistentState<ChatMessage[]>(storageKeys.messages, [initialMessage]);
-  const [text, setText] = useState('');
-  const bottomRef = useRef<HTMLDivElement>(null);
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [messages]);
-  const send = (value = text) => {
-    const trimmed = value.trim();
-    if (!trimmed) return;
-    const now = new Date().toISOString();
-    const reply: ChatMessage[] = [
-      { id: `${Date.now()}-you`, role: 'user', text: trimmed, at: now },
-      { id: `${Date.now()}-reply`, role: 'assistant', text: supportiveReply(trimmed), at: new Date(Date.now() + 1).toISOString() },
-    ];
-    setMessages([...messages, ...reply]); setText('');
-  };
-  const clear = () => setMessages([initialMessage]);
-  return <div className="fade-in">
-    <Heading title="Chat" right={<button className="btn outline small" onClick={clear} data-testid="button-clear-conversation"><X size={15} /> New chat</button>} />
-    <div className="chat-layout">
-      <section className="panel chat-panel" aria-label="Space Companion conversation">
-        <div className="chat-header"><strong>Companion</strong><small>Scripted · on-device</small></div>
-        <div className="chat-messages" role="log" aria-live="polite" data-testid="conversation-messages">
-          {messages.map(message => <div key={message.id} className={`message ${message.role}`} data-testid={`message-${message.role}-${message.id}`}><div>{message.id === 'welcome' ? initialMessage.text : message.text}</div><div className="message-time">{message.id !== 'welcome' && timeLabel(message.at)}</div></div>)}
-          <div ref={bottomRef} />
-        </div>
-        <form className="chat-compose" onSubmit={e => { e.preventDefault(); send(); }}>
-          <input className="chat-input" aria-label="Write a message" placeholder="Message…" value={text} onChange={e => setText(e.target.value)} data-testid="input-companion-message" />
-          <button className="btn" type="submit" disabled={!text.trim()} aria-label="Send message" data-testid="button-send-message"><Send size={15} /></button>
-        </form>
-      </section>
-      <aside className="panel chat-aside"><div className="prompt-list">{prompts.map((prompt, i) => <button key={prompt} className="prompt-chip" onClick={() => send(prompt)} data-testid={`button-prompt-${i + 1}`}>{prompt}<ArrowUpRight size={12} style={{ float: 'right' }} /></button>)}</div></aside>
-    </div>
-  </div>;
-}
 function NotFound() {
-  return <div className="empty-state"><strong>Page not found</strong><Link href="/" className="btn" style={{ marginTop: 14 }} data-testid="link-back-vitals">Back to vitals</Link></div>;
+  return <div className="empty-state"><strong>Page not found</strong><Link href="/" className="btn" style={{ marginTop: 14 }} data-testid="link-back-vitals">Back to radiation</Link></div>;
+}
+function DailyLogPage({ reminder }: { reminder: ReturnType<typeof useDailyReminder> }) {
+  const [savedReadings] = usePersistentState<BodyReadings>(storageKeys.readings, defaultBodyReadings);
+  return <DailyLog reminder={reminder} readings={normalizeBodyReadings(savedReadings)} />;
 }
 function RoutedApp() {
-  return <Layout><Switch>
+  const reminder = useDailyReminder();
+  return <Layout>
+    {reminder.notice && <section className="daily-reminder-notice" role="alert" aria-label="Daily log reminder" data-testid="notice-daily-reminder"><Bell size={19} /><div><strong>Time for your daily log</strong>{reminder.settings.voiceEnabled && reminder.voiceStatus && <p className="short-hint">{reminder.voiceStatus}</p>}<div className="reminder-notice-actions"><Link href="/log" className="btn small" data-testid="link-reminder-log">Open log</Link><button className="btn outline small" onClick={reminder.dismiss} data-testid="button-dismiss-reminder">Dismiss</button></div></div></section>}
+    <Switch>
     <Route path="/" component={Overview} />
     <Route path="/signals" component={Signals} />
     <Route path="/alerts" component={Alerts} />
-    <Route path="/wellbeing" component={Wellbeing} />
-    <Route path="/companion" component={Companion} />
+    <Route path="/log"><DailyLogPage reminder={reminder} /></Route>
+    <Route path="/wellbeing"><Redirect to="/log" replace /></Route>
+    <Route path="/companion"><Redirect to="/log" replace /></Route>
     <Route component={NotFound} />
   </Switch></Layout>;
 }
