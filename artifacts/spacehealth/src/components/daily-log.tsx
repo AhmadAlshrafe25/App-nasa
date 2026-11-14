@@ -12,6 +12,7 @@ export function DailyLog({ reminder, readings }: { reminder: DailyReminderContro
   const [saveError, setSaveError] = useState('');
   const [saved, setSaved] = useState(false);
   const [date, setDate] = useState(localDay());
+  const [dateEdited, setDateEdited] = useState(false);
   const [heartRate, setHeartRate] = useState(String(readings.heartRate));
   const [sleepHours, setSleepHours] = useState(readings.sleep.toFixed(1));
   const [activity, setActivity] = useState(String(readings.activity));
@@ -19,6 +20,12 @@ export function DailyLog({ reminder, readings }: { reminder: DailyReminderContro
   const [stress, setStress] = useState(4);
   const [radiation, setRadiation] = useState('');
   const [note, setNote] = useState('');
+  const emptyDraft = !heartRate && !sleepHours && !activity && !mood && stress === 4 && !radiation && !note;
+  useEffect(() => {
+    // An app left open overnight should start a fresh log on the new day.
+    // Never relabel an existing draft or a date the astronaut selected.
+    if (!dateEdited && emptyDraft) setDate(reminder.today);
+  }, [reminder.today, dateEdited, emptyDraft]);
   useEffect(() => {
     const load = () => {
       try { setEntries(readEntries(localStorage)); setLoadError(''); }
@@ -44,6 +51,7 @@ export function DailyLog({ reminder, readings }: { reminder: DailyReminderContro
       setSaved(true); setSaveError('');
       setHeartRate(''); setSleepHours(''); setActivity(''); setMood('');
       setStress(4); setRadiation(''); setNote('');
+      setDate(reminder.today); setDateEdited(false);
     } catch {
       setSaveError('Log not saved. Your entries are still in the form. Check on-device storage access.');
       setSaved(false);
@@ -79,7 +87,7 @@ export function DailyLog({ reminder, readings }: { reminder: DailyReminderContro
     <div className="grid overview-bottom log-layout">
       <form className="panel form-panel" onSubmit={save} onChange={() => setSaved(false)} data-testid="form-daily-log">
         <label className="form-label" htmlFor="log-date">Log date</label>
-        <input className="log-input" type="date" id="log-date" required max={reminder.today} value={date} onChange={e => setDate(e.target.value)} />
+        <input className="log-input" type="date" id="log-date" required max={reminder.today} value={date} onChange={e => { setDate(e.target.value); setDateEdited(true); }} />
         <div className="log-number-fields">
           <label className="form-label" htmlFor="log-heart-rate">Heart rate <span className="short-hint">beats per minute</span><input className="log-input" id="log-heart-rate" type="number" inputMode="numeric" required min="30" max="220" step="1" value={heartRate} onChange={e => setHeartRate(e.target.value)} data-testid="input-log-heart-rate" /></label>
           <label className="form-label" htmlFor="log-sleep">Sleep <span className="short-hint">hours in past day</span><input className="log-input" id="log-sleep" type="number" inputMode="decimal" required min="0" max="24" step="0.1" value={sleepHours} onChange={e => setSleepHours(e.target.value)} data-testid="input-log-sleep" /></label>

@@ -41,7 +41,7 @@ when backend contracts change; frontend consumers are not automatically wired.
 - Never imply simulated measurements came from a real dosimeter.
 - Statistical radiation deviations are not validated exposure limits. Missing is unknown, never zero; marking an alert seen does not resolve a condition.
 - Risk labels: `Normal`, `Attention Required`, `High Priority Alert`. A single minor spike cannot trigger high priority.
-- Current frontend scope excludes Chat, family connection, and remote communications. `/log` replaces Check-in; `/wellbeing` and `/companion` redirect there. Do not restore communications features from older tasks without renewed approval.
+- `/log` replaces Check-in; `/wellbeing` and `/companion` redirect there. Product-scope decisions about communications are recorded in `.agents/memory/wrist-monitor.md`.
 - Daily logs retain the previous on-device check-in storage and are not uploaded. Existing stored chat records are left untouched rather than deleted.
 - Daily reminders use device-local time, fire once per calendar day while the web app runs, and skip a day already logged. Closed browsers, device sleep, permissions, or audio restrictions can prevent or delay alerts; do not promise a closed-app alarm.
 - Spoken reminders select only locally installed speech voices. Unsupported or blocked voice/notification features must visibly report their limitations.
