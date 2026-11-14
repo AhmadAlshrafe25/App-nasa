@@ -545,7 +545,7 @@ function RoutedApp() {
       <Route path="/"><Overview readings={readings} onChangeReadings={setReadings} /></Route>
       <Route path="/signals"><Signals readings={readings} /></Route>
       <Route path="/alerts"><Alerts readings={readings} /></Route>
-      <Route path="/log"><DailyLog reminder={reminder} readings={readings} /></Route>
+      <Route path="/log"><DailyLog reminder={reminder} /></Route>
       <Route path="/wellbeing"><Redirect to="/log" replace /></Route>
       <Route path="/companion"><Redirect to="/log" replace /></Route>
       <Route component={NotFound} />

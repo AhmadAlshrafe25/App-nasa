@@ -14,6 +14,7 @@ export type DailyEntry = {
   voiceAudioDataUrl?: string;
   voiceDurationSec?: number;
   voiceTranscript?: string;
+  voiceCaptureSource?: 'microphone';
   oxygen?: number;
   respiration?: number;
   temperature?: number;
@@ -29,6 +30,26 @@ export function earthHourLabel(date = new Date()) {
 
 export function formatAstronautLogHeader(earthDay: string, earthHour: string, flightDay = 142) {
   return `Astronaut's Log, Earth Day ${earthDay}, Hour ${earthHour} · Mission Day ${flightDay}`;
+}
+
+export function createVoiceLogEntry(input: {
+  id: string; capturedAt: Date; audio: string; duration: number; transcript: string; mood: string; stress: number;
+}): DailyEntry {
+  if (!Number.isFinite(input.capturedAt.getTime()) || !/^data:audio\/[^;,]+(?:;[^,]*)?;base64,/.test(input.audio)
+    || input.duration < 1 || !Number.isFinite(input.duration) || !input.mood
+    || !Number.isInteger(input.stress) || input.stress < 1 || input.stress > 10) {
+    throw new Error('A real voice recording, valid time, mood, and stress level are required.');
+  }
+  const day = localDay(input.capturedAt);
+  const hour = earthHourLabel(input.capturedAt);
+  const transcript = input.transcript.trim();
+  return {
+    id: input.id, createdAt: input.capturedAt.toISOString(), logDate: day, earthDay: day, earthHour: hour,
+    captainHeader: formatAstronautLogHeader(day, hour), mood: input.mood, stress: input.stress,
+    sleep: 'Not logged', note: transcript || 'Voice recording · no on-device transcript available.',
+    voiceAudioDataUrl: input.audio, voiceDurationSec: input.duration, voiceCaptureSource: 'microphone',
+    ...(transcript ? { voiceTranscript: transcript } : {}),
+  };
 }
 export type DailyReminder = {
   enabled: boolean; time: string; voiceEnabled: boolean; lastFired: string; dismissedOn: string;
