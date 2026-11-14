@@ -21,6 +21,12 @@ The app's current scope excludes Chat and family/remote communication features; 
 
 **How to apply:** Do not restore communications features from older plans without renewed approval. Keep reminder speech on-device and explain browser/open-app/audio limitations rather than promising background alarms on a closed web app.
 
+The user selected a labeled, fictional Astro sample with browser-generated speech instead of real family media or a live Earth connection.
+
+**Why:** Real voice/video delivery needs authentic media and secure transmission, which this demo does not have.
+
+**How to apply:** Keep the transcript visible, disclose that the voice is computer-generated and the example is fictional, and do not imply real messages or video are connected.
+
 Daily logs use automatically determined Earth Day and Hour, with the entry taken from the astronaut’s voice. Only crew mood and stress are manual fields; the archive belongs below them.
 
 **Why:** The user explicitly requested this simpler recording flow and vertical archive placement.

@@ -1,9 +1,9 @@
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Link, Redirect, Route, Router as WouterRouter, Switch, useLocation } from 'wouter';
 import {
   Activity, AlertTriangle, ArrowDownRight, Bell, Check, CheckCircle2, ClipboardList,
-  Droplets, Dumbbell, Flame, Gauge, HeartPulse, Moon, Orbit, Radiation as RadiationIcon,
-  ShieldAlert, Siren, Sun, Thermometer, Watch, Waves, Wind,
+  Droplets, Dumbbell, Flame, Gauge, HeartPulse, Moon, Orbit, Pause, Play,
+  Radiation as RadiationIcon, ShieldAlert, Siren, Sun, Thermometer, Watch, Waves, Wind, X,
 } from 'lucide-react';
 import {
   analyzeRadiation, defaultRadiationDemo, getRadiationSamples,
@@ -69,6 +69,112 @@ function usePersistentState<T>(key: string, initial: T) {
     };
   }, [key, initial]);
   return [value, setValue] as const;
+}
+
+const astroSample = 'Hi Mara. We miss you here on Earth. The garden is thriving, and we’re cheering you on. Take a moment to look out at the stars for us.';
+
+function AstroDialog({ onClose }: { onClose: () => void }) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [available] = useState(() => typeof window !== 'undefined'
+    && 'speechSynthesis' in window
+    && typeof SpeechSynthesisUtterance !== 'undefined');
+  const [playing, setPlaying] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [status, setStatus] = useState(available ? 'Sample ready to play.' : 'Speech synthesis is unavailable in this browser. Read the sample below.');
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (dialog && !dialog.open) dialog.showModal();
+    return () => {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+      if (dialog?.open) dialog.close();
+    };
+  }, []);
+
+  const stopSpeech = () => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+    setPlaying(false);
+    setPaused(false);
+  };
+
+  const closeDialog = () => {
+    stopSpeech();
+    if (dialogRef.current?.open) dialogRef.current.close();
+    onClose();
+  };
+
+  const toggleSpeech = () => {
+    if (!available) return;
+    const synthesis = window.speechSynthesis;
+    if (playing && !paused) {
+      synthesis.pause();
+      setPaused(true);
+      setStatus('Sample paused.');
+      return;
+    }
+    if (playing && paused) {
+      synthesis.resume();
+      setPaused(false);
+      setStatus('Playing the computer-generated sample.');
+      return;
+    }
+    synthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(astroSample);
+    utterance.onstart = () => {
+      setPlaying(true);
+      setPaused(false);
+      setStatus('Playing the computer-generated sample.');
+    };
+    utterance.onend = () => {
+      setPlaying(false);
+      setPaused(false);
+      setStatus('Sample finished.');
+    };
+    utterance.onerror = () => {
+      setPlaying(false);
+      setPaused(false);
+      setStatus('Speech playback could not start. The sample transcript is available below.');
+    };
+    synthesis.speak(utterance);
+  };
+
+  return <dialog
+    ref={dialogRef}
+    className="astro-dialog"
+    aria-labelledby="astro-dialog-title"
+    aria-describedby="astro-disclosure"
+    data-testid="dialog-astro"
+    onCancel={event => { event.preventDefault(); closeDialog(); }}
+    onClick={event => { if (event.target === event.currentTarget) closeDialog(); }}
+    onClose={stopSpeech}
+  >
+    <div className="astro-dialog-content">
+      <div className="astro-dialog-heading">
+        <span className="astro-mark" aria-hidden="true"><Orbit size={20} /></span>
+        <div><span className="astro-kicker">LOCAL SAMPLE</span><h2 id="astro-dialog-title">A note from Earth</h2></div>
+        <button type="button" className="astro-close" onClick={closeDialog} aria-label="Close Astro sample" data-testid="button-astro-close"><X size={19} /></button>
+      </div>
+      <p className="astro-transcript" data-testid="text-astro-transcript">{astroSample}</p>
+      <div className="astro-playback">
+        <button
+          type="button"
+          className="btn astro-play-button"
+          onClick={toggleSpeech}
+          disabled={!available}
+          aria-label={playing && !paused ? 'Pause sample message' : paused ? 'Resume sample message' : 'Play sample message'}
+          aria-pressed={playing && !paused}
+          data-testid="button-astro-play"
+        >
+          {playing && !paused ? <Pause size={17} aria-hidden="true" /> : <Play size={17} aria-hidden="true" />}
+          {playing && !paused ? 'Pause' : paused ? 'Resume' : 'Play sample'}
+        </button>
+        <span role="status" aria-live="polite" data-testid="status-astro-speech">{status}</span>
+      </div>
+      <p className="astro-disclosure" id="astro-disclosure" data-testid="status-astro-disclosure">
+        Fictional example only. This is not a real person, recording, Earth connection, or video. Any playback uses a computer-generated browser voice.
+      </p>
+    </div>
+  </dialog>;
 }
 
 const VITAL_ICONS: Record<keyof BodyReadings, typeof HeartPulse> = {
@@ -242,6 +348,7 @@ function Layout({
   onChangeReadings: (next: BodyReadings) => void;
 }) {
   const [location] = useLocation();
+  const [astroOpen, setAstroOpen] = useState(false);
   const [storedTheme, setTheme] = usePersistentState<DisplayTheme>(themeStorageKey, 'space');
   const theme = normalizeTheme(storedTheme);
   useEffect(() => applyTheme(theme), [theme]);
@@ -256,13 +363,13 @@ function Layout({
         {navItems.map(({ href, label, icon: Icon }) => <Link key={href} href={href} className={`nav-link ${location === href ? 'active' : ''}`} aria-current={location === href ? 'page' : undefined} data-testid={`link-nav-${label.toLowerCase().replaceAll(' ', '-')}`}>
           <Icon aria-hidden="true" /><span>{label}</span>
         </Link>)}
+        <button type="button" className="nav-link astro-nav-button" onClick={() => setAstroOpen(true)} data-testid="button-astro-desktop"><Orbit aria-hidden="true" /><span>Astro</span></button>
       </nav>
     </aside>
     <div className="workspace">
       <header className="topbar">
         <div className="crew-branding">
           <strong className="crew-name" data-testid="text-crew-name">Mara Velez</strong>
-          <span className="mission-motto" data-testid="mission-motto">Ad astra per asphera</span>
         </div>
         <span className="sensor-live-pill" data-testid="badge-sensor-origin">
           <Watch size={13} /> Demo · no connected sensors
@@ -295,10 +402,16 @@ function Layout({
         <EmergencyMonitor readings={readings} onChangeReadings={onChangeReadings} />
         {children}
       </main>
+      <footer className="mission-footer" data-testid="footer-mission-motto">
+        <strong className="mission-motto" data-testid="mission-motto">Ad astra per asphera</strong>
+        <span>To the stars through adversity.</span>
+      </footer>
     </div>
     <nav className="mobile-nav" aria-label="Mobile navigation">
       {navItems.map(({ href, label, icon: Icon }) => <Link key={href} href={href} className={location === href ? 'active' : ''} aria-label={label} aria-current={location === href ? 'page' : undefined} data-testid={`mobile-link-${href.slice(1) || 'overview'}`}><Icon /><span>{label}</span></Link>)}
+      <button type="button" className="mobile-astro-button" onClick={() => setAstroOpen(true)} data-testid="button-astro-mobile"><Orbit aria-hidden="true" /><span>Astro</span></button>
     </nav>
+    {astroOpen && <AstroDialog onClose={() => setAstroOpen(false)} />}
   </div>;
 }
 
@@ -465,7 +578,7 @@ function Overview({
       <div className="mission-context-heading"><Orbit size={15} aria-hidden="true" /><strong>Mission overview</strong><span>Day 142</span></div>
       <div className="companion-status" role="status" data-testid="status-space-companion">
         <span className="companion-indicator" aria-hidden="true" />
-        <div><strong>Space Companion</strong><span>Not connected · no chat or communication</span></div>
+        <div><strong>Astro</strong><span>Local fictional sample · no live connection</span></div>
       </div>
     </section>
     <div className="readings-trend-heading">

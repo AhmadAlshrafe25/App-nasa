@@ -1,4 +1,4 @@
-- [Wrist monitor target](wrist-monitor.md) — SpaceHealth targets an astronaut’s wrist display and accompanying team; keep screens glanceable and free of decorative prose.
+- [Wrist monitor target](wrist-monitor.md) — Keep SpaceHealth glanceable; Astro currently uses an explicitly fictional local voice sample, not a claimed Earth connection.
 - [Radiation monitoring scope](radiation-monitoring.md) — Radiation anomalies are the priority; distinguish statistical deviations from validated exposure limits and live hardware readings.
 - [Manual artifact checks](manual-artifact-checks.md) — standalone shell builds do not inherit the managed workflow’s injected service environment.
 - [SpaceHealth visual identity](spacehealth-visual-identity.md) — Keep the dashboard light and wrist-readable, with lavender, sky blue, beige, white, square corners, and Arabic Typesetting first.
