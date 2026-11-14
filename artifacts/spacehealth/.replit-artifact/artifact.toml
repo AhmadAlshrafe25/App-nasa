@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "SpaceHealth"
+description = "An astronaut-facing health and wellness monitoring prototype with physiological signals, transparent anomaly alerts, mental well-being check-ins, and supportive mission companion guidance using clearly labeled sample data."
+version = "1.0.0"
+id = "artifacts/spacehealth"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24384
+
+[services.development]
+run = "pnpm --filter @workspace/spacehealth run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/spacehealth", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/spacehealth/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24384"
+BASE_PATH = "/"
