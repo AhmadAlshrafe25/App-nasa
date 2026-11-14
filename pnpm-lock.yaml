@@ -205,6 +205,9 @@ importers:
       http-proxy-middleware:
         specifier: ^4.2.1
         version: 4.2.1
+      pg:
+        specifier: ^8.23.1
+        version: 8.23.1
       pino:
         specifier: ^9.14.0
         version: 9.14.0
@@ -775,6 +778,9 @@ importers:
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.1.4(react@19.1.4))(react@19.1.4)
+      playwright-core:
+        specifier: ^1.65.0
+        version: 1.65.0
       react:
         specifier: 'catalog:'
         version: 19.1.4
@@ -2995,6 +3001,11 @@ packages:
 
   pino@9.14.0:
     resolution: {integrity: sha512-8OEwKp5juEvb/MjpIc4hjqfgCNysrS94RIOMXYvpYCdm/jglrKEiAYmiumbmGhCvs+IcInsphYDFwqrjr7398w==}
+    hasBin: true
+
+  playwright-core@1.65.0:
+    resolution: {integrity: sha512-vNSKgH6YqtN7cdT/L334zo0a+YwkrpicyrHJlWWPIm/Q+Nn2SWInil01oT0mbu96U4GgoRtCYQD9CzJQgju+lA==}
+    engines: {node: '>=20'}
     hasBin: true
 
   postcss-selector-parser@6.0.10:
@@ -5684,6 +5695,8 @@ snapshots:
       safe-stable-stringify: 2.5.0
       sonic-boom: 4.2.1
       thread-stream: 3.1.0
+
+  playwright-core@1.65.0: {}
 
   postcss-selector-parser@6.0.10:
     dependencies:

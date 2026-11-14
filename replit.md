@@ -16,6 +16,7 @@ a radiation safety system.
 - `uv run --frozen python scripts/export-openapi.py` then `pnpm --filter @workspace/api-spec run codegen` — refresh shared contracts and generated helpers.
 - `curl -fsS "https://${REPLIT_DEV_DOMAIN}/api/healthz"` — read-only health check through the Replit proxy. The legacy `scripts/smoke-backend.py` targets an earlier API contract and needs updating before use.
 - `pnpm run typecheck` — workspace type checks.
+- `pnpm --filter @workspace/spacehealth run test:e2e` — browser tests (Playwright with the system Chromium) for Mark viewed, Add family message, Queue sample packet, Sync Earth and the Alerts findings block, run with the API up and unreachable. They start their own API on a temporary database and their own dev server, so no workflow needs to be running.
 
 ## Backend
 
