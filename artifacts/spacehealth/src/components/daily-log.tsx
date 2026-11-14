@@ -209,7 +209,7 @@ export function DailyLog({ reminder, readings }: { reminder: DailyReminderContro
     const entryHour = hour || earthHourLabel(now);
     const header = formatAstronautLogHeader(entryDay, entryHour, 142);
     const finalNote = (overrideNote !== undefined ? overrideNote : note).trim()
-      || `${header}. Wrist and body telemetry nominal. Heart rate ${readings.heartRate} bpm, sleep ${readings.sleep.toFixed(1)} hrs, activity ${readings.activity} min.`;
+      || `${header}. Simulated demo readings, not live measurements. Heart rate ${readings.heartRate} bpm, sleep ${readings.sleep.toFixed(1)} hrs, activity ${readings.activity} min.`;
     const entry: DailyEntry = {
       id: crypto.randomUUID(),
       createdAt: now.toISOString(),
@@ -217,6 +217,7 @@ export function DailyLog({ reminder, readings }: { reminder: DailyReminderContro
       earthDay: entryDay,
       earthHour: entryHour,
       captainHeader: header,
+      readingsSource: 'simulated',
       heartRate: readings.heartRate,
       sleepHours: readings.sleep,
       activityMinutes: readings.activity,
@@ -265,7 +266,7 @@ export function DailyLog({ reminder, readings }: { reminder: DailyReminderContro
       entry.earthDay || entry.logDate || localDay(new Date(entry.createdAt)),
       entry.earthHour || earthHourLabel(new Date(entry.createdAt)),
     );
-    const text = `${header}. ${entry.note || `Mood ${entry.mood}, stress ${entry.stress} of 10. Heart rate ${entry.heartRate ?? readings.heartRate} beats per minute, sleep ${entry.sleep}.`}`;
+    const text = `${header}. Demo archive: readings are simulated or unverified, not live telemetry. ${entry.note || `Mood ${entry.mood}, stress ${entry.stress} of 10. Heart rate ${entry.heartRate === undefined ? 'not logged' : `${entry.heartRate} beats per minute`}, sleep ${entry.sleep}.`}`;
     const utter = new SpeechSynthesisUtterance(text);
     utter.rate = 0.94;
     window.speechSynthesis.speak(utter);
@@ -287,8 +288,8 @@ export function DailyLog({ reminder, readings }: { reminder: DailyReminderContro
     <section className="panel log-reading-source" data-testid="summary-pulled-readings">
       <div className="section-head">
         <div>
-          <h2 className="section-title"><Watch size={17} style={{ display: 'inline', verticalAlign: '-3px', marginRight: 6 }} />Auto-synced from Wrist &amp; Body Sensors</h2>
-          <p className="short-hint" style={{ margin: '2px 0 0' }}>Live biometric telemetry streamed from Mara Velez’s wrist band and smart-textile body vest.</p>
+          <h2 className="section-title"><Watch size={17} style={{ display: 'inline', verticalAlign: '-3px', marginRight: 6 }} />Simulated readings for this log</h2>
+          <p className="short-hint" style={{ margin: '2px 0 0' }}>Editable local demo values, not live sensor telemetry. Saved entries retain these fictional readings.</p>
         </div>
         <Link href="/" className="section-link" data-testid="link-edit-readings">Adjust in Readings</Link>
       </div>
@@ -320,7 +321,7 @@ export function DailyLog({ reminder, readings }: { reminder: DailyReminderContro
       </div>
       {evaluated.overall !== 'normal' && (
         <div className={`sensor-sync-warning ${evaluated.overall}`} data-testid="log-sensor-status">
-          <strong>{evaluated.overall === 'red' ? 'CRITICAL SENSOR TELEMETRY ATTACHED' : 'CAUTION SENSOR TELEMETRY ATTACHED'}:</strong>{' '}
+          <strong>{evaluated.overall === 'red' ? 'RED DEMO VALUES' : 'YELLOW DEMO VALUES'} · unvalidated example bands:</strong>{' '}
           {[...evaluated.redItems, ...evaluated.yellowItems].map(i => `${i.spec.label} (${i.formattedValue} ${i.spec.unit})`).join(', ')}
         </div>
       )}
@@ -425,7 +426,7 @@ export function DailyLog({ reminder, readings }: { reminder: DailyReminderContro
           className="text-area"
           id="log-note"
           maxLength={800}
-          placeholder={`${captainHeader} — Crew systems and wrist biometrics nominal...`}
+          placeholder={`${captainHeader} — Record your observations; attached readings are simulated...`}
           value={note}
           onChange={e => setNote(e.target.value)}
           data-testid="input-log-note"
@@ -464,7 +465,8 @@ export function DailyLog({ reminder, readings }: { reminder: DailyReminderContro
                     {entry.voiceAudioDataUrl && <span className="voice-log-badge">VOICE LOG ({entry.voiceDurationSec ?? 2}s)</span>}
                   </div>
                   <strong>{header}</strong>
-                  <span>{entry.mood} · Stress {entry.stress}/10 · HR {entry.heartRate ?? readings.heartRate} bpm · Sleep {entry.sleep}</span>
+                  <span>{entry.readingsSource === 'simulated' ? 'Simulated readings' : 'Legacy readings · source unverified'}</span>
+                  <span>{entry.mood} · Stress {entry.stress}/10 · HR {entry.heartRate === undefined ? 'Not logged' : `${entry.heartRate} bpm`} · Sleep {entry.sleep}</span>
                 </summary>
                 {entry.note && <p className="history-note captain-entry-text">“{entry.note}”</p>}
                 {entry.voiceAudioDataUrl && (
@@ -479,8 +481,8 @@ export function DailyLog({ reminder, readings }: { reminder: DailyReminderContro
                 </div>
                 <dl>
                   <dt>Earth Day &amp; Hour</dt><dd>{entryDay} at {entryHour}</dd>
-                  <dt>Heart rate (Wrist/Chest)</dt><dd>{entry.heartRate ?? readings.heartRate} beats/min</dd>
-                  <dt>Activity (3-Axis Body)</dt><dd>{entry.activityMinutes ?? readings.activity} minutes</dd>
+                  <dt>Heart rate</dt><dd>{entry.heartRate === undefined ? 'Not logged' : `${entry.heartRate} beats/min`}</dd>
+                  <dt>Activity</dt><dd>{entry.activityMinutes === undefined ? 'Not logged' : `${entry.activityMinutes} minutes`}</dd>
                   <dt>Sleep (Wrist Actigraphy)</dt><dd>{entry.sleep}</dd>
                   {entry.oxygen !== undefined && <><dt>Blood SpO₂ (Wrist)</dt><dd>{entry.oxygen}%</dd></>}
                   {entry.temperature !== undefined && <><dt>Body Temp (Torso)</dt><dd>{entry.temperature.toFixed(1)} °C</dd></>}

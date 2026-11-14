@@ -20,6 +20,7 @@ export type DailyEntry = {
   systolicBP?: number;
   hrv?: number;
   water?: number;
+  readingsSource?: 'simulated';
 };
 
 export function earthHourLabel(date = new Date()) {

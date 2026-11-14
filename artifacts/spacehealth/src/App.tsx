@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { Link, Redirect, Route, Router as WouterRouter, Switch, useLocation } from 'wouter';
 import {
   Activity, AlertTriangle, ArrowDownRight, Bell, Check, CheckCircle2, ClipboardList,
@@ -16,8 +16,9 @@ import { useDailyReminder } from '@/hooks/use-daily-reminder';
 import {
   defaultBodyReadings, evaluateAllVitals, normalizeBodyReadings,
   readingsStorageKey, VITAL_SPECS,
-  type BodyReadings, type EvaluatedVital, type VitalSeverity,
+  type BodyReadings, type EvaluatedVital,
 } from '@/lib/vitals';
+import { mergeStoredValue } from '@/lib/persistent-state';
 
 const navItems = [
   { href: '/', label: 'Readings', icon: RadiationIcon },
@@ -51,12 +52,19 @@ function usePersistentState<T>(key: string, initial: T) {
   const [value, setValue] = useState<T>(() => readStored(key, initial));
   useEffect(() => {
     try {
-      localStorage.setItem(key, JSON.stringify(value));
-      window.dispatchEvent(new CustomEvent(readingsChangedEvent, { detail: { key } }));
+      const serialized = JSON.stringify(value);
+      if (localStorage.getItem(key) !== serialized) {
+        localStorage.setItem(key, serialized);
+        window.dispatchEvent(new CustomEvent(readingsChangedEvent, { detail: { key } }));
+      }
     } catch { /* local-only prototype */ }
   }, [key, value]);
   useEffect(() => {
-    const onSync = () => setValue(readStored(key, initial));
+    const onSync = (event: Event) => {
+      if (event instanceof StorageEvent && event.key !== key && event.key !== null) return;
+      if (event instanceof CustomEvent && event.detail?.key !== key) return;
+      setValue(previous => mergeStoredValue(previous, readStored(key, initial)));
+    };
     window.addEventListener('storage', onSync);
     window.addEventListener(readingsChangedEvent, onSync);
     return () => {
@@ -79,54 +87,6 @@ const VITAL_ICONS: Record<keyof BodyReadings, typeof HeartPulse> = {
   water: Droplets,
 };
 
-// Synthesize an unmistakable spacecraft emergency klaxon using Web Audio API
-function playEmergencyKlaxonBurst() {
-  try {
-    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    if (!AudioCtx) return;
-    const ctx = new AudioCtx();
-    const now = ctx.currentTime;
-    [0, 0.28, 0.56].forEach((offset, idx) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(idx % 2 === 0 ? 880 : 660, now + offset);
-      osc.frequency.linearRampToValueAtTime(idx % 2 === 0 ? 980 : 520, now + offset + 0.22);
-      gain.gain.setValueAtTime(0.18, now + offset);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.24);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(now + offset);
-      osc.stop(now + offset + 0.25);
-    });
-    window.setTimeout(() => { void ctx.close().catch(() => {}); }, 1000);
-  } catch {
-    // Ignore if audio context is blocked before user gesture
-  }
-}
-
-function playYellowCautionChime() {
-  try {
-    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    if (!AudioCtx) return;
-    const ctx = new AudioCtx();
-    const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(587.33, now);
-    gain.gain.setValueAtTime(0.1, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + 0.26);
-    window.setTimeout(() => { void ctx.close().catch(() => {}); }, 500);
-  } catch {
-    // Ignore
-  }
-}
-
 function EmergencyMonitor({
   readings,
   onChangeReadings,
@@ -135,43 +95,6 @@ function EmergencyMonitor({
   onChangeReadings: (next: BodyReadings) => void;
 }) {
   const { overall, yellowItems, redItems } = evaluateAllVitals(readings);
-  const prevSeverityRef = useRef<VitalSeverity>('normal');
-
-  // Continuous non-stop alarm loop while in RED state
-  useEffect(() => {
-    if (overall === 'yellow' && prevSeverityRef.current !== 'yellow') {
-      playYellowCautionChime();
-    }
-    prevSeverityRef.current = overall;
-
-    if (overall !== 'red') {
-      window.speechSynthesis?.cancel();
-      return;
-    }
-
-    const triggerAlarmCycle = () => {
-      playEmergencyKlaxonBurst();
-      if ('speechSynthesis' in window && !window.speechSynthesis.speaking) {
-        try {
-          const names = redItems.map(r => `${r.spec.label} ${r.formattedValue} ${r.spec.unit}`).join(', ');
-          const msg = new SpeechSynthesisUtterance(
-            `Red Alert! Critical wrist and body sensor emergency: ${names}. Stabilize astronaut readings immediately.`,
-          );
-          msg.rate = 1.05;
-          msg.pitch = 1.1;
-          window.speechSynthesis.speak(msg);
-        } catch {
-          // Ignore speech error
-        }
-      }
-    };
-
-    triggerAlarmCycle();
-    const interval = window.setInterval(triggerAlarmCycle, 2600);
-    return () => {
-      clearInterval(interval);
-    };
-  }, [overall, redItems]);
 
   const bringRedToYellow = () => {
     const next = { ...readings };
@@ -206,42 +129,41 @@ function EmergencyMonitor({
         data-testid="banner-yellow-emergency"
       >
         <div className="yellow-toast-head">
-          <span className="yellow-toast-badge"><AlertTriangle size={16} /> YELLOW CAUTION · SMALL EMERGENCY NOTIFICATION</span>
-          <span className="yellow-toast-source"><Watch size={13} /> Wrist &amp; Body Sensors</span>
+          <span className="yellow-toast-badge"><AlertTriangle size={16} /> YELLOW DEMO · EXAMPLE BAND</span>
+          <span className="yellow-toast-source"><Watch size={13} /> Simulated readings</span>
         </div>
         <p className="yellow-toast-body">
           {yellowItems.map(item => (
             <span key={item.spec.key} className="yellow-vital-chip" data-testid={`yellow-chip-${item.spec.key}`}>
-              <strong>{item.spec.label}: {item.formattedValue} {item.spec.unit}</strong> ({item.reason})
+              <strong>{item.spec.label}: {item.formattedValue} {item.spec.unit}</strong> (yellow example band)
             </span>
           ))}
         </p>
         <div className="yellow-toast-actions">
           <Link href="/" className="btn small outline" data-testid="link-yellow-inspect">Inspect Readings</Link>
           <button type="button" className="btn small" onClick={stabilizeAllToNormal} data-testid="button-yellow-stabilize">
-            Normalize Sensors
+            Reset demo readings
           </button>
         </div>
       </section>
     );
   }
 
-  // RED CRITICAL EMERGENCY — NON-STOP ALARM UNTIL RESOLVED TO YELLOW OR NORMAL
+  // Fictional examples must not trigger operational alarms.
   return (
     <section
-      className="red-emergency-takeover"
-      role="alert"
-      aria-live="assertive"
+      className="panel"
+      role="status"
+      aria-live="polite"
       data-testid="banner-red-emergency"
     >
-      <div className="red-emergency-stripes" />
       <div className="red-emergency-inner">
         <div className="red-emergency-header">
           <span className="red-siren-icon"><Siren size={26} /></span>
           <div>
-            <div className="red-emergency-kicker">UNSTOPPABLE LEVEL-3 CRITICAL BIOMETRIC ALARM · WRIST &amp; BODY SENSORS</div>
-            <h2>RED EMERGENCY — ASTRONAUT VITAL THRESHOLD BREACHED</h2>
-            <p>This emergency alarm <strong>cannot be dismissed</strong> and will continue sounding until all Red readings return to the <strong>Yellow</strong> or <strong>Normal</strong> range.</p>
+            <div className="red-emergency-kicker">SIMULATED READINGS · UNVALIDATED EXAMPLE BANDS</div>
+            <h2>Red demo state</h2>
+            <p>Editable fictional data, not a medical emergency or live sensor alert. No emergency alarm is played. Follow approved mission procedures for real concerns.</p>
           </div>
         </div>
 
@@ -250,11 +172,11 @@ function EmergencyMonitor({
             <div className="red-breach-card" key={item.spec.key} data-testid={`red-breach-${item.spec.key}`}>
               <div className="red-breach-top">
                 <strong>{item.spec.label}: {item.formattedValue} {item.spec.unit}</strong>
-                <span className="red-sensor-tag">{item.spec.sensorLocation} · {item.spec.sensorDetail}</span>
+                <span className="red-sensor-tag">Simulated {item.spec.sensorLocation} · {item.spec.sensorDetail}</span>
               </div>
-              <div className="red-breach-reason">{item.reason} · Red zone: {item.spec.redRangeText}</div>
+              <div className="red-breach-reason">Unvalidated red example band: {item.spec.redRangeText}</div>
               <div className="red-inline-control">
-                <span>Adjust {item.spec.label} now:</span>
+                <span>Edit demo {item.spec.label}:</span>
                 <input
                   type="range"
                   min={item.spec.min}
@@ -277,7 +199,7 @@ function EmergencyMonitor({
             onClick={bringRedToYellow}
             data-testid="button-emergency-to-yellow"
           >
-            Step Down to Yellow Caution
+            Load yellow demo values
           </button>
           <button
             type="button"
@@ -285,7 +207,7 @@ function EmergencyMonitor({
             onClick={stabilizeAllToNormal}
             data-testid="button-emergency-to-normal"
           >
-            Stabilize All to Normal
+            Reset demo readings
           </button>
         </div>
       </div>
@@ -330,7 +252,7 @@ function Layout({
       <header className="topbar">
         <strong className="crew-name" data-testid="text-crew-name">Mara Velez</strong>
         <span className="sensor-live-pill" data-testid="badge-sensor-origin">
-          <Watch size={13} /> Wrist &amp; Body Sensors Active
+          <Watch size={13} /> Demo · no connected sensors
         </span>
         <span className="wrist-day">Day 142</span>
         <details className="demo-disclosure">
@@ -360,7 +282,7 @@ function VitalSensorCard({
   item: EvaluatedVital;
   onChange: (nextValue: number) => void;
 }) {
-  const { spec, value, formattedValue, severity, reason } = item;
+  const { spec, value, formattedValue, severity } = item;
   const Icon = VITAL_ICONS[spec.key];
   const slug = spec.label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   return (
@@ -371,7 +293,7 @@ function VitalSensorCard({
       <div className="metric-top">
         <div>
           <span>{spec.label}</span>
-          <small className="sensor-origin-line">{spec.sensorLocation} · {spec.sensorDetail}</small>
+          <small className="sensor-origin-line">Simulated {spec.sensorLocation} · {spec.sensorDetail}</small>
         </div>
         <span className="metric-icon"><Icon /></span>
       </div>
@@ -380,11 +302,12 @@ function VitalSensorCard({
           {formattedValue} <span className="metric-unit">{spec.unit}</span>
         </div>
         <span className={`vital-zone-pill zone-${severity}`} data-testid={`status-zone-${spec.key}`}>
-          {severity === 'red' ? 'RED · CRITICAL' : severity === 'yellow' ? 'YELLOW · CAUTION' : 'NORMAL'}
+          {severity === 'red' ? 'RED · DEMO' : severity === 'yellow' ? 'YELLOW · DEMO' : 'NORMAL · DEMO'}
         </span>
       </div>
-      <div className="vital-reason-line">{reason}</div>
+      <div className="vital-reason-line">{severity === 'normal' ? 'Within the default demo band' : 'Outside the default demo band'} · not a clinical assessment</div>
       <div className="vital-thresholds-guide">
+        <span>Unvalidated example bands:</span>
         <span className="th-normal">Normal: {spec.normalRangeText}</span>
         <span className="th-yellow">Yellow: {spec.yellowRangeText}</span>
         <span className="th-red">Red: {spec.redRangeText}</span>
@@ -483,14 +406,14 @@ function Overview({
   };
 
   return <div className="fade-in">
-    <Heading title="Readings" right={<Link href="/alerts" className={`wrist-alert ${pendingCount === 0 ? 'is-reviewed' : ''}`} data-testid="link-alert-status"><Bell size={15} />{pendingCount ? `${pendingCount} active` : 'All nominal'}</Link>} />
+    <Heading title="Readings" right={<Link href="/alerts" className={`wrist-alert ${pendingCount === 0 ? 'is-reviewed' : ''}`} data-testid="link-alert-status"><Bell size={15} />{pendingCount ? `${pendingCount} demo flags` : 'No demo flags'}</Link>} />
 
     <section className="panel sensor-architecture-banner" data-testid="banner-sensor-architecture">
       <div className="sensor-arch-head">
         <span className="sensor-arch-icon"><Watch size={20} /></span>
         <div>
-          <strong>On-Astronaut Biometric Telemetry · Wrist Band &amp; Body Vest Sensors</strong>
-          <p>All physiological readings below come directly from sensors worn on <strong>Mara Velez’s wrist</strong> (PPG heart rate, optical SpO₂, pulse-transit BP, actigraphy) and <strong>smart-textile body vest</strong> (thoracic ECG, respiration band, torso temperature, 3-axis movement). These readings automatically sync into your <strong>Astronaut’s Log</strong>.</p>
+          <strong>Simulated wrist and body readings</strong>
+          <p>These are editable local examples, <strong>not measurements from connected devices</strong>. Colors use unvalidated demonstration bands, not medical safety limits. Saving a log copies these sample values into the local archive.</p>
         </div>
       </div>
       <div className="sensor-preset-bar" role="group" aria-label="Test sensor alert thresholds">
@@ -502,7 +425,7 @@ function Overview({
           Test Yellow Point (Small Alert)
         </button>
         <button type="button" className="choice preset-red-btn" onClick={triggerRedPreset} data-testid="button-preset-red">
-          Test Red Point (Big Non-Stop Emergency)
+          Load red demo values · silent
         </button>
       </div>
     </section>
@@ -511,7 +434,7 @@ function Overview({
     <ReadingsExplained analysis={analysis} />
 
     <details className="secondary-vitals" open>
-      <summary data-testid="button-body-vitals">Wrist &amp; Body Sensor Readings ({ VITAL_SPECS.length } live channels)</summary>
+      <summary data-testid="button-body-vitals">Simulated wrist &amp; body readings ({ VITAL_SPECS.length } editable examples)</summary>
       <div className="grid metrics-grid">
         {evaluated.items.map(item => (
           <VitalSensorCard
@@ -586,7 +509,7 @@ function Alerts({ readings }: { readings: BodyReadings }) {
     </details>
     <details className="secondary-vitals body-alerts" open>
       <summary data-testid="button-pulse-alert">
-        Wrist &amp; Body Sensor Status · {evaluated.overall === 'red' ? `${evaluated.redItems.length} RED EMERGENCY` : evaluated.overall === 'yellow' ? `${evaluated.yellowItems.length} YELLOW CAUTION` : reviewed ? 'seen' : '1 new'}
+        Simulated wrist &amp; body status · {evaluated.overall === 'red' ? `${evaluated.redItems.length} red examples` : evaluated.overall === 'yellow' ? `${evaluated.yellowItems.length} yellow examples` : reviewed ? 'seen' : '1 demo flag'}
       </summary>
       <div className="panel alert-panel" data-testid="alert-anomaly">
         {reviewed ? <div className="reviewed-box" data-testid="status-alert-reviewed"><CheckCircle2 size={22} /><strong>Reviewed</strong></div> : <div className="alert-callout"><span className="alert-symbol"><ShieldAlert size={18} /></span><div><h3>Heartbeat above usual</h3><p><strong>81 beats/min</strong> · 9 above usual range</p></div></div>}
