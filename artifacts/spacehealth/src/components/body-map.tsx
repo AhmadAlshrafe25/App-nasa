@@ -1,126 +1,129 @@
-import { useEffect, useState, type KeyboardEvent } from 'react';
-import { AlertTriangle, CircleDot, Info, Unplug, Eye, ZoomIn, ZoomOut, X } from 'lucide-react';
-import muscleFront from '@/assets/anatomy/body-0.webp';
-import muscleBack from '@/assets/anatomy/body-1.webp';
-import boneFront from '@/assets/anatomy/body-2.webp';
-import boneBack from '@/assets/anatomy/body-3.webp';
-
-import { getBodyRegions, statusLabel, type BodyScenario, type BodySystem, type BodyView, type RegionStatus } from '@/lib/body-regions';
+import { lazy, Suspense, useMemo, useState } from 'react';
+import { AlertTriangle, CircleDot, Eye, Unplug, ZoomIn, ZoomOut, X, RotateCcw } from 'lucide-react';
+import { getBodyRegions, regionKey, statusLabel, type BodyRegion, type BodySystem, type RegionStatus } from '@/lib/body-regions';
+import { isBackFacing, MODEL_URL, yawLabel } from '@/lib/body-3d';
+import type { MeshPick } from './body-viewer-3d';
 import './body-map.css';
+import './body-viewer-3d.css';
 
-const ART = { muscle: { front: muscleFront, back: muscleBack }, bone: { front: boneFront, back: boneBack } } as const;
-const ZOOMS = [1, 1.4, 1.8];
-
-const scenarios: { id: BodyScenario; label: string }[] = [
-  { id: 'simulated', label: 'Mixed demo (default)' },
-  { id: 'flagged', label: 'Flagged regions' },
-  { id: 'disconnected', label: 'Disconnected sensors' },
-];
+const BodyViewer3D = lazy(() => import('./body-viewer-3d'));
+const SCENARIO = 'simulated' as const;
+const norm = (y: number) => ((y % 360) + 360) % 360;
 
 const StatusIcon = ({ status }: { status: RegionStatus }) => {
   const Icon = status === 'flagged' ? AlertTriangle : status === 'attention' ? Eye : status === 'unavailable' ? Unplug : CircleDot;
   return <Icon size={15} aria-hidden="true" />;
 };
 
-export function BodyMap({ system }: { system: BodySystem }) {
-  const [scenario, setScenario] = useState<BodyScenario>('simulated');
-  const [view, setView] = useState<BodyView>('front');
-  const [zoom, setZoom] = useState(0);
-  const [hoverId, setHoverId] = useState<string | null>(null);
-  const regions = getBodyRegions(system, view, scenario);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  useEffect(() => { setSelectedId(null); setHoverId(null); }, [system, view]);
-  const selected = regions.find(r => r.id === selectedId);
-  const readout = regions.find(r => r.id === hoverId) ?? selected;
-  const counts = regions.reduce<Record<RegionStatus, number>>((acc, r) => { acc[r.status]++; return acc; }, { normal: 0, attention: 0, flagged: 0, unavailable: 0 });
+/** All demo regions for both systems, keyed "muscle:thigh-L" / "bone:thigh-L" so they never collide. */
+function useRegionIndex(back: boolean) {
+  return useMemo(() => {
+    const idx: Record<string, BodyRegion> = {};
+    for (const system of ['muscle', 'bone'] as BodySystem[]) {
+      // Back-view labels first then current view overrides, so spine (back only) is always present.
+      for (const view of back ? ['front', 'back'] as const : ['back', 'front'] as const)
+        for (const r of getBodyRegions(system, view, SCENARIO)) idx[`${system}:${regionKey(r)}`] = r;
+    }
+    return idx;
+  }, [back]);
+}
 
-  const onKey = (event: KeyboardEvent, index: number) => {
-    const map: Record<string, number> = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 };
-    let next: number | null = null;
-    if (event.key in map) next = (index + map[event.key] + regions.length) % regions.length;
-    if (event.key === 'Home') next = 0;
-    if (event.key === 'End') next = regions.length - 1;
-    if (next === null) return;
-    event.preventDefault();
-    setSelectedId(regions[next].id);
-    document.getElementById(`body-region-shape-${regions[next].id}`)?.focus();
-  };
+export function BodyMap() {
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const [yaw, setYawRaw] = useState(0);
+  const setYaw = (y: number) => setYawRaw(norm(Math.round(y)));
+  const [zoom, setZoomRaw] = useState(1);
+  const setZoom = (value: number) => setZoomRaw(Math.max(1, Math.min(3, Math.round(value * 100) / 100)));
+  const [hover, setHover] = useState<MeshPick | null>(null);
+  const [selected, setSelected] = useState<MeshPick | null>(null);
+  const [keys, setKeys] = useState<MeshPick[]>([]);
+  const [focusIdx, setFocusIdx] = useState<number | null>(null);
+  const index = useRegionIndex(isBackFacing(yaw));
+  const statusByKey = useMemo(() => {
+    const out: Record<string, RegionStatus> = {};
+    for (const [k, r] of Object.entries(index)) out[k] = r.status;
+    return out;
+  }, [index]);
 
-  return <div className={`body-map system-${system}`} data-testid="panel-body-map">
-    <div className="body-map-banner" data-testid="status-body-map-disclosure">
-      <Info size={16} aria-hidden="true" />
-      <p><strong>SIMULATED SENSOR MAP.</strong> No hardware connected. Not a scan or diagnosis. Statuses are fictional demo flags for review, not confirmed damage.</p>
-    </div>
-    <div className="body-scenario" role="group" aria-label="Demo sensor scenario">
-      <span className="body-scenario-label">Demo scenario</span>
-      {scenarios.map(s => <button key={s.id} type="button" aria-pressed={scenario === s.id}
-        className={scenario === s.id ? 'active' : ''} onClick={() => setScenario(s.id)}
-        data-testid={`button-body-scenario-${s.id}`}>{s.label}</button>)}
-    </div>
-    <div className="body-scenario" role="group" aria-label="Body view">
-      <span className="body-scenario-label">View</span>
-      {(['front', 'back'] as const).map(v => <button key={v} type="button" aria-pressed={view === v}
-        className={view === v ? 'active' : ''} onClick={() => setView(v)}
-        data-testid={`button-body-view-${v}`}>{v === 'front' ? 'Front' : 'Back'}</button>)}
-    </div>
-    <div className={`body-map-grid ${selected ? 'has-selection' : 'no-selection'}`}>
-      <figure className="body-figure">
-        <div className="body-orient" data-testid="text-body-orientation">
-          {view === 'front'
-            ? <><span>Person's RIGHT</span><b>FRONT · facing you</b><span>Person's LEFT</span></>
-            : <><span>Person's LEFT</span><b>BACK · facing away</b><span>Person's RIGHT</span></>}
+  const focusPick = focusIdx !== null ? keys[focusIdx] ?? null : null;
+  const readout = hover ?? focusPick;
+  const readoutRegion = readout ? index[readout.key] : undefined;
+  const selRegion = selected ? index[selected.key] : undefined;
+  const selStatus = selRegion?.status ?? 'normal';
+
+  return <div className="body-map" data-testid="panel-body-map">
+    <div className="bm-stage">
+      {loadError ? <div className="viewer3d-error" role="alert" data-testid="status-body-3d-error">
+        <AlertTriangle size={18} aria-hidden="true" />
+        <p>{loadError}</p>
+        <button type="button" onClick={() => { setLoadError(null); setAttempt(a => a + 1); }} data-testid="button-body-3d-retry"><RotateCcw size={15} aria-hidden="true" /> Retry</button>
+      </div> : <div className="viewer3d-frame holo" tabIndex={0} role="application"
+        aria-label={`Body model, ${yawLabel(yaw)}. Drag to rotate, scroll to zoom. Left and Right rotate. Plus and Minus zoom. Up and Down move through parts, Enter selects.`}
+        onBlur={() => setFocusIdx(null)}
+        onKeyDown={event => {
+          const step = event.shiftKey ? 45 : 15;
+          if (event.key === 'ArrowLeft') setYaw(yaw - step);
+          else if (event.key === 'ArrowRight') setYaw(yaw + step);
+          else if (event.key === '+' || event.key === '=') setZoom(zoom + 0.1);
+          else if (event.key === '-') setZoom(zoom - 0.1);
+          else if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && keys.length) {
+            const d = event.key === 'ArrowDown' ? 1 : -1;
+            setFocusIdx(i => i === null ? (d > 0 ? 0 : keys.length - 1) : (i + d + keys.length) % keys.length);
+          } else if (event.key === 'Enter' && focusPick) setSelected(focusPick);
+          else if (event.key === 'Escape') { setSelected(null); setFocusIdx(null); }
+          else return;
+          event.preventDefault();
+        }} data-testid="viewer-body-3d">
+        <span className="holo-grid" aria-hidden="true" />
+        <span className="holo-scan" aria-hidden="true" />
+        <Suspense fallback={<div className="viewer3d-loading" role="status"><span className="viewer3d-skeleton" aria-hidden="true" />Loading body model...</div>}>
+          <BodyViewer3D key={attempt} url={MODEL_URL} statusByKey={statusByKey}
+            selectedUuid={selected?.uuid ?? null} focusKey={focusPick?.key ?? null}
+            yaw={yaw} zoom={zoom} label={yawLabel(yaw)} onYawChange={setYaw} onZoomChange={setZoom}
+            onSelect={setSelected} onHover={setHover} onKeys={setKeys} onError={setLoadError} />
+        </Suspense>
+        <div className={`bm-hover ${readoutRegion ? `status-${readoutRegion.status}` : ''}`} aria-live="polite" data-testid="text-body-hover-readout">
+          {readout && readoutRegion
+            ? <><StatusIcon status={readoutRegion.status} /><strong>{focusPick && !hover ? readoutRegion.label : readout.name}</strong><span>{statusLabel[readoutRegion.status]}</span></>
+            : <span className="bm-hint">Drag to rotate · Scroll to zoom · Tap a part</span>}
         </div>
-        <div className="body-zoom-bar">
-          <span className="body-art-note" data-testid="text-body-art-disclosure">Illustrative anatomy · simulated sensor overlay · not validated diagnostic anatomy</span>
-          <button type="button" aria-label="Zoom out" disabled={zoom === 0} onClick={() => setZoom(z => Math.max(0, z - 1))} data-testid="button-body-zoom-out"><ZoomOut size={18} aria-hidden="true" /></button>
-          <output data-testid="value-body-zoom">{Math.round(ZOOMS[zoom] * 100)}%</output>
-          <button type="button" aria-label="Zoom in" disabled={zoom === ZOOMS.length - 1} onClick={() => setZoom(z => Math.min(ZOOMS.length - 1, z + 1))} data-testid="button-body-zoom-in"><ZoomIn size={18} aria-hidden="true" /></button>
-        </div>
-        {readout ? <div className={`holo-readout status-${readout.status}`} aria-live="polite" data-testid="text-body-hover-readout">
-          <StatusIcon status={readout.status} />
-          <span className="holo-readout-name">{readout.label}</span>
-          <span className="holo-readout-status">{statusLabel[readout.status]}</span>
-        </div> : <p className="holo-readout" data-testid="text-body-select-hint">Tap a body part to see its status and simulation sample. Keyboard: Tab to a region, then Enter.</p>}
-        <div className="body-art-scroll">
-          <div className="body-art holo" style={{ width: `${ZOOMS[zoom] * 100}%` }}>
-            <img src={ART[system][view]} alt={`Illustrative ${system === 'muscle' ? 'muscle' : 'skeleton'} anatomy, ${view} view. Not a scan.`} width={512} height={512} draggable={false} data-testid="img-body-anatomy" />
-            <span className="holo-grid" aria-hidden="true" />
-            <span className="holo-scan" aria-hidden="true" />
-            <svg viewBox="0 0 512 512" role="group" aria-label="Select a body part for its simulation sample" onPointerLeave={() => setHoverId(null)}>
-              {regions.map((r, index) => <path key={r.id} d={r.d} id={`body-region-shape-${r.id}`}
-                role="button" tabIndex={0} aria-label={`${r.label}: ${statusLabel[r.status]}. Show simulation sample`}
-                aria-pressed={r.id === selectedId}
-                className={`region-shape status-${r.status} ${r.id === selectedId ? 'is-selected' : ''}`}
-                onPointerEnter={() => setHoverId(r.id)}
-                onFocus={() => setHoverId(r.id)} onBlur={() => setHoverId(null)}
-                onKeyDown={event => {
-                  if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setSelectedId(r.id); setHoverId(null); }
-                  else onKey(event, index);
-                }}
-                onClick={() => { setSelectedId(r.id); setHoverId(null); }} data-testid={`shape-body-region-${r.id}`}><title>{`${r.label}: ${statusLabel[r.status]}`}</title></path>)}
-            </svg>
-          </div>
-        </div>
-        <figcaption className="body-legend-row">
-          {(['normal', 'attention', 'flagged', 'unavailable'] as const).map(s => <span key={s} className={`legend-chip status-${s}`}><StatusIcon status={s} />{statusLabel[s]} <b>{counts[s]}</b></span>)}
-        </figcaption>
-      </figure>
-      {selected && <div className="body-side">
-        <article className={`region-detail status-${selected.status}`} aria-live="polite" data-testid="panel-body-region-detail">
-          <button type="button" className="region-detail-close" aria-label="Close body part details" onClick={() => setSelectedId(null)}><X size={18} aria-hidden="true" /></button>
-          <span className="region-detail-kicker">Selected region · simulated sample</span>
-          <h3 data-testid="text-body-region-label">{selected.label}</h3>
-          <p className="region-detail-status" data-testid="status-body-region"><StatusIcon status={selected.status} />{statusLabel[selected.status]}</p>
-          <dl>
-            <dt>Sample reading (fictional)</dt>
-            <dd data-testid="text-body-region-reading">{selected.sampleReading ?? 'Unavailable — sensor disconnected, no value'}</dd>
-            <dt>Sensor (simulated, not connected)</dt>
-            <dd>{selected.sensorLabel}</dd>
-          </dl>
-          <p className="region-detail-explain">{selected.explanation}</p>
-          {selected.status === 'flagged' && <p className="region-detail-next">Review the sample. For any real concern, follow mission protocol and contact the medical team.</p>}
-        </article>
       </div>}
+
+      <div className="bm-controls">
+        <div className="bm-seg" role="group" aria-label="Facing">
+          <button type="button" aria-pressed={!isBackFacing(yaw)} onClick={() => setYaw(0)} data-testid="button-body-view-front">Front</button>
+          <button type="button" aria-pressed={isBackFacing(yaw)} onClick={() => setYaw(180)} data-testid="button-body-view-back">Back</button>
+        </div>
+        <input className="bm-yaw" type="range" min={0} max={359} step={1} value={yaw} aria-label="Rotate body"
+          aria-valuetext={yawLabel(yaw)} onChange={e => setYaw(Number(e.target.value))} data-testid="input-body-yaw" />
+      </div>
+      <div className="bm-zoom-controls" role="group" aria-label="Zoom controls">
+        <label htmlFor="body-zoom">Zoom</label>
+        <button type="button" aria-label="Zoom out" disabled={zoom <= 1} onClick={() => setZoom(zoom - 0.1)} data-testid="button-body-zoom-out"><ZoomOut size={17} aria-hidden="true" /></button>
+        <input id="body-zoom" type="range" min={1} max={3} step={0.01} value={zoom} aria-valuetext={`${Math.round(zoom * 100)} percent`} onChange={e => setZoom(Number(e.target.value))} data-testid="input-body-zoom" />
+        <button type="button" aria-label="Zoom in" disabled={zoom >= 3} onClick={() => setZoom(zoom + 0.1)} data-testid="button-body-zoom-in"><ZoomIn size={17} aria-hidden="true" /></button>
+        <output htmlFor="body-zoom" data-testid="value-body-zoom">{Math.round(zoom * 100)}%</output>
+        <button type="button" onClick={() => setZoom(1)} disabled={zoom === 1} data-testid="button-body-zoom-reset">Reset</button>
+      </div>
     </div>
+
+    {selected && selRegion && <article className={`bm-detail status-${selStatus}`} aria-live="polite" data-testid="panel-body-region-detail">
+      <button type="button" className="bm-close" aria-label="Close" onClick={() => setSelected(null)} data-testid="button-body-detail-close"><X size={17} aria-hidden="true" /></button>
+      <h3 data-testid="text-body-region-label">{selected.name}</h3>
+      <p className="bm-status" data-testid="status-body-region"><StatusIcon status={selStatus} />{statusLabel[selStatus]}</p>
+      <p className="bm-sample" data-testid="text-body-region-reading">
+        <span>Demo sample · {selRegion.label}</span>
+        <strong>{selRegion.sampleReading ?? 'Unavailable'}</strong>
+      </p>
+    </article>}
+
+    <div className="bm-legend" aria-label="Status colors">
+      {(['normal', 'attention', 'flagged', 'unavailable'] as const).map(s => <span key={s} className={`status-${s}`}><StatusIcon status={s} />{statusLabel[s].replace(' · demo', '')}</span>)}
+    </div>
+    <details className="bm-credits" data-testid="text-body-model-credit">
+      <summary>Model credits</summary>
+      <p><a href="https://github.com/Charleeh/ecorche" target="_blank" rel="noreferrer">Écorché by Charleeh</a>, CC BY-SA 4.0, based on BodyParts3D © The Database Center for Life Science, CC BY 4.0, and Z-Anatomy by Gauthier Kervyn, CC BY-SA 4.0. Region colors are an illustrative demo overlay.</p>
+    </details>
   </div>;
 }

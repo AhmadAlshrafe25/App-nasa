@@ -1,3 +1,5 @@
+import { muscleContour } from './muscle-contours';
+
 export type BodySystem = 'muscle' | 'bone';
 export type BodyView = 'front' | 'back';
 export type RegionStatus = 'normal' | 'attention' | 'flagged' | 'unavailable';
@@ -94,7 +96,8 @@ export function getBodyRegions(system: BodySystem, view: BodyView, scenario: Bod
       const kind = system === 'muscle' ? 'Activity index' : 'Loading index';
       const sensor = `${system === 'muscle' ? 'Sim. EMG patch' : 'Sim. strain tag'} ${seg.slice(0, 2).toUpperCase()}${side === 'C' ? '' : '-' + side}${view === 'back' ? '-B' : ''}`;
       out.push({
-        id, label, system, view, side, status, d: ellipseD(shape),
+        id, label, system, view, side, status,
+        d: system === 'muscle' ? muscleContour(seg, view, shape, paired && shape[0] > hot.center) : ellipseD(shape),
         sampleReading: status === 'unavailable' ? null : `${kind} ${value}`,
         sensorLabel: sensor,
         explanation: `Imagined ${system === 'muscle' ? 'surface activity' : 'mechanical loading'} sample for this region. Not a measurement, density scan or imaging result. ${statusNote[status]}`,
@@ -107,3 +110,6 @@ export function getBodyRegions(system: BodySystem, view: BodyView, scenario: Bod
 export const statusLabel: Record<RegionStatus, string> = {
   normal: 'Good · demo', attention: 'Danger · demo', flagged: 'Weakness/break concern · demo', unavailable: 'Unavailable',
 };
+
+/** View-independent region key, e.g. "thigh-L". Shared by the illustrated map and the 3D viewer. */
+export const regionKey = (r: BodyRegion) => r.id.split('-').slice(2).join('-');

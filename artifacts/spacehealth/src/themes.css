@@ -2,48 +2,48 @@
 :root[data-theme='space'],
 :root[data-theme='sky'] {
   color-scheme: dark;
-  --background: 230 46% 12%;
-  --foreground: 36 39% 85%;
-  --card: 230 46% 12%;
-  --card-foreground: 36 39% 85%;
-  --popover: 230 46% 12%;
-  --popover-foreground: 36 39% 85%;
-  --muted: 230 35% 20%;
-  --muted-foreground: 36 28% 72%;
-  --border: 253 28% 40%;
-  --ink: #E8DCC8;
-  --supporting-ink: #8CCFFF;
-  --blue: #8CCFFF;
-  --blue-dark: #8CCFFF;
-  --blue-soft: #8CCFFF22;
-  --navy: #10152B;
-  --signal-color: #8B72D6;
-  --trend-alert: #8CCFFF;
+  --background: 210 33% 5%;
+  --foreground: 165 22% 92%;
+  --card: 205 39% 9%;
+  --card-foreground: 165 22% 92%;
+  --popover: 205 39% 9%;
+  --popover-foreground: 165 22% 92%;
+  --muted: 200 40% 13%;
+  --muted-foreground: 165 14% 66%;
+  --border: 187 31% 23%;
+  --ink: #E5F2EF;
+  --supporting-ink: #9FB3AE;
+  --blue: #62F5E2;
+  --blue-dark: #62F5E2;
+  --blue-soft: #62F5E222;
+  --navy: #090D12;
+  --signal-color: #62F5E2;
+  --trend-alert: #FACC15;
 }
 
 :root[data-theme='space'] {
-  --space-action: #8B72D6;
-  --space-action-text: #10152B;
+  --space-action: #62F5E2;
+  --space-action-text: #090D12;
 }
 :root[data-theme='sky'] {
-  --space-action: #8CCFFF;
-  --space-action-text: #10152B;
+  --space-action: #62F5E2;
+  --space-action-text: #090D12;
 }
 
 :root[data-theme='space'] body,
-:root[data-theme='sky'] body { background:#10152B; }
+:root[data-theme='sky'] body { background:#090D12; }
 :root[data-theme='space'] .sidebar,
 :root[data-theme='space'] .mobile-nav,
 :root[data-theme='sky'] .sidebar,
-:root[data-theme='sky'] .mobile-nav { background:#10152B;color:#E8DCC8; }
+:root[data-theme='sky'] .mobile-nav { background:#090D12;color:#E5F2EF; }
 :root[data-theme='space'] .topbar,
-:root[data-theme='sky'] .topbar { background:#10152B;border-color:#8B72D655; }
+:root[data-theme='sky'] .topbar { background:#090D12;border-color:#62F5E255; }
 :root[data-theme='space'] .panel,
-:root[data-theme='sky'] .panel { background:#8B72D61A;border-color:#8B72D655; }
+:root[data-theme='sky'] .panel { background:#62F5E21A;border-color:#62F5E255; }
 :root[data-theme='space'] .radiation-panel,
-:root[data-theme='sky'] .radiation-panel { background:#8B72D633;border-color:#8B72D6; }
+:root[data-theme='sky'] .radiation-panel { background:#62F5E233;border-color:#62F5E2; }
 :root[data-theme='space'] .radiation-flagged,
-:root[data-theme='sky'] .radiation-flagged { background:#8B72D633;border-color:#8B72D6; }
+:root[data-theme='sky'] .radiation-flagged { background:#62F5E233;border-color:#62F5E2; }
 :root[data-theme='space'] .alert-callout,
 :root[data-theme='space'] .rule-box,
 :root[data-theme='space'] .history-item,
@@ -51,15 +51,15 @@
 :root[data-theme='sky'] .alert-callout,
 :root[data-theme='sky'] .rule-box,
 :root[data-theme='sky'] .history-item,
-:root[data-theme='sky'] .reviewed-box { background:#8B72D61A;border-color:#8B72D655;color:#E8DCC8; }
+:root[data-theme='sky'] .reviewed-box { background:#62F5E21A;border-color:#62F5E255;color:#E5F2EF; }
 :root[data-theme='space'] .choice,
 :root[data-theme='space'] .log-input,
 :root[data-theme='space'] .text-area,
 :root[data-theme='sky'] .choice,
 :root[data-theme='sky'] .log-input,
-:root[data-theme='sky'] .text-area { background:#10152B;color:#E8DCC8;border-color:#8B72D655; }
+:root[data-theme='sky'] .text-area { background:#090D12;color:#E5F2EF;border-color:#62F5E255; }
 :root[data-theme='space'] :focus-visible,
-:root[data-theme='sky'] :focus-visible { outline-color:#8CCFFF; }
+:root[data-theme='sky'] :focus-visible { outline-color:#62F5E2; }
 
 .mission-context {
   display:grid;
@@ -68,16 +68,16 @@
   gap:6px 14px;
   margin-top:8px;
   padding:9px 12px;
-  border:1px solid #8B72D655;
-  background:#8B72D61A;
+  border:1px solid #62F5E255;
+  background:#62F5E21A;
 }
-.mission-context-heading { display:flex;align-items:center;gap:7px;color:#8CCFFF;font-size:16px; }
-.mission-context-heading span { margin-left:auto;color:#E8DCC8;font-size:14px;font-variant-numeric:tabular-nums; }
-.companion-status { grid-column:1/-1;display:flex;align-items:center;gap:8px;padding-top:6px;border-top:1px solid #8B72D655; }
-.companion-indicator { width:8px;height:8px;flex:0 0 8px;background:#8B72D6; }
+.mission-context-heading { display:flex;align-items:center;gap:7px;color:#62F5E2;font-size:16px; }
+.mission-context-heading span { margin-left:auto;color:#E5F2EF;font-size:14px;font-variant-numeric:tabular-nums; }
+.companion-status { grid-column:1/-1;display:flex;align-items:center;gap:8px;padding-top:6px;border-top:1px solid #62F5E255; }
+.companion-indicator { width:8px;height:8px;flex:0 0 8px;background:#62F5E2; }
 .companion-status div { display:flex;flex-wrap:wrap;align-items:baseline;gap:3px 8px;min-width:0; }
-.companion-status strong { color:#E8DCC8;font-size:14px; }
-.companion-status div span { color:#E8DCC8B8;font-size:13px; }
+.companion-status strong { color:#E5F2EF;font-size:14px; }
+.companion-status div span { color:#9FB3AE;font-size:13px; }
 
 /* Make previously light-theme labels readable against the new dark surfaces. */
 :root[data-theme='space'] .mission-time .wrist-day,
@@ -89,10 +89,10 @@
 :root[data-theme='space'] .radiation-flagged .radiation-comparison,
 :root[data-theme='sky'] .radiation-flagged .radiation-comparison,
 :root[data-theme='space'] .readings-trend-heading > strong,
-:root[data-theme='sky'] .readings-trend-heading > strong { color:#E8DCC8; }
+:root[data-theme='sky'] .readings-trend-heading > strong { color:#E5F2EF; }
 
 :root[data-theme='space'] .radiation-caption > span,
-:root[data-theme='sky'] .radiation-caption > span { color:#8CCFFF; }
+:root[data-theme='sky'] .radiation-caption > span { color:#62F5E2; }
 
 :root[data-theme='space'] .btn:not(.outline):not(.secondary),
 :root[data-theme='space'] .red-to-yellow-btn,
@@ -106,16 +106,16 @@
 }
 
 :root[data-theme='sky'] .nav-link.active,
-:root[data-theme='sky'] .nav-link:hover { background:#8CCFFF22; }
-:root[data-theme='sky'] .nav-link.active { box-shadow:inset 3px 0 #8CCFFF; }
+:root[data-theme='sky'] .nav-link:hover { background:#62F5E222; }
+:root[data-theme='sky'] .nav-link.active { box-shadow:inset 3px 0 #62F5E2; }
 :root[data-theme='sky'] .choice.active,
 :root[data-theme='sky'] .period-tabs button.selected,
 :root[data-theme='sky'] .theme-picker button[aria-pressed='true'] {
-  color:#10152B;
-  background:#8CCFFF;
-  border-color:#8CCFFF;
+  color:#071014;
+  background:#62F5E2;
+  border-color:#62F5E2;
 }
-:root[data-theme='sky'] .companion-indicator { background:#8CCFFF; }
+:root[data-theme='sky'] .companion-indicator { background:#62F5E2; }
 
 @media (max-width:480px) {
   .theme-summary { display:none; }
@@ -130,34 +130,53 @@
 
 /* Severity colors: amber for Yellow, coral for Red, in both dark themes.
    Declared after the generic .panel/.rule-box rules so these always win. Text stays
-   cream (#E8DCC8) on tinted surfaces; the accent colors are used for borders, icons and bars. */
+   off-white (#E5F2EF) on tinted surfaces; the accent colors are used for borders, icons and bars. */
 :root:is([data-theme='space'],[data-theme='sky']) {
-  --severity-yellow: #E5B84B;
-  --severity-red: #E05A5A;
+  --severity-yellow: #FACC15;
+  --severity-red: #F87171;
 }
 :root:is([data-theme='space'],[data-theme='sky']) .vital-card-yellow,
 :root:is([data-theme='space'],[data-theme='sky']) .yellow-emergency-toast {
-  background:#E5B84B1F;border-color:#E5B84B;color:#E8DCC8;
+  background:#FACC151F;border-color:#FACC15;color:#E5F2EF;
 }
-:root:is([data-theme='space'],[data-theme='sky']) .vital-card-yellow { border-left:5px solid #E5B84B; }
+:root:is([data-theme='space'],[data-theme='sky']) .vital-card-yellow { border-left:5px solid #FACC15; }
 :root:is([data-theme='space'],[data-theme='sky']) .vital-card-red,
 :root:is([data-theme='space'],[data-theme='sky']) .red-breach-card {
-  background:#E05A5A24;border-color:#E05A5A;color:#E8DCC8;
+  background:#F8717124;border-color:#F87171;color:#E5F2EF;
 }
-:root:is([data-theme='space'],[data-theme='sky']) .vital-card-red { border-left:5px solid #E05A5A; }
+:root:is([data-theme='space'],[data-theme='sky']) .vital-card-red { border-left:5px solid #F87171; }
 :root:is([data-theme='space'],[data-theme='sky']) .zone-yellow,
 :root:is([data-theme='space'],[data-theme='sky']) .vital-card-yellow .vital-zone-pill {
-  background:#E5B84B26;border-color:#E5B84B;color:#F2D37E;font-weight:700;
+  background:#FACC1526;border-color:#FACC15;color:#FACC15;font-weight:700;
 }
 :root:is([data-theme='space'],[data-theme='sky']) .zone-red,
 :root:is([data-theme='space'],[data-theme='sky']) .vital-card-red .vital-zone-pill {
-  background:#E05A5A33;border-color:#E05A5A;color:#F4E6D2;font-weight:700;
+  background:#F8717133;border-color:#F87171;color:#E5F2EF;font-weight:700;
 }
 :root:is([data-theme='space'],[data-theme='sky']) .vital-card-yellow .metric-icon,
-:root:is([data-theme='space'],[data-theme='sky']) .yellow-toast-badge svg { color:#E5B84B;border-color:#E5B84B; }
+:root:is([data-theme='space'],[data-theme='sky']) .yellow-toast-badge svg { color:#FACC15;border-color:#FACC15; }
 :root:is([data-theme='space'],[data-theme='sky']) .vital-card-red .metric-icon,
-:root:is([data-theme='space'],[data-theme='sky']) .red-siren-icon { color:#E05A5A;border-color:#E05A5A; }
-:root:is([data-theme='space'],[data-theme='sky']) .yellow-toast-badge { color:#F2D37E; }
-:root:is([data-theme='space'],[data-theme='sky']) .yellow-vital-chip { background:#E5B84B26;border:1px solid #E5B84B; }
-:root:is([data-theme='space'],[data-theme='sky']) .red-breach-top strong { color:#E8DCC8; }
-:root:is([data-theme='space'],[data-theme='sky']) .red-breach-reason { color:#F4C9C0; }
+:root:is([data-theme='space'],[data-theme='sky']) .red-siren-icon { color:#F87171;border-color:#F87171; }
+:root:is([data-theme='space'],[data-theme='sky']) .yellow-toast-badge { color:#FACC15; }
+:root:is([data-theme='space'],[data-theme='sky']) .yellow-vital-chip { background:#FACC1526;border:1px solid #FACC15; }
+:root:is([data-theme='space'],[data-theme='sky']) .red-breach-top strong { color:#E5F2EF; }
+:root:is([data-theme='space'],[data-theme='sky']) .red-breach-reason { color:#E5F2EF; }
+
+/* Sky: same cyan accent, slightly bluer navy surfaces than Space (#090D12). */
+:root[data-theme='sky'] { --background: 212 45% 8%; --card: 210 42% 12%; --popover: 210 42% 12%; --muted: 210 40% 15%; }
+:root[data-theme='sky'] body, :root[data-theme='sky'] .sidebar, :root[data-theme='sky'] .mobile-nav, :root[data-theme='sky'] .topbar { background:#0B1626; }
+
+/* Integration corrections */
+:root:is([data-theme='space'],[data-theme='sky']) .choice.active,
+:root:is([data-theme='space'],[data-theme='sky']) .period-tabs button.selected,
+:root:is([data-theme='space'],[data-theme='sky']) .theme-picker button[aria-pressed='true'] { color:#071014; }
+:root:is([data-theme='space'],[data-theme='sky']) .radiation-flagged { background:#FACC151F;border-color:#FACC15;border-left-color:#FACC15; }
+:root:is([data-theme='space'],[data-theme='sky']) .radiation-flagged .radiation-caption,
+:root:is([data-theme='space'],[data-theme='sky']) .radiation-flagged .radiation-state,
+:root:is([data-theme='space'],[data-theme='sky']) .radiation-flagged .radiation-seen { color:#FACC15; }
+:root:is([data-theme='space'],[data-theme='sky']) .radiation-flagged .radiation-comparison,
+:root:is([data-theme='space'],[data-theme='sky']) .radiation-flagged .radiation-value { color:#E5F2EF; }
+:root:is([data-theme='space'],[data-theme='sky']) .vital-card-red,
+:root:is([data-theme='space'],[data-theme='sky']) .red-breach-card,
+:root:is([data-theme='space'],[data-theme='sky']) .red-breach-top strong,
+:root:is([data-theme='space'],[data-theme='sky']) .red-breach-reason { color:#E5F2EF; }

@@ -49,7 +49,7 @@ Use detailed anatomical body artwork, not blocky polygons or a simple silhouette
 
 **Why:** The user repeatedly clarified that “whole detailed body figure” meant visible anatomical detail, not merely more selectable geometric regions.
 
-**How to apply:** Preserve detailed muscle fibers and skeleton illustrations across front/back views; keep sensor overlays subtle so the artwork remains visible.
+**How to apply:** Preserve detailed muscle fibers and skeleton illustrations across front/back views. Muscle status overlays must follow muscle-group contours rather than circles or oval sensor rings; keep them subtle so artwork remains visible.
 
 The body map should have a holographic presentation with green good regions, yellow danger regions, and red weakness/break concerns.
 
@@ -61,7 +61,19 @@ Do not display a full body-region list beside the anatomy; show a region's simul
 
 **Why:** The user explicitly requested removing the list and opening details by clicking the body itself.
 
-**How to apply:** Keep anatomy hotspots directly clickable and keyboard-accessible, start without a selected detail, and clear details when switching body systems or front/back views.
+**How to apply:** Keep anatomy regions directly clickable with an accessible selection path, and start without a selected detail.
+
+The body should rotate continuously through 360 degrees with drag or scroll, rather than only switching between front/back pictures.
+
+**Why:** The user explicitly asked to scroll the model around to see the back.
+
+**How to apply:** Keep actual three-dimensional anatomy available and preserve selection during rotation. After the user asked for easier zooming, use drag for rotation and vertical scrolling for zoom, with a visible zoom slider, percentage, and reset. The user subsequently requested removing the illustrated view entirely; show a short load error and Retry rather than restoring it.
+
+Show bones and muscles together in one simple 3D body; bones highlight on hover and open their sample when clicked.
+
+**Why:** The user explicitly requested a combined model, removal of the illustrated map, and removal of extra explanatory text.
+
+**How to apply:** Do not restore separate anatomy-system tabs, scenario/comparison clutter, or an illustrated fallback. Keep only concise controls, selected-part details, a small simulation label, and expandable required model credits. Hovered bones must visibly highlight and remain clickable through translucent muscles.
 
 Daily logs use automatically determined Earth Day and Hour, with the entry taken from the astronaut’s voice. Only crew mood and stress are manual fields; the archive belongs below them.
 

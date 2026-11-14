@@ -38,7 +38,7 @@ import {
 import { mergeStoredValue } from '@/lib/persistent-state';
 import { getReadingTrend, primaryReadingKeys } from '@/lib/reading-trends';
 import { applyTheme, normalizeTheme, themeStorageKey, type DisplayTheme } from '@/lib/theme';
-import { getExampleAlert, getExampleTrends, normalizeCountermeasureState, countermeasureStorageKey, emptyCountermeasureState } from '@/lib/countermeasures';
+import { normalizeCountermeasureState, countermeasureStorageKey, emptyCountermeasureState } from '@/lib/countermeasures';
 
 import { AiFindings } from '@/components/ai-findings';
 import { CompanionPanel } from '@/components/companion-panel';
@@ -153,82 +153,12 @@ function CriticalDemoBanner({ readings, signal }: { readings: BodyReadings; sign
 }
 
 function MicrogravityVisualizer() {
-  const signal = useCountermeasureSignal();
-  const [selectedSystem, setSelectedSystem] = useState<'muscle' | 'bone'>('muscle');
-  const [selectedDay, setSelectedDay] = useState(30);
-  const exampleTrends = getExampleTrends('example');
-  const lowWorkloadTrends = getExampleTrends('low');
-  const sampleUnavailable = signal.unavailable || signal.scenario === 'missing';
-  const lowWorkloadAlert = !signal.unavailable && signal.scenario === 'low' ? getExampleAlert('low') : null;
-  const alert = !!lowWorkloadAlert;
-  const selectedIndex = exampleTrends.days.indexOf(selectedDay);
-  const exampleMuscle = exampleTrends.muscle[selectedIndex];
-  const exampleBone = exampleTrends.bone[selectedIndex];
-  const lowMuscle = lowWorkloadTrends.muscle[selectedIndex];
-  const lowBone = lowWorkloadTrends.bone[selectedIndex];
-  const sampleValue = (value: number | null | undefined) =>
-    !sampleUnavailable && typeof value === 'number' && Number.isFinite(value) ? value : null;
-  const values = [
-    { name: 'Example routine', muscle: sampleValue(exampleMuscle), bone: sampleValue(exampleBone), flagged: false },
-    { name: 'Low workload', muscle: sampleValue(lowMuscle), bone: sampleValue(lowBone), flagged: !!lowWorkloadAlert },
-  ];
-  return <section className={`microgravity-panel ${alert ? 'is-flagged' : ''}`} aria-labelledby="microgravity-title" data-testid="visualizer-microgravity">
-    <header className="microgravity-header">
-      <div><span className="eyebrow">MICROGRAVITY · LOCAL SIMULATION</span><h2 id="microgravity-title">Muscle + bone impact</h2></div>
-      <span className="demo-stamp"><Orbit size={13} aria-hidden="true" /> DEMO ONLY</span>
+  return <section className="microgravity-panel bm-panel" aria-labelledby="microgravity-title" data-testid="visualizer-microgravity">
+    <header className="bm-head">
+      <h2 id="microgravity-title">Body scan</h2>
+      <span className="bm-note" data-testid="text-body-sim-note">Simulation · no live sensors</span>
     </header>
-    <div className="microgravity-body has-body-map">
-      <div className="impact-readouts">
-        <div className="period-tabs" role="tablist" aria-label="Muscle and bone readings">
-          {(['muscle', 'bone'] as const).map(system => <button key={system} type="button"
-            role="tab" id={`impact-tab-${system}`} aria-selected={selectedSystem === system}
-            aria-controls="impact-readings-panel" tabIndex={selectedSystem === system ? 0 : -1}
-            className={selectedSystem === system ? 'selected' : ''}
-            onClick={() => setSelectedSystem(system)}
-            onKeyDown={event => {
-              if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
-              event.preventDefault();
-              const next = event.key === 'Home' ? 'muscle' : event.key === 'End' ? 'bone' : selectedSystem === 'muscle' ? 'bone' : 'muscle';
-              setSelectedSystem(next);
-              document.getElementById(`impact-tab-${next}`)?.focus();
-            }}
-            data-testid={`tab-impact-${system}`}>{system === 'muscle' ? 'Muscle readings' : 'Bone readings'}</button>)}
-        </div>
-        <BodyMap system={selectedSystem} />
-        <p className="impact-disclaimer">Fictional demo comparison · indices relative to a fictional 100% baseline. Not measured tissue, not g/cm², and not a personal medical forecast.</p>
-        <p className="impact-mitigation-note">In this fictional example, the regular countermeasure routine stays closer to baseline than the low-workload case. This is not evidence of a real workout effect.</p>
-        <label className="impact-day-control" htmlFor="impact-day-range">
-          <span>Demo day</span><output htmlFor="impact-day-range" data-testid="value-impact-day">{selectedDay} / 30</output>
-          <input id="impact-day-range" type="range" min="0" max="30" step="5" value={selectedDay}
-            aria-label="Select fictional comparison day, 0 to 30"
-            aria-describedby="impact-day-help"
-            onChange={event => setSelectedDay(Number(event.target.value))}
-            data-testid="input-impact-day" />
-          <small id="impact-day-help">Choose one of the existing 5-day sample points.</small>
-        </label>
-        <div className="impact-comparison" role="tabpanel" id="impact-readings-panel" aria-labelledby={`impact-tab-${selectedSystem}`}>
-          {values.map((scenario, index) => <article className={`impact-scenario ${scenario.flagged ? 'low-workload-flagged' : ''}`} key={scenario.name}
-            data-testid={`metric-demo-scenario-${index}`} tabIndex={0}>
-            <h3>{scenario.name}{scenario.flagged && <span className="scenario-flag">Demo flag</span>}</h3>
-            <div className="impact-pair">
-              {selectedSystem === 'muscle' && <div className="impact-meter" role="group" aria-label={`${scenario.name} muscle index`} tabIndex={0} data-testid={`metric-demo-muscle-${index}`}>
-                <div className="impact-meter-heading"><span>Muscle</span><strong>{scenario.muscle === null ? 'Unavailable' : `${scenario.muscle.toFixed(1)}%`}</strong></div>
-                {scenario.muscle !== null && <progress aria-label={`${scenario.name} fictional muscle index at day ${selectedDay}`} max="100" value={scenario.muscle} data-testid={`progress-demo-muscle-${index}`} />}
-              </div>}
-              {selectedSystem === 'bone' && <div className="impact-meter bone-meter" role="group" aria-label={`${scenario.name} bone index`} tabIndex={0} data-testid={`metric-demo-bone-${index}`}>
-                <div className="impact-meter-heading"><span>Bone</span><strong>{scenario.bone === null ? 'Unavailable' : `${scenario.bone.toFixed(1)}%`}</strong></div>
-                {scenario.bone !== null && <progress aria-label={`${scenario.name} fictional bone index at day ${selectedDay}`} max="100" value={scenario.bone} data-testid={`progress-demo-bone-${index}`} />}
-              </div>}
-            </div>
-          </article>)}
-        </div>
-      </div>
-    </div>
-    <footer className="microgravity-foot">
-      <span className={lowWorkloadAlert ? 'impact-alert' : ''} data-testid="status-demo-impact">{signal.unavailable ? 'Unavailable — saved simulation is unreadable' : signal.scenario === 'missing' ? 'Unavailable — sample data missing' : lowWorkloadAlert ? 'Low-workload fictional example flagged' : 'Example trajectories · not measurements'}</span>
-      <Link href="/countermeasures" data-testid="link-impact-countermeasures">Review scenario <ArrowDownRight size={14} aria-hidden="true" /></Link>
-    </footer>
-    <p className="impact-log-note">Saved workout logs do not alter these sample curves. {sampleUnavailable ? 'All comparison values are unavailable.' : `Selected sample point: day ${selectedDay}.`}</p>
+    <BodyMap />
   </section>;
 }
 
@@ -997,43 +927,43 @@ const clerkAppearance = {
     logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
   },
   variables: {
-    colorPrimary: '#a893ee',
-    colorForeground: '#f4efdf',
-    colorMutedForeground: '#bdc8d8',
-    colorDanger: '#ed8f79',
-    colorBackground: '#151c2e',
-    colorInput: '#222d43',
-    colorInputForeground: '#f4efdf',
-    colorNeutral: '#f4efdf',
+    colorPrimary: '#62F5E2',
+    colorForeground: '#E5F2EF',
+    colorMutedForeground: '#9FB3AE',
+    colorDanger: '#F87171',
+    colorBackground: '#0E1820',
+    colorInput: '#132430',
+    colorInputForeground: '#E5F2EF',
+    colorNeutral: '#E5F2EF',
     fontFamily: 'Arabic Typesetting, serif',
     borderRadius: '16px',
   },
   elements: {
     rootBox: 'w-full flex justify-center',
-    cardBox: 'bg-[#151c2e] border border-[#46536d] rounded-2xl w-[440px] max-w-full overflow-hidden',
+    cardBox: 'bg-[#0E1820] border border-[#2A4A50] rounded-2xl w-[440px] max-w-full overflow-hidden',
     card: '!shadow-none !border-0 !bg-transparent !rounded-none',
     footer: '!shadow-none !border-0 !bg-transparent !rounded-none',
-    headerTitle: 'text-[#f4efdf]',
-    headerSubtitle: 'text-[#bdc8d8]',
-    socialButtonsBlockButtonText: 'text-[#f4efdf]',
-    formFieldLabel: 'text-[#f4efdf]',
-    footerActionLink: 'text-[#a893ee]',
-    footerActionText: 'text-[#bdc8d8]',
-    dividerText: 'text-[#bdc8d8]',
-    identityPreviewEditButton: 'text-[#a893ee]',
-    formFieldSuccessText: 'text-[#9fcebd]',
-    alertText: 'text-[#f4efdf]',
+    headerTitle: 'text-[#E5F2EF]',
+    headerSubtitle: 'text-[#9FB3AE]',
+    socialButtonsBlockButtonText: 'text-[#E5F2EF]',
+    formFieldLabel: 'text-[#E5F2EF]',
+    footerActionLink: 'text-[#62F5E2]',
+    footerActionText: 'text-[#9FB3AE]',
+    dividerText: 'text-[#9FB3AE]',
+    identityPreviewEditButton: 'text-[#62F5E2]',
+    formFieldSuccessText: 'text-[#4ADE80]',
+    alertText: 'text-[#E5F2EF]',
     logoBox: 'rounded-xl',
     logoImage: 'rounded-xl',
-    socialButtonsBlockButton: 'border border-[#46536d] bg-[#202a3e]',
-    formButtonPrimary: 'bg-[#a893ee] text-[#17172a] hover:bg-[#b6a3f4]',
-    formFieldInput: 'border border-[#46536d] bg-[#222d43] text-[#f4efdf]',
-    footerAction: 'text-[#bdc8d8]',
-    dividerLine: 'bg-[#46536d]',
-    alert: 'border border-[#a45f54] bg-[#34242a]',
-    otpCodeFieldInput: 'border border-[#46536d] bg-[#222d43] text-[#f4efdf]',
-    formFieldRow: 'text-[#f4efdf]',
-    main: 'text-[#f4efdf]',
+    socialButtonsBlockButton: 'border border-[#2A4A50] bg-[#132430]',
+    formButtonPrimary: 'bg-[#62F5E2] text-[#071014] hover:bg-[#8AF8EA]',
+    formFieldInput: 'border border-[#2A4A50] bg-[#132430] text-[#E5F2EF]',
+    footerAction: 'text-[#9FB3AE]',
+    dividerLine: 'bg-[#2A4A50]',
+    alert: 'border border-[#F87171] bg-[#2A1618]',
+    otpCodeFieldInput: 'border border-[#2A4A50] bg-[#132430] text-[#E5F2EF]',
+    formFieldRow: 'text-[#E5F2EF]',
+    main: 'text-[#E5F2EF]',
   },
 };
 

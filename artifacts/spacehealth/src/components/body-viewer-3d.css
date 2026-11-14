@@ -1,0 +1,16 @@
+.viewer3d-frame { position:relative; width:100%; aspect-ratio:3/4; max-height:min(78vh,760px); margin:0 auto; overflow:hidden; cursor:grab;
+  background:radial-gradient(ellipse 45% 55% at 50% 50%, #62F5E21F, transparent 70%), #03060b; border:1px solid #62F5E233; }
+.viewer3d-frame:active { cursor:grabbing; }
+.viewer3d-frame:focus-visible { outline:3px solid #62F5E2; outline-offset:2px; }
+.viewer3d-host { position:absolute; inset:0; }
+.viewer3d-canvas { display:block; width:100%; height:100%; touch-action:pan-y; position:relative; z-index:1; }
+.viewer3d-frame .holo-grid, .viewer3d-frame .holo-scan { z-index:2; }
+.viewer3d-loading { position:absolute; inset:0; z-index:3; display:grid; place-content:center; justify-items:center; gap:10px; color:#E5F2EF; font-size:15px; }
+.viewer3d-skeleton { width:70px; height:220px; border:1px solid #62F5E255; background:linear-gradient(180deg,#62F5E214,#62F5E230,#62F5E214); background-size:100% 200%; animation:viewer3d-shimmer 2.4s ease-in-out infinite; }
+@keyframes viewer3d-shimmer { 0%,100% { background-position:0 0; } 50% { background-position:0 100%; } }
+.viewer3d-error { display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; padding:14px; border:1px solid #f87171; border-left-width:4px; background:#f871710f; color:#E5F2EF; }
+.viewer3d-error svg { color:#f87171; }
+.viewer3d-error p { margin:0; flex:1; font-size:15px; }
+.viewer3d-error button { display:inline-flex; align-items:center; gap:6px; min-height:44px; padding:6px 12px; border:1px solid #62F5E266; background:transparent; color:#62F5E2; font-size:15px; }
+.sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+@media (prefers-reduced-motion:reduce) { .viewer3d-skeleton { animation:none; } }

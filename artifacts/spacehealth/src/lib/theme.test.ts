@@ -26,10 +26,10 @@ test('both themes keep the dark browser color, and Sky is restored on reload', (
   try {
     applyTheme('space');
     assert.equal(dataset.theme, 'space');
-    assert.equal(browserColor, '#10152B');
+    assert.equal(browserColor, '#090D12');
     initializeTheme();
     assert.equal(dataset.theme, 'sky');
-    assert.equal(browserColor, '#10152B');
+    assert.equal(browserColor, '#090D12');
   } finally {
     if (originalDocument) Object.defineProperty(globalThis, 'document', originalDocument);
     else Reflect.deleteProperty(globalThis, 'document');

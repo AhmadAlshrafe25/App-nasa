@@ -2,3 +2,4 @@
 - [Radiation monitoring scope](radiation-monitoring.md) — Radiation anomalies are the priority; distinguish statistical deviations from validated exposure limits and live hardware readings.
 - [Manual artifact checks](manual-artifact-checks.md) — standalone shell builds do not inherit the managed workflow’s injected service environment.
 - [SpaceHealth visual identity](spacehealth-visual-identity.md) — Keep the dashboard dark and wrist-readable, with charcoal, neon cyan/lilac, square corners, and Arabic Typesetting first.
+- [Anatomy asset constraints](anatomy-assets.md) — Preserve detailed licensed 3D anatomy; preflight storage auth before mirroring public models without touching private media.
