@@ -5,13 +5,14 @@ import muscleBack from '@/assets/anatomy/body-1.webp';
 import boneFront from '@/assets/anatomy/body-2.webp';
 import boneBack from '@/assets/anatomy/body-3.webp';
 
-const ART = { muscle: { front: muscleFront, back: muscleBack }, bone: { front: boneFront, back: boneBack } } as const;
-const ZOOMS = [1, 1.4, 1.8];
 import { getBodyRegions, statusLabel, type BodyScenario, type BodySystem, type BodyView, type RegionStatus } from '@/lib/body-regions';
 import './body-map.css';
 
+const ART = { muscle: { front: muscleFront, back: muscleBack }, bone: { front: boneFront, back: boneBack } } as const;
+const ZOOMS = [1, 1.4, 1.8];
+
 const scenarios: { id: BodyScenario; label: string }[] = [
-  { id: 'simulated', label: 'Simulated default' },
+  { id: 'simulated', label: 'Mixed demo (default)' },
   { id: 'flagged', label: 'Flagged regions' },
   { id: 'disconnected', label: 'Disconnected sensors' },
 ];
@@ -25,10 +26,12 @@ export function BodyMap({ system }: { system: BodySystem }) {
   const [scenario, setScenario] = useState<BodyScenario>('simulated');
   const [view, setView] = useState<BodyView>('front');
   const [zoom, setZoom] = useState(0);
+  const [hoverId, setHoverId] = useState<string | null>(null);
   const regions = getBodyRegions(system, view, scenario);
   const [selectedId, setSelectedId] = useState(regions[0].id);
   useEffect(() => { setSelectedId(getBodyRegions(system, view, 'simulated')[0].id); }, [system, view]);
   const selected = regions.find(r => r.id === selectedId) ?? regions[0];
+  const readout = regions.find(r => r.id === hoverId) ?? selected;
   const counts = regions.reduce<Record<RegionStatus, number>>((acc, r) => { acc[r.status]++; return acc; }, { normal: 0, attention: 0, flagged: 0, unavailable: 0 });
 
   const onKey = (event: KeyboardEvent, index: number) => {
@@ -73,13 +76,21 @@ export function BodyMap({ system }: { system: BodySystem }) {
           <output data-testid="value-body-zoom">{Math.round(ZOOMS[zoom] * 100)}%</output>
           <button type="button" aria-label="Zoom in" disabled={zoom === ZOOMS.length - 1} onClick={() => setZoom(z => Math.min(ZOOMS.length - 1, z + 1))} data-testid="button-body-zoom-in"><ZoomIn size={18} aria-hidden="true" /></button>
         </div>
+        <div className={`holo-readout status-${readout.status}`} aria-live="polite" data-testid="text-body-hover-readout">
+          <StatusIcon status={readout.status} />
+          <span className="holo-readout-name">{readout.label}</span>
+          <span className="holo-readout-status">{statusLabel[readout.status]}</span>
+        </div>
         <div className="body-art-scroll">
-          <div className="body-art" style={{ width: `${ZOOMS[zoom] * 100}%` }}>
+          <div className="body-art holo" style={{ width: `${ZOOMS[zoom] * 100}%` }}>
             <img src={ART[system][view]} alt={`Illustrative ${system === 'muscle' ? 'muscle' : 'skeleton'} anatomy, ${view} view. Not a scan.`} width={512} height={512} draggable={false} data-testid="img-body-anatomy" />
-            <svg viewBox="0 0 512 512" aria-hidden="true">
+            <span className="holo-grid" aria-hidden="true" />
+            <span className="holo-scan" aria-hidden="true" />
+            <svg viewBox="0 0 512 512" aria-hidden="true" onPointerLeave={() => setHoverId(null)}>
               {regions.map(r => <path key={r.id} d={r.d}
                 className={`region-shape status-${r.status} ${r.id === selected.id ? 'is-selected' : ''}`}
-                onClick={() => setSelectedId(r.id)} data-testid={`shape-body-region-${r.id}`}><title>{`${r.label}: ${statusLabel[r.status]}`}</title></path>)}
+                onPointerEnter={() => setHoverId(r.id)}
+                onClick={() => { setSelectedId(r.id); setHoverId(null); }} data-testid={`shape-body-region-${r.id}`}><title>{`${r.label}: ${statusLabel[r.status]}`}</title></path>)}
             </svg>
           </div>
         </div>

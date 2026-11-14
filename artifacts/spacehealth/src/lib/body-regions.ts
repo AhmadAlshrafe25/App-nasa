@@ -51,7 +51,7 @@ const order = ['head', 'neck', 'shoulder', 'chest', 'core', 'upperArm', 'forearm
 
 // Overrides keyed by `${segment}:${anatomical side}` or `${segment}` (applies to all sides). Same across views.
 const overrides: Record<BodyScenario, Record<BodySystem, Record<string, RegionStatus>>> = {
-  simulated: { muscle: { core: 'attention' }, bone: { pelvis: 'attention' } },
+  simulated: { muscle: { core: 'attention', 'shoulder:R': 'attention', 'thigh:L': 'flagged' }, bone: { pelvis: 'attention', spine: 'attention', 'lowerLeg:L': 'flagged' } },
   flagged: {
     muscle: { 'thigh:L': 'flagged', 'lowerLeg:R': 'attention', core: 'attention', 'shoulder:R': 'flagged' },
     bone: { 'thigh:R': 'flagged', spine: 'attention', core: 'attention', 'foot:L': 'flagged', pelvis: 'attention' },
@@ -63,9 +63,9 @@ const overrides: Record<BodyScenario, Record<BodySystem, Record<string, RegionSt
 };
 
 const statusNote: Record<RegionStatus, string> = {
-  normal: 'Demo status: within the fictional example pattern. Nothing to review.',
-  attention: 'Demo status: attention. The fictional sample drifted from the example pattern; worth a look during review.',
-  flagged: 'Demo status: simulated concern, flagged for review. This does not mean tissue is damaged and is not a diagnosis.',
+  normal: 'Good · demo: within the fictional example pattern. Nothing to review.',
+  attention: 'Danger · demo: the fictional sample drifted from the example pattern and is marked for a closer look during review.',
+  flagged: 'Weakness/break concern · demo: a fictional concern flagged for review. No injury, weakness or break has been detected or diagnosed.',
   unavailable: 'Sensor disconnected in this demo. No sample is available, so no status is inferred.',
 };
 
@@ -105,5 +105,5 @@ export function getBodyRegions(system: BodySystem, view: BodyView, scenario: Bod
 }
 
 export const statusLabel: Record<RegionStatus, string> = {
-  normal: 'Normal (demo)', attention: 'Attention (demo)', flagged: 'Flagged for review', unavailable: 'Unavailable',
+  normal: 'Good · demo', attention: 'Danger · demo', flagged: 'Weakness/break concern · demo', unavailable: 'Unavailable',
 };
