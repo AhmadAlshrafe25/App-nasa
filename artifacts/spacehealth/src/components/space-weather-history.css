@@ -1,0 +1,46 @@
+.space-weather-history { margin-top:10px;border-top:1px solid #1E293B;padding-top:8px; }
+.space-weather-history > summary { color:#2DD4BF;font-size:13px;font-weight:700;cursor:pointer; }
+.space-weather-history > summary:focus-visible,
+.space-weather-history button:focus-visible { outline:2px solid #38BDF8;outline-offset:2px; }
+.space-weather-history-note { color:#64748B;font-size:12px;line-height:1.4;margin:7px 0; }
+.space-weather-history-controls { display:flex;gap:6px;margin:8px 0; }
+.space-weather-history-controls button {
+  min-height:32px;padding:5px 9px;border:1px solid #1E293B;border-radius:3px;
+  background:#0D131F;color:#94A3B8;font-size:12px;cursor:pointer;
+}
+.space-weather-history-controls button[aria-pressed="true"] { border-color:#14B8A6;color:#2DD4BF; }
+.space-weather-history-controls button:hover { border-color:#38BDF8;color:#F1F5F9; }
+.space-weather-history-scroll { overflow-x:auto;overscroll-behavior-inline:contain; }
+.space-weather-history-chart {
+  display:grid;grid-auto-flow:column;grid-auto-columns:24px;align-items:stretch;gap:3px;
+  width:max-content;min-width:100%;height:112px;padding:6px 3px 0;border-bottom:1px solid #334155;
+}
+.space-weather-history-year {
+  min-width:0;height:100%;padding:0;border:0;background:transparent;display:flex;flex-direction:column;
+  align-items:center;justify-content:flex-end;gap:4px;color:#64748B;cursor:pointer;
+}
+.space-weather-history-year:hover .space-weather-history-bar,
+.space-weather-history-year[aria-pressed="true"] .space-weather-history-bar { background:#38BDF8; }
+.space-weather-history-bar-wrap { width:100%;height:78px;display:flex;align-items:flex-end;justify-content:center; }
+.space-weather-history-bar { width:14px;min-height:3px;background:#14B8A6;border-radius:2px 2px 0 0;transition:background-color .15s ease; }
+.space-weather-history-year.year-partial .space-weather-history-bar { background:#F59E0B; }
+.space-weather-history-year-label { min-height:15px;font-size:8px;line-height:1.2;white-space:nowrap; }
+.space-weather-history-year[aria-pressed="true"] .space-weather-history-year-label { color:#F1F5F9;font-weight:700; }
+.chart-all-years { grid-auto-columns:22px;gap:1px; }
+.chart-all-years .space-weather-history-bar { width:11px; }
+.chart-all-years .space-weather-history-year-label { font-size:8px; }
+.space-weather-history-detail {
+  display:flex;flex-wrap:wrap;align-items:baseline;gap:5px 12px;margin-top:9px;
+  color:#94A3B8;font-size:12px;font-variant-numeric:tabular-nums;
+}
+.space-weather-history-detail strong { color:#F1F5F9;font-size:14px; }
+.space-weather-history-partial { color:#F59E0B; }
+.space-weather-history-source {
+  display:flex;flex-wrap:wrap;justify-content:space-between;gap:5px;margin-top:7px;
+  color:#64748B;font-size:11px;line-height:1.4;
+}
+.space-weather-history-source a { color:#38BDF8;text-underline-offset:2px; }
+.space-weather-history-source a:hover { color:#2DD4BF; }
+@media (prefers-reduced-motion:reduce) {
+  .space-weather-history-bar { transition:none; }
+}

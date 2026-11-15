@@ -6,6 +6,7 @@ import {
   SPACE_WEATHER_SOURCES,
   type SpaceWeatherObservation,
 } from '@/lib/space-weather';
+import { SpaceWeatherHistory } from '@/components/space-weather-history';
 import './space-weather-feed.css';
 
 type FeedValue = { observation: SpaceWeatherObservation | null; error: boolean };
@@ -168,6 +169,7 @@ export function SpaceWeatherFeed() {
         {feed.protonFlux.error && <small className="space-weather-error"><AlertTriangle size={13} />Could not refresh this reading</small>}
       </article>
     </div>
+    <SpaceWeatherHistory />
     <footer className="space-weather-foot">
       <span>Public near-Earth data, not an onboard reading, dose estimate, or safety alarm.</span>
       <span>{checkedAt ? `Checked ${new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(checkedAt)}` : 'Waiting for first update'}</span>

@@ -65,3 +65,35 @@ test('Readings marks unavailable NOAA data instead of filling in sample values',
     await context.close();
   }
 });
+
+test('Readings provides selectable, clearly labeled Kaggle storm-history context', async () => {
+  const { page, context } = await harness.openPage(WIDE);
+  await page.route(KP_URL, route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify([{ time_tag: new Date().toISOString().slice(0, 19), Kp: 2.67 }]),
+  }));
+  await page.route(PROTON_URL, route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify([{ time_tag: new Date().toISOString(), energy: '>=10 MeV', flux: 0.24 }]),
+  }));
+  try {
+    await page.goto(`${harness.appUrl}/`);
+    const history = byId(page, 'details-space-weather-history');
+    await history.locator('summary').click();
+    await expectText(page, 'history-selected-year', /^2025$/);
+    await expectText(page, 'history-selected-storm-days', /97 days at G1 or higher/);
+    assert.match(await history.textContent() ?? '', /not an onboard reading, dose, forecast, or safety limit/i);
+    assert.equal(await byId(page, 'history-year-1932').count(), 0);
+
+    await byId(page, 'button-history-all').click();
+    assert.equal(await byId(page, 'history-year-1932').count(), 1);
+    await byId(page, 'history-year-2026').click();
+    await expectText(page, 'history-selected-year', /^2026 · partial year$/);
+    await expectText(page, 'history-selected-storm-days', /52 days at G1 or higher/);
+    await expectText(page, 'history-partial-note', /through October 29 \(302 days reported\)/);
+  } finally {
+    await context.close();
+  }
+});
