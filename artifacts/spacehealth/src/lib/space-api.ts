@@ -6,7 +6,8 @@ import type {
 /** The Python API is routed at the site root under /api, independent of this app's base path. */
 export const API_PREFIX = '/api';
 export const ASTRONAUT_ID = 'AST-01';
-export const API_TIMEOUT_MS = 4000;
+// Dashboard anomaly scoring can approach four seconds on a cold start.
+export const API_TIMEOUT_MS = 10_000;
 
 export type ApiResult<T> =
   | { status: 'ok'; data: T }

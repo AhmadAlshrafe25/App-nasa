@@ -13,12 +13,6 @@ after(async () => { await harness?.stop(); });
 async function open(viewport: { width: number; height: number }, online: boolean, path = '/') {
   const opened = await harness.openPage(viewport);
   opened.network.online = online;
-  opened.page.on('response', response => {
-    if (response.url().includes('/dashboard')) console.log('Dashboard response:', response.status(), response.url());
-  });
-  opened.page.on('requestfailed', request => {
-    if (request.url().includes('/dashboard')) console.log('Dashboard request failed:', request.failure()?.errorText);
-  });
   await opened.page.goto(`${harness.appUrl}${path}`);
   const mission = byId(opened.page, 'section-mission-overview');
   if (await mission.count() && !(await mission.evaluate(element => (element as HTMLDetailsElement).open))) {
@@ -128,8 +122,6 @@ describe('with the API running', () => {
     try {
       await byId(page, 'button-radiation-details').click();
       await byId(page, 'section-ai-findings').waitFor();
-      await page.waitForTimeout(3000);
-      console.log('AI finding state:', await byId(page, 'section-ai-findings').innerText());
       await byId(page, 'text-ai-risk').waitFor();
       await byId(page, 'button-ai-pattern-details').click();
       await byId(page, 'table-baseline-comparison').waitFor();
