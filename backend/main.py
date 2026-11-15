@@ -12,6 +12,7 @@ from ai.risk_assessment import assess
 from backend import database as db
 from backend.models import (Assessment, CheckInRequest, FamilyMessage, FamilyMessageIn, CheckInResponse, Dashboard, SimulationResponse,
                             HealthStatus, MoodTag, SupportRequest, SupportResponse, SyncResult, SyncStatus)
+from backend.nasa_donki import NASADataUnavailable, get_recent_cmes
 from companion import companion
 
 MARS_DELAY_MINUTES = 14
@@ -173,8 +174,17 @@ def healthz():
     return {"status": "ok"}
 
 
+@app.get("/space-weather/nasa-cmes", tags=["space-weather"])
+def nasa_cme_reports():
+    """Recent real CME reports from NASA DONKI, not local spacecraft telemetry."""
+    try:
+        return get_recent_cmes()
+    except NASADataUnavailable as exc:
+        raise HTTPException(502, "NASA DONKI is temporarily unavailable.") from exc
+
+
 # Preview/proxy prefix: expose every route again under /api (hidden from Swagger).
-for _route in [r for r in app.routes if getattr(r, "path", "").startswith(("/health", "/astronauts", "/companion", "/family", "/mission", "/simulate"))]:
+for _route in [r for r in app.routes if getattr(r, "path", "").startswith(("/health", "/astronauts", "/companion", "/family", "/mission", "/simulate", "/space-weather"))]:
     app.add_api_route("/api" + _route.path, _route.endpoint, methods=list(_route.methods), include_in_schema=False)
 
 

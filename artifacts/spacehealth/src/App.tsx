@@ -30,6 +30,7 @@ import { AstroDemo } from '@/components/astro-demo';
 import { Countermeasures } from '@/components/countermeasures';
 import { CabinAlertBanner, CabinReadingsPanel } from '@/components/cabin-readings';
 import { SpaceWeatherFeed } from '@/components/space-weather-feed';
+import { NasaCmeFeed } from '@/components/nasa-cme-feed';
 import { EarthClock } from '@/components/earth-clock';
 import { useDailyReminder } from '@/hooks/use-daily-reminder';
 import {
@@ -793,6 +794,7 @@ function Overview({
     <Heading title="Readings" right={<Link href="/alerts" className={`wrist-alert ${pendingCount === 0 ? 'is-reviewed' : ''}`} data-testid="link-alert-status"><Bell size={15} />{pendingCount ? `${pendingCount} alerts` : 'No alerts'}</Link>} />
 
     <SpaceWeatherFeed />
+    <NasaCmeFeed />
     <Link href="/alerts" className="radiation-open" aria-label="View radiation anomaly details" data-testid="link-radiation-details"><RadiationSummary analysis={analysis} acknowledged={demo.acknowledged} trend={samples} /></Link>
     <CabinReadingsPanel />
     <div className="readings-trend-heading">

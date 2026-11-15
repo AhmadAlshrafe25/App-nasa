@@ -1,0 +1,32 @@
+.nasa-cme-panel { margin:0 0 14px;padding:13px 15px; }
+.nasa-cme-head,.nasa-cme-title-wrap,.nasa-cme-event-heading,.nasa-cme-event-details,.nasa-cme-foot { display:flex;align-items:center;gap:9px; }
+.nasa-cme-head { justify-content:space-between; }
+.nasa-cme-title-wrap { min-width:0;flex-wrap:wrap;color:#38BDF8; }
+.nasa-cme-title-wrap h2 { color:#F1F5F9;font-size:19px;margin:0; }
+.nasa-cme-state { border:1px solid #1E293B;border-radius:3px;padding:3px 7px;color:#64748B;font-size:12px;font-weight:700; }
+.nasa-cme-nasa-data { border-color:#14B8A6;color:#2DD4BF; }
+.nasa-cme-showing-last-response { border-color:#F59E0B;color:#F59E0B; }
+.nasa-cme-unavailable { border-color:#991B1B;color:#EF4444; }
+.nasa-cme-refresh { display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:5px 9px;background:#0D131F;border:1px solid #1E293B;border-radius:3px;color:#F1F5F9;cursor:pointer; }
+.nasa-cme-refresh:hover:not(:disabled),.nasa-cme-refresh:focus-visible { border-color:#38BDF8;color:#38BDF8; }
+.nasa-cme-refresh:disabled { opacity:.7;cursor:wait; }
+.nasa-cme-intro { color:#64748B;font-size:13px;margin:7px 0 10px; }
+.nasa-cme-events { display:grid;gap:7px; }
+.nasa-cme-event { padding:9px 10px;background:#0D131F;border:1px solid #1E293B;border-radius:3px; }
+.nasa-cme-event-heading { justify-content:space-between;flex-wrap:wrap; }
+.nasa-cme-event-heading strong { color:#F1F5F9;font-size:15px; }
+.nasa-cme-event-heading time { color:#64748B;font-size:13px;font-variant-numeric:tabular-nums; }
+.nasa-cme-event-details { align-items:flex-start;flex-wrap:wrap;margin-top:5px;color:#94A3B8;font-size:13px; }
+.nasa-cme-event-details > span { border-right:1px solid #1E293B;padding-right:8px; }
+.nasa-cme-event-details a,.nasa-cme-foot a { display:inline-flex;align-items:center;gap:4px;color:#2DD4BF;text-decoration:underline;text-underline-offset:2px; }
+.nasa-cme-empty { color:#94A3B8;font-size:14px;margin:8px 0; }
+.nasa-cme-foot { justify-content:space-between;flex-wrap:wrap;color:#64748B;font-size:12px;margin-top:8px; }
+.nasa-cme-disclaimer { color:#64748B;font-size:12px;margin:7px 0 0; }
+.nasa-cme-refresh .is-spinning { animation:space-weather-spin 1s linear infinite; }
+@media (max-width:520px) {
+  .nasa-cme-panel { padding:11px; }
+  .nasa-cme-title-wrap h2 { font-size:17px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .nasa-cme-refresh .is-spinning { animation:none; }
+}
