@@ -7,7 +7,7 @@ let harness: Harness;
 before(async () => { harness = await startHarness(); }, { timeout: 150_000 });
 after(async () => { await harness?.stop(); });
 
-test('Readings identifies NASA DONKI reports and shows the returned event fields', async () => {
+test('Readings integrates NASA CME analysis as a compact space-environment metric', async () => {
   const { page, context } = await harness.openPage(WIDE);
   let calls = 0;
   await page.route('**/api/space-weather/nasa-cmes', async route => {
@@ -36,13 +36,19 @@ test('Readings identifies NASA DONKI reports and shows the returned event fields
 
   try {
     await page.goto(`${harness.appUrl}/`);
-    await expectText(page, 'status-nasa-cme', /^NASA data$/);
+    await expectText(page, 'status-nasa-cme', /^Connected$/);
+    await expectText(page, 'value-nasa-cme', /^721 km\/s$/);
+    const tile = byId(page, 'panel-nasa-cme');
+    assert.match(await tile.textContent() ?? '', /Latest report/);
+    assert.match(await byId(page, 'panel-space-weather').textContent() ?? '', /not spacecraft-local sensors/i);
+    const detail = byId(page, 'details-nasa-cme');
+    assert.equal(await byId(page, 'event-nasa-cme-0').isVisible(), false, 'raw event list is collapsed by default');
+    await detail.locator('summary').click();
     await expectText(page, 'event-nasa-cme-0', /N10E20/);
     const event = await byId(page, 'event-nasa-cme-0').textContent();
     assert.match(event ?? '', /721 km\/s/);
     assert.match(event ?? '', /2026-11-15T12:40:00-CME-001/);
     assert.equal(await byId(page, 'link-nasa-cme-0').getAttribute('href'), 'https://ccmc.gsfc.nasa.gov/DONKI/view/CME/1/-1');
-    await expectText(page, 'panel-nasa-cme', /not onboard sensor readings/i);
     await byId(page, 'button-nasa-cme-refresh').click();
     assert.equal(calls, 2);
   } finally {
@@ -60,7 +66,7 @@ test('NASA errors show unavailable without inventing an event', async () => {
   try {
     await page.goto(`${harness.appUrl}/`);
     await expectText(page, 'status-nasa-cme', /^Unavailable$/);
-    await expectText(page, 'text-nasa-cme-unavailable', /No sample events are substituted/);
+    await expectText(page, 'text-nasa-cme-unavailable', /No substitute data is shown/);
   } finally {
     await context.close();
   }

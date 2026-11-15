@@ -6,6 +6,7 @@ import {
   SPACE_WEATHER_SOURCES,
   type SpaceWeatherObservation,
 } from '@/lib/space-weather';
+import { NasaCmeFeed } from '@/components/nasa-cme-feed';
 import { SpaceWeatherHistory } from '@/components/space-weather-history';
 import './space-weather-feed.css';
 
@@ -130,7 +131,7 @@ export function SpaceWeatherFeed() {
     <header className="space-weather-head">
       <div className="space-weather-title-wrap">
         <Radio size={19} aria-hidden="true" />
-        <h2 id="space-weather-title">Space weather</h2>
+        <h2 id="space-weather-title">Space environment</h2>
         <span className={`space-weather-status status-${overall.toLowerCase()}`} role="status" aria-live="polite" data-testid="status-space-weather">
           <span className="space-weather-dot" aria-hidden="true" />{overall}
         </span>
@@ -168,6 +169,7 @@ export function SpaceWeatherFeed() {
         </p>
         {feed.protonFlux.error && <small className="space-weather-error"><AlertTriangle size={13} />Could not refresh this reading</small>}
       </article>
+      <NasaCmeFeed />
     </div>
     <SpaceWeatherHistory />
     <footer className="space-weather-foot">

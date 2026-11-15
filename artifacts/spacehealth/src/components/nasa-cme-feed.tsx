@@ -74,46 +74,62 @@ export function NasaCmeFeed() {
     ? 'Loading'
     : feed.error
       ? feed.data ? 'Showing last response' : 'Unavailable'
-      : 'NASA data';
+      : 'Connected';
+  const latest = feed.data?.events[0] ?? null;
 
-  return <section className="panel nasa-cme-panel" aria-labelledby="nasa-cme-title" data-testid="panel-nasa-cme">
-    <header className="nasa-cme-head">
+  return <article className="space-weather-metric nasa-cme-metric" aria-labelledby="nasa-cme-title" data-testid="panel-nasa-cme">
+    <header className="space-weather-metric-head nasa-cme-head">
       <div className="nasa-cme-title-wrap">
-        <Satellite size={19} aria-hidden="true" />
-        <h2 id="nasa-cme-title">NASA space-weather events</h2>
+        <Satellite size={16} aria-hidden="true" />
+        <strong id="nasa-cme-title">NASA CME analysis</strong>
         <span className={`nasa-cme-state nasa-cme-${feedStatus.toLowerCase().replaceAll(' ', '-')}`} role="status" aria-live="polite" data-testid="status-nasa-cme">
           {feedStatus}
         </span>
       </div>
-      <button type="button" className="nasa-cme-refresh" onClick={() => void refresh()} disabled={loading} aria-label="Refresh NASA event reports" data-testid="button-nasa-cme-refresh">
-        <RefreshCw size={15} aria-hidden="true" className={loading ? 'is-spinning' : ''} />
-        <span>{loading ? 'Updating' : 'Refresh'}</span>
+      <button type="button" className="nasa-cme-refresh" onClick={() => void refresh()} disabled={loading} aria-label="Refresh NASA CME data" data-testid="button-nasa-cme-refresh">
+        <RefreshCw size={14} aria-hidden="true" className={loading ? 'is-spinning' : ''} />
       </button>
     </header>
-    <p className="nasa-cme-intro">
-      NASA DONKI coronal mass ejection reports · recent 7-day window · real event data
+    <div className="nasa-cme-value" data-testid="value-nasa-cme">
+      {latest?.analysisSpeedKmPerSecond != null
+        ? <>{Math.round(latest.analysisSpeedKmPerSecond)} <span>km/s</span></>
+        : latest ? 'Reported' : '—'}
+    </div>
+    <p className="nasa-cme-reading">
+      {latest
+        ? <>Latest report · {formatUtc(latest.startTime)}</>
+        : feed.data
+          ? 'No CME report in the past 7 days'
+          : feed.error
+            ? 'NASA data unavailable'
+            : 'Checking NASA data'}
     </p>
-    {feed.data?.events.length ? <div className="nasa-cme-events" data-testid="list-nasa-cme-events">
-      {feed.data.events.map((event, index) => <article className="nasa-cme-event" key={event.activityId ?? event.startTime} data-testid={`event-nasa-cme-${index}`}>
-        <div className="nasa-cme-event-heading">
-          <strong>{event.sourceLocation ?? 'Source location not reported'}</strong>
-          <time dateTime={event.startTime}>{formatUtc(event.startTime)}</time>
-        </div>
-        <div className="nasa-cme-event-details">
-          {event.activeRegion !== null && <span>Active region {event.activeRegion}</span>}
-          {event.analysisSpeedKmPerSecond !== null && <span>NASA analysis speed {Math.round(event.analysisSpeedKmPerSecond)} km/s</span>}
-          {event.activityId && <span>Event {event.activityId}</span>}
-          {event.eventUrl && <a href={event.eventUrl} target="_blank" rel="noreferrer" data-testid={`link-nasa-cme-${index}`}>NASA event details <ExternalLink size={12} aria-hidden="true" /></a>}
-        </div>
-      </article>)}
-    </div> : feed.data && <p className="nasa-cme-empty" data-testid="text-nasa-cme-empty">No CME reports in this period.</p>}
-    {!feed.data && feed.error && <p className="nasa-cme-empty" role="alert" data-testid="text-nasa-cme-unavailable">
-      NASA reports are unavailable right now. No sample events are substituted.
+    {latest?.sourceLocation && <p className="nasa-cme-location">Source {latest.sourceLocation}</p>}
+    {!feed.data && feed.error && <p className="nasa-cme-error" role="alert" data-testid="text-nasa-cme-unavailable">
+      No substitute data is shown.
     </p>}
-    {feed.data && <footer className="nasa-cme-foot">
-      <span>Retrieved {formatUtc(feed.data.retrievedAt)}{feed.data.cached ? ' · cached' : ''}</span>
-      <a href={feed.data.sourceUrl} target="_blank" rel="noreferrer">NASA DONKI source <ExternalLink size={12} aria-hidden="true" /></a>
-    </footer>}
-    <p className="nasa-cme-disclaimer">NASA event reports are not onboard sensor readings, mission-specific forecasts, or exposure limits.</p>
-  </section>;
+    <details className="nasa-cme-details" data-testid="details-nasa-cme">
+      <summary>NASA report details</summary>
+      {feed.data?.events.length ? <div className="nasa-cme-events" data-testid="list-nasa-cme-events">
+        {feed.data.events.map((event, index) => <div className="nasa-cme-event" key={event.activityId ?? event.startTime} data-testid={`event-nasa-cme-${index}`}>
+          <div className="nasa-cme-event-heading">
+            <strong>{event.sourceLocation ?? 'Location not reported'}</strong>
+            <time dateTime={event.startTime}>{formatUtc(event.startTime)}</time>
+          </div>
+          <div className="nasa-cme-event-details">
+            {event.activeRegion !== null && <span>Active region {event.activeRegion}</span>}
+            {event.analysisSpeedKmPerSecond !== null && <span>{Math.round(event.analysisSpeedKmPerSecond)} km/s</span>}
+            {event.activityId && <span>{event.activityId}</span>}
+            {event.eventUrl && <a href={event.eventUrl} target="_blank" rel="noreferrer" data-testid={`link-nasa-cme-${index}`}>NASA record <ExternalLink size={12} aria-hidden="true" /></a>}
+          </div>
+        </div>)}
+      </div> : feed.data && <p className="nasa-cme-empty" data-testid="text-nasa-cme-empty">No CME report in the past 7 days.</p>}
+      {feed.data && <p className="nasa-cme-retrieved">
+        Retrieved {formatUtc(feed.data.retrievedAt)}{feed.data.cached ? ' · cached' : ''}
+        {' · '}
+        <a href={feed.data.sourceUrl} target="_blank" rel="noreferrer">NASA DONKI source <ExternalLink size={12} aria-hidden="true" /></a>
+      </p>}
+    </details>
+    <p className="nasa-cme-disclaimer">NASA report, not a crew dose or onboard sensor.</p>
+  </article>;
 }

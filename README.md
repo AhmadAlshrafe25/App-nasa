@@ -6,13 +6,13 @@ SpaceHealth is an offline-first astronaut health dashboard. Some readings shown 
 
 ### NASA DONKI coronal mass ejections
 
-The Readings page includes NASA's DONKI coronal mass ejection (CME) reports for the previous seven UTC days. The Python API calls NASA's `GET https://api.nasa.gov/DONKI/CME` endpoint and exposes the normalized result at `GET /api/space-weather/nasa-cmes`.
+The Space environment panel combines NOAA's latest planetary K-index and GOES proton-flux observations with a NASA DONKI CME analysis. The Python API calls NASA's `GET https://api.nasa.gov/DONKI/CME` endpoint and exposes the normalized result at `GET /api/space-weather/nasa-cmes`.
 
-The interface displays up to three recent reports and uses the NASA event start time, source location, active-region number, and the speed from the analysis NASA marks most accurate. Event detail links point back to the NASA CCMC DONKI record. The app refreshes this endpoint periodically; the backend caches upstream results for 30 minutes.
+The dashboard surfaces the latest reported CME analysis speed and event time as one metric, with the raw recent event records tucked into an optional details disclosure. The analysis speed is an event report value, not a spacecraft wind reading. Event detail links point back to the NASA CCMC DONKI record. The app refreshes this endpoint periodically; the backend caches upstream results for 30 minutes.
 
 Set `NASA_API_KEY` as a server-side environment secret for regular use. If it is not set, the backend uses NASA's public `DEMO_KEY`, which has a low request quota. Never commit an API key to GitHub or expose it in browser code.
 
-These are NASA event reports, not spacecraft-local sensor measurements, mission-specific forecasts, dose estimates, or exposure limits.
+NASA DONKI CME records do not provide crew biometrics or a personal radiation dose. They are not spacecraft-local sensor measurements, and this integration does not translate them into a mission-specific forecast or exposure limit. NOAA's Kp and GOES proton flux are shown separately as near-Earth space-environment observations.
 
 ### NOAA near-Earth space-weather observations
 
