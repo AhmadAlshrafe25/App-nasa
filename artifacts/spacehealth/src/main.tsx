@@ -5,8 +5,8 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import { initializeTheme } from '@/lib/theme';
 
 import './index.css';
-import './themes.css';
 import './live-backend.css';
+import './themes.css';
 
 initializeTheme();
 createRoot(document.getElementById('root')!, {

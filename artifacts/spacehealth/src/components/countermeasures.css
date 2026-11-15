@@ -69,18 +69,19 @@
 /* Keep the local demo surface inside the shared deep-space instrument palette. */
 .cm-page .cm-glance,.cm-page .cm-form,.cm-page .cm-error,.cm-page .cm-details,
 .cm-page .cm-list li,.cm-page .cm-glance-values,.cm-page .cm-audio {
-  background-color:#62F5E21A;
-  border-color:#62F5E255;
+  background-color:#0D131F;
+  border-color:#1E293B;
 }
-.cm-page .cm-heading,.cm-page .cm-back,.cm-page .cm-local,.cm-page .cm-glance-head,
+.cm-page .cm-heading,.cm-page .cm-back,.cm-page .cm-glance-head,
 .cm-page .cm-glance-values b,.cm-page .cm-status,.cm-page .cm-form-head,
 .cm-page .cm-score,.cm-page .cm-list h2,.cm-page .cm-sub,.cm-page .cm-list li,
 .cm-page .cm-list li b,.cm-page .cm-prompts li,.cm-page .cm-empty { color:#E5F2EF; }
 .cm-page .cm-local,.cm-page .cm-glance-head span,.cm-page .cm-glance-values small,
 .cm-page .cm-fine,.cm-page .cm-list li span:first-child,.cm-page .cm-completions li {
-  color:#9FB3AE;
+  color:#64748B;
 }
-.cm-page .cm-back,.cm-page .cm-entry-link,.cm-page .cm-ok { color:#62F5E2; }
-.cm-page .cm-prompts li { border-left-color:#62F5E2; }
-.cm-page .cm-fields input { color:#E5F2EF;background:#090D12;border-color:#62F5E255; }
-.cm-page .cm-fields input[aria-invalid='true'],.cm-page .cm-error { border-color:#62F5E2; }
+.cm-page .cm-back,.cm-page .cm-entry-link,.cm-page .cm-ok { color:#2DD4BF; }
+.cm-page .cm-prompts li { border-left-color:#2DD4BF; }
+.cm-page .cm-fields input { color:#F1F5F9;background:#070B12;border-color:#1E293B; }
+.cm-page .cm-fields input[aria-invalid='true'] { border-color:#EF4444; }
+.cm-page .cm-error { color:#F1F5F9;border-color:#991B1B; }

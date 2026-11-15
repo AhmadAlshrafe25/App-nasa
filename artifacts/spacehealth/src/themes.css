@@ -162,6 +162,267 @@
 :root:is([data-theme='space'],[data-theme='sky']) .red-breach-top strong { color:#E5F2EF; }
 :root:is([data-theme='space'],[data-theme='sky']) .red-breach-reason { color:#E5F2EF; }
 
+/* Exact SpaceHealth mission-console palette shared by both display modes. */
+:root,
+:root[data-theme='space'],
+:root[data-theme='sky'] {
+  --space-navy:#070B12;
+  --space-panel:#0D131F;
+  --space-panel-strong:#0D131F;
+  --space-line:#1E293B;
+  --space-muted:#64748B;
+  --space-beige:#F1F5F9;
+  --space-sky:#2DD4BF;
+  --space-purple:#14B8A6;
+  --space-teal:#14B8A6;
+  --space-hud:#38BDF8;
+  --space-amber:#F59E0B;
+  --space-red:#EF4444;
+  --space-red-border:#991B1B;
+  --space-red-wash:rgba(239,68,68,.12);
+  --background:218 44% 5%;
+  --foreground:210 40% 96%;
+  --card:220 40% 9%;
+  --card-foreground:210 40% 96%;
+  --popover:220 40% 9%;
+  --popover-foreground:210 40% 96%;
+  --primary:173 66% 50%;
+  --primary-foreground:218 44% 5%;
+  --secondary:174 84% 40%;
+  --secondary-foreground:210 40% 96%;
+  --muted:215 28% 17%;
+  --muted-foreground:215 16% 47%;
+  --accent:174 84% 40%;
+  --accent-foreground:210 40% 96%;
+  --destructive:0 84% 60%;
+  --destructive-foreground:210 40% 96%;
+  --border:215 28% 17%;
+  --input:215 28% 17%;
+  --ring:199 89% 60%;
+  --signal-color:#2DD4BF;
+  --trend-alert:#F59E0B;
+  --severity-yellow:#F59E0B;
+  --severity-red:#EF4444;
+  --blue:#2DD4BF;
+  --blue-dark:#14B8A6;
+  --blue-soft:rgba(20,184,166,.12);
+  --navy:#070B12;
+  --ink:#F1F5F9;
+  --supporting-ink:#64748B;
+  --space-action:#2DD4BF;
+  --space-action-text:#070B12;
+  --radius:0.1875rem;
+}
+
+:root:is([data-theme='space'],[data-theme='sky']) body,
+:root:is([data-theme='space'],[data-theme='sky']) .app-shell,
+:root:is([data-theme='space'],[data-theme='sky']) .workspace,
+:root:is([data-theme='space'],[data-theme='sky']) .sidebar,
+:root:is([data-theme='space'],[data-theme='sky']) .mobile-nav,
+:root:is([data-theme='space'],[data-theme='sky']) .topbar {
+  color:#F1F5F9;
+  background-color:#070B12;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .panel,
+:root:is([data-theme='space'],[data-theme='sky']) .rule-box,
+:root:is([data-theme='space'],[data-theme='sky']) .form-panel,
+:root:is([data-theme='space'],[data-theme='sky']) .voice-log-deck,
+:root:is([data-theme='space'],[data-theme='sky']) .history-item,
+:root:is([data-theme='space'],[data-theme='sky']) .alert-callout,
+:root:is([data-theme='space'],[data-theme='sky']) .notice,
+:root:is([data-theme='space'],[data-theme='sky']) .microgravity-panel,
+:root:is([data-theme='space'],[data-theme='sky']) .cm-glance,
+:root:is([data-theme='space'],[data-theme='sky']) .cm-form,
+:root:is([data-theme='space'],[data-theme='sky']) .astro-dialog,
+:root:is([data-theme='space'],[data-theme='sky']) .astro-message {
+  color:#F1F5F9;
+  background-color:#0D131F;
+  border-color:#1E293B;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .nav-link,
+:root:is([data-theme='space'],[data-theme='sky']) .nav-label,
+:root:is([data-theme='space'],[data-theme='sky']) .sidebar-note,
+:root:is([data-theme='space'],[data-theme='sky']) .brand-sub,
+:root:is([data-theme='space'],[data-theme='sky']) .mission-motto,
+:root:is([data-theme='space'],[data-theme='sky']) .page-subtitle,
+:root:is([data-theme='space'],[data-theme='sky']) .chart-labels,
+:root:is([data-theme='space'],[data-theme='sky']) .cm-local,
+:root:is([data-theme='space'],[data-theme='sky']) .cm-fine,
+:root:is([data-theme='space'],[data-theme='sky']) .astro-disclosure,
+:root:is([data-theme='space'],[data-theme='sky']) .astro-message-heading time,
+:root:is([data-theme='space'],[data-theme='sky']) .astro-message-heading span {
+  color:#64748B;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .vital-card-yellow,
+:root:is([data-theme='space'],[data-theme='sky']) .yellow-emergency-toast {
+  color:#F1F5F9;
+  background:rgba(245,158,11,.12);
+  border-color:#F59E0B;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .vital-card-yellow {
+  border-left:4px solid #F59E0B;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .zone-yellow,
+:root:is([data-theme='space'],[data-theme='sky']) .vital-card-yellow .vital-zone-pill,
+:root:is([data-theme='space'],[data-theme='sky']) .yellow-vital-chip {
+  color:#F59E0B;
+  background:rgba(245,158,11,.12);
+  border-color:#F59E0B;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .vital-card-red,
+:root:is([data-theme='space'],[data-theme='sky']) .red-breach-card {
+  color:#F1F5F9;
+  background:rgba(239,68,68,.12);
+  border-color:#991B1B;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .vital-card-red {
+  border-left:4px solid #EF4444;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .zone-red,
+:root:is([data-theme='space'],[data-theme='sky']) .vital-card-red .vital-zone-pill {
+  color:#F1F5F9;
+  background:rgba(239,68,68,.12);
+  border-color:#EF4444;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .critical-demo-banner {
+  color:#F1F5F9;
+  background:rgba(239,68,68,.12);
+  border-color:#991B1B;
+  border-left-color:#EF4444;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .critical-banner-icon,
+:root:is([data-theme='space'],[data-theme='sky']) .red-siren-icon {
+  color:#EF4444;
+  background:rgba(239,68,68,.12);
+  border-color:#991B1B;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .critical-banner-copy > strong,
+:root:is([data-theme='space'],[data-theme='sky']) .red-siren-icon svg {
+  color:#EF4444;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .impact-alert,
+:root:is([data-theme='space'],[data-theme='sky']) .scenario-flag,
+:root:is([data-theme='space'],[data-theme='sky']) .cm-flag .cm-status {
+  color:#F59E0B;
+}
+
+/* Crisp HUD brackets on the primary information cards. */
+:root:is([data-theme='space'],[data-theme='sky']) .panel:not(.hero-panel),
+:root:is([data-theme='space'],[data-theme='sky']) .microgravity-panel,
+:root:is([data-theme='space'],[data-theme='sky']) .viewer3d-frame {
+  position:relative;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .panel:not(.hero-panel)::before,
+:root:is([data-theme='space'],[data-theme='sky']) .microgravity-panel::before,
+:root:is([data-theme='space'],[data-theme='sky']) .viewer3d-frame::before {
+  content:'';
+  position:absolute;
+  top:-1px;
+  left:-1px;
+  z-index:3;
+  width:12px;
+  height:12px;
+  border-top:1px solid #475569;
+  border-left:1px solid #475569;
+  pointer-events:none;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .panel:not(.hero-panel)::after,
+:root:is([data-theme='space'],[data-theme='sky']) .microgravity-panel::after,
+:root:is([data-theme='space'],[data-theme='sky']) .viewer3d-frame::after {
+  content:'';
+  position:absolute;
+  right:-1px;
+  bottom:-1px;
+  z-index:3;
+  width:12px;
+  height:12px;
+  border-right:1px solid #38BDF8;
+  border-bottom:1px solid #38BDF8;
+  pointer-events:none;
+}
+
+/* Native health meters use separated ticks rather than a smooth fill. */
+:root:is([data-theme='space'],[data-theme='sky']) .impact-meter progress {
+  height:8px;
+  background:repeating-linear-gradient(90deg,#1E293B 0 7px,transparent 7px 10px);
+}
+:root:is([data-theme='space'],[data-theme='sky']) .impact-meter progress::-webkit-progress-bar {
+  background:repeating-linear-gradient(90deg,#1E293B 0 7px,transparent 7px 10px);
+}
+:root:is([data-theme='space'],[data-theme='sky']) .impact-meter progress::-webkit-progress-value,
+:root:is([data-theme='space'],[data-theme='sky']) .impact-meter progress::-moz-progress-bar {
+  background:repeating-linear-gradient(90deg,#2DD4BF 0 7px,transparent 7px 10px);
+}
+:root:is([data-theme='space'],[data-theme='sky']) .bone-meter progress::-webkit-progress-value,
+:root:is([data-theme='space'],[data-theme='sky']) .bone-meter progress::-moz-progress-bar {
+  background:repeating-linear-gradient(90deg,#14B8A6 0 7px,transparent 7px 10px);
+}
+:root:is([data-theme='space'],[data-theme='sky']) .radiation-flagged {
+  background:rgba(245,158,11,.12);
+  border-color:#F59E0B;
+  border-left-color:#F59E0B;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .radiation-flagged .radiation-caption,
+:root:is([data-theme='space'],[data-theme='sky']) .radiation-flagged .radiation-state,
+:root:is([data-theme='space'],[data-theme='sky']) .radiation-flagged .radiation-seen,
+:root:is([data-theme='space'],[data-theme='sky']) .yellow-toast-badge {
+  color:#F59E0B;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .cm-glance.cm-flag {
+  background:rgba(245,158,11,.12);
+  border-color:#F59E0B;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .critical-banner-copy > strong span,
+:root:is([data-theme='space'],[data-theme='sky']) .red-breach-top strong,
+:root:is([data-theme='space'],[data-theme='sky']) .red-breach-reason {
+  color:#F1F5F9;
+}
+
+/* Astro and sync surfaces use the same semantic colors as the dashboard. */
+:root:is([data-theme='space'],[data-theme='sky']) .care-panel,
+:root:is([data-theme='space'],[data-theme='sky']) .care-family,
+:root:is([data-theme='space'],[data-theme='sky']) .care-message {
+  color:#F1F5F9;
+  background:#0D131F;
+  border-color:#1E293B;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .care-source,
+:root:is([data-theme='space'],[data-theme='sky']) .care-icon-btn,
+:root:is([data-theme='space'],[data-theme='sky']) .care-subhead,
+:root:is([data-theme='space'],[data-theme='sky']) .care-line strong,
+:root:is([data-theme='space'],[data-theme='sky']) .care-notice,
+:root:is([data-theme='space'],[data-theme='sky']) .care-link-btn {
+  color:#2DD4BF;
+  border-color:#1E293B;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .care-source-offline {
+  color:#F59E0B;
+  background:rgba(245,158,11,.12);
+  border-color:#F59E0B;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .care-source-error,
+:root:is([data-theme='space'],[data-theme='sky']) .care-error {
+  color:#F1F5F9;
+  background:rgba(239,68,68,.12);
+  border-color:#991B1B;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .care-btn,
+:root:is([data-theme='space'],[data-theme='sky']) .sync-btn {
+  color:#070B12;
+  background:#2DD4BF;
+  border-color:#2DD4BF;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .care-line,
+:root:is([data-theme='space'],[data-theme='sky']) .care-message-meta strong,
+:root:is([data-theme='space'],[data-theme='sky']) .care-message-title {
+  color:#F1F5F9;
+}
+:root:is([data-theme='space'],[data-theme='sky']) .care-reason,
+:root:is([data-theme='space'],[data-theme='sky']) .care-foot,
+:root:is([data-theme='space'],[data-theme='sky']) .care-message-meta span {
+  color:#64748B;
+}
+
 /* Sky: same cyan accent, slightly bluer navy surfaces than Space (#090D12). */
 :root[data-theme='sky'] { --background: 212 45% 8%; --card: 210 42% 12%; --popover: 210 42% 12%; --muted: 210 40% 15%; }
 :root[data-theme='sky'] body, :root[data-theme='sky'] .sidebar, :root[data-theme='sky'] .mobile-nav, :root[data-theme='sky'] .topbar { background:#0B1626; }
