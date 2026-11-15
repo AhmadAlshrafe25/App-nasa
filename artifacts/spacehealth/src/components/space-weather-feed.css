@@ -1,0 +1,37 @@
+.space-weather-panel { margin:12px 0 14px;padding:13px 15px; }
+.space-weather-head,.space-weather-title-wrap,.space-weather-metric-head,.space-weather-foot { display:flex;align-items:center;gap:9px; }
+.space-weather-head { justify-content:space-between; }
+.space-weather-title-wrap { min-width:0;flex-wrap:wrap;color:#38BDF8; }
+.space-weather-title-wrap h2 { color:#F1F5F9;font-size:19px;margin:0; }
+.space-weather-status,.space-weather-freshness { display:inline-flex;align-items:center;gap:5px;border:1px solid #1E293B;border-radius:3px;padding:3px 7px;color:#64748B;font-size:12px;font-weight:700;line-height:1.25; }
+.space-weather-status.status-current,.space-weather-freshness.freshness-current { color:#2DD4BF;border-color:#14B8A6; }
+.space-weather-status.status-partial,.space-weather-status.status-delayed,.space-weather-freshness.freshness-delayed { color:#F59E0B;border-color:#F59E0B; }
+.space-weather-status.status-unavailable,.space-weather-freshness.freshness-unavailable { color:#64748B;border-color:#1E293B; }
+.space-weather-dot { width:7px;height:7px;border-radius:50%;background:currentColor; }
+.status-current .space-weather-dot { box-shadow:0 0 8px #2DD4BF; }
+.space-weather-refresh { display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:5px 9px;background:#0D131F;border:1px solid #1E293B;border-radius:3px;color:#F1F5F9;cursor:pointer; }
+.space-weather-refresh:hover:not(:disabled),.space-weather-refresh:focus-visible { border-color:#38BDF8;color:#38BDF8; }
+.space-weather-refresh:disabled { opacity:.7;cursor:wait; }
+.space-weather-location { color:#64748B;font-size:13px;margin:7px 0 10px; }
+.space-weather-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px; }
+.space-weather-metric { min-width:0;padding:10px 11px;background:#0D131F;border:1px solid #1E293B;border-radius:3px; }
+.space-weather-metric-head { justify-content:space-between;gap:8px; }
+.space-weather-metric-head strong { min-width:0;color:#F1F5F9;font-size:15px; }
+.space-weather-value { margin:7px 0 2px;color:#2DD4BF;font-size:27px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums; }
+.space-weather-value span { color:#64748B;font-size:15px;font-weight:500; }
+.space-weather-metric p { color:#64748B;font-size:13px;margin:0;line-height:1.4; }
+.space-weather-error { display:flex;align-items:center;gap:4px;color:#F59E0B;font-size:12px;margin-top:6px; }
+.space-weather-foot { justify-content:space-between;flex-wrap:wrap;margin-top:8px;color:#64748B;font-size:12px; }
+.space-weather-foot > span:first-child { flex:1 1 320px; }
+.space-weather-foot > span:last-child { font-variant-numeric:tabular-nums; }
+.space-weather-refresh .is-spinning { animation:space-weather-spin 1s linear infinite; }
+@keyframes space-weather-spin { to { transform:rotate(360deg); } }
+@media (max-width:520px) {
+  .space-weather-panel { padding:11px; }
+  .space-weather-grid { grid-template-columns:minmax(0,1fr); }
+  .space-weather-title-wrap h2 { font-size:18px; }
+  .space-weather-foot { align-items:flex-start; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .space-weather-refresh .is-spinning { animation:none; }
+}

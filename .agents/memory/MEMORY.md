@@ -1,5 +1,6 @@
 - [Wrist monitor target](wrist-monitor.md) — Keep SpaceHealth glanceable; Astro uses private, invitation-only family recordings, not a live Earth feed.
 - [Radiation monitoring scope](radiation-monitoring.md) — Radiation anomalies are the priority; distinguish statistical deviations from validated exposure limits and live hardware readings.
+- [Space-weather data scope](space-weather-source.md) — NOAA near-Earth readings are not onboard telemetry; show per-value timestamps and freshness.
 - [Manual artifact checks](manual-artifact-checks.md) — standalone shell builds do not inherit the managed workflow’s injected service environment.
 - [SpaceHealth visual identity](spacehealth-visual-identity.md) — Keep all screens dark and wrist-readable with one navy/cyan palette, square corners, and Arabic Typesetting first.
 - [Simple astronaut-facing wording](app-copy.md) — Remove repeated technical explanations across the app; keep actions obvious and essential safety notices brief.
